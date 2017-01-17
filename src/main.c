@@ -20,129 +20,10 @@
 #include "util.h"
 #include "world.h"
 #include "chunk.h"
-
-#define MAX_CHUNKS 8192
-#define MAX_PLAYERS 128
-#define WORKERS 4
-#define MAX_TEXT_LENGTH 256
-#define MAX_NAME_LENGTH 32
-#define MAX_PATH_LENGTH 256
-#define MAX_ADDR_LENGTH 256
-
-#define ALIGN_LEFT 0
-#define ALIGN_CENTER 1
-#define ALIGN_RIGHT 2
-
-#define MODE_OFFLINE 0
-#define MODE_ONLINE 1
-
-#define WORKER_IDLE 0
-#define WORKER_BUSY 1
-#define WORKER_DONE 2
-
-
-
-typedef struct {
-    int p;
-    int q;
-    int load;
-    Map *block_maps[3][3];
-    Map *light_maps[3][3];
-    int miny;
-    int maxy;
-    int faces;
-    GLfloat *data;
-} WorkerItem;
-
-typedef struct {
-    int index;
-    int state;
-    thrd_t thrd;
-    mtx_t mtx;
-    cnd_t cnd;
-    WorkerItem item;
-} Worker;
-
-typedef struct {
-    int x;
-    int y;
-    int z;
-    int w;
-} Block;
-
-typedef struct {
-    float x;
-    float y;
-    float z;
-    float rx;
-    float ry;
-    float t;
-} State;
-
-typedef struct {
-    int id;
-    char name[MAX_NAME_LENGTH];
-    State state;
-    State state1;
-    State state2;
-    GLuint buffer;
-} Player;
-
-typedef struct {
-    GLuint program;
-    GLuint position;
-    GLuint normal;
-    GLuint uv;
-    GLuint matrix;
-    GLuint sampler;
-    GLuint camera;
-    GLuint timer;
-    GLuint extra1;
-    GLuint extra2;
-    GLuint extra3;
-    GLuint extra4;
-} Attrib;
-
-typedef struct {
-    GLFWwindow *window;
-    Worker workers[WORKERS];
-    Chunk chunks[MAX_CHUNKS];
-    int chunk_count;
-    int create_radius;
-    int render_radius;
-    int delete_radius;
-    int sign_radius;
-    Player players[MAX_PLAYERS];
-    int player_count;
-    int typing;
-    char typing_buffer[MAX_TEXT_LENGTH];
-    int message_index;
-    char messages[MAX_MESSAGES][MAX_TEXT_LENGTH];
-    int width;
-    int height;
-    int observe1;
-    int observe2;
-    int flying;
-    int item_index;
-    int scale;
-    int ortho;
-    float fov;
-    int suppress_char;
-    int mode;
-    int mode_changed;
-    char db_path[MAX_PATH_LENGTH];
-    char server_addr[MAX_ADDR_LENGTH];
-    int server_port;
-    int day_length;
-    int time_changed;
-    Block block0;
-    Block block1;
-    Block copy0;
-    Block copy1;
-} Model;
+#include "Model.h"
 
 static Model model;
-static Model *g = &model;
+Model *g = &model;
 
 int chunked(float x) {
     return floorf(roundf(x) / CHUNK_SIZE);
@@ -513,16 +394,6 @@ Player *player_crosshair(Player *player) {
     return result;
 }
 
-Chunk *find_chunk(int p, int q) {
-    for (int i = 0; i < g->chunk_count; i++) {
-        Chunk *chunk = g->chunks + i;
-        if (chunk->p == p && chunk->q == q) {
-            return chunk;
-        }
-    }
-    return 0;
-}
-
 int chunk_distance(Chunk *chunk, int p, int q) {
     int dp = ABS(chunk->p - p);
     int dq = ABS(chunk->q - q);
@@ -826,42 +697,6 @@ void gen_sign_buffer(Chunk *chunk) {
     del_buffer(chunk->sign_buffer);
     chunk->sign_buffer = gen_faces(5, faces, data);
     chunk->sign_faces = faces;
-}
-
-int has_lights(Chunk *chunk) {
-    if (!SHOW_LIGHTS) {
-        return 0;
-    }
-    for (int dp = -1; dp <= 1; dp++) {
-        for (int dq = -1; dq <= 1; dq++) {
-            Chunk *other = chunk;
-            if (dp || dq) {
-                other = find_chunk(chunk->p + dp, chunk->q + dq);
-            }
-            if (!other) {
-                continue;
-            }
-            Map *map = &other->lights;
-            if (map->size) {
-                return 1;
-            }
-        }
-    }
-    return 0;
-}
-
-void dirty_chunk(Chunk *chunk) {
-    chunk->dirty = 1;
-    if (has_lights(chunk)) {
-        for (int dp = -1; dp <= 1; dp++) {
-            for (int dq = -1; dq <= 1; dq++) {
-                Chunk *other = find_chunk(chunk->p + dp, chunk->q + dq);
-                if (other) {
-                    other->dirty = 1;
-                }
-            }
-        }
-    }
 }
 
 void occlusion(
@@ -1174,26 +1009,6 @@ void load_chunk(WorkerItem *item) {
 void request_chunk(int p, int q) {
     int key = db_get_key(p, q);
     client_chunk(p, q, key);
-}
-
-void init_chunk(Chunk *chunk, int p, int q) {
-    chunk->p = p;
-    chunk->q = q;
-    chunk->faces = 0;
-    chunk->sign_faces = 0;
-    chunk->buffer = 0;
-    chunk->sign_buffer = 0;
-    dirty_chunk(chunk);
-    SignList *signs = &chunk->signs;
-    sign_list_alloc(signs, 16);
-    db_load_signs(signs, p, q);
-    Map *block_map = &chunk->map;
-    Map *light_map = &chunk->lights;
-    int dx = p * CHUNK_SIZE - 1;
-    int dy = 0;
-    int dz = q * CHUNK_SIZE - 1;
-    map_alloc(block_map, dx, dy, dz, 0x7fff);
-    map_alloc(light_map, dx, dy, dz, 0xf);
 }
 
 void create_chunk(Chunk *chunk, int p, int q) {

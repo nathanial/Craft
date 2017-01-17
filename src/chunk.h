@@ -13,7 +13,7 @@ typedef struct {
     Map map;
     Map lights;
     SignList signs;
-    int p, q, r; // chunk position
+    int p, q; // chunk position
     int faces;
     int sign_faces;
     int dirty;
@@ -22,5 +22,10 @@ typedef struct {
     GLuint buffer;
     GLuint sign_buffer;
 } Chunk;
+
+void init_chunk(Chunk *chunk, int p, int q);
+void dirty_chunk(Chunk *chunk);
+int has_lights(Chunk *chunk);
+Chunk *find_chunk(int p, int q);
 
 #endif //CRAFT_CHUNK_H
