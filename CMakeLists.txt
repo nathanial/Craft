@@ -11,7 +11,7 @@ add_executable(
     deps/lodepng/lodepng.c
     deps/noise/noise.c
     deps/sqlite/sqlite3.c
-    deps/tinycthread/tinycthread.c)
+    deps/tinycthread/tinycthread.c src/chunk.h)
 
 add_definitions(-std=c99 -O3)
 

@@ -130,10 +130,10 @@ void init_grid(void)
             if (d < 0.1 * (double) (GRIDW / 2))
             {
                 d = d * 10.0;
-                p[x][y] = -cos(d * (M_PI / (double)(GRIDW * 4))) * 100.0;
+                cx[x][y] = -cos(d * (M_PI / (double)(GRIDW * 4))) * 100.0;
             }
             else
-                p[x][y] = 0.0;
+                cx[x][y] = 0.0;
 
             vx[x][y] = 0.0;
             vy[x][y] = 0.0;
@@ -205,7 +205,7 @@ void adjust_grid(void)
         for (x = 0;  x < GRIDW;  x++)
         {
             pos = y * GRIDW + x;
-            vertex[pos].z = (float) (p[x][y] * (1.0 / 50.0));
+            vertex[pos].z = (float) (cx[x][y] * (1.0 / 50.0));
         }
     }
 }
@@ -225,14 +225,14 @@ void calc_grid(void)
     {
         x2 = (x + 1) % GRIDW;
         for(y = 0; y < GRIDH; y++)
-            ax[x][y] = p[x][y] - p[x2][y];
+            ax[x][y] = cx[x][y] - cx[x2][y];
     }
 
     for (y = 0;  y < GRIDH;  y++)
     {
         y2 = (y + 1) % GRIDH;
         for(x = 0; x < GRIDW; x++)
-            ay[x][y] = p[x][y] - p[x][y2];
+            ay[x][y] = cx[x][y] - cx[x][y2];
     }
 
     // Compute speeds
@@ -252,7 +252,7 @@ void calc_grid(void)
         for (y = 1;  y < GRIDH;  y++)
         {
             y2 = y - 1;
-            p[x][y] = p[x][y] + (vx[x2][y] - vx[x][y] + vy[x][y2] - vy[x][y]) * time_step;
+            cx[x][y] = cx[x][y] + (vx[x2][y] - vx[x][y] + vy[x][y2] - vy[x][y]) * time_step;
         }
     }
 }
