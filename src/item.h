@@ -5,7 +5,7 @@
 #define GRASS 1
 #define SAND 2
 #define STONE 3
-#define BRICK 4
+#define BEACON 4
 #define WOOD 5
 #define CEMENT 6
 #define DIRT 7
@@ -64,8 +64,9 @@ extern const int blocks[256][6];
 extern const int plants[256];
 
 int is_plant(int w);
-int is_obstacle(int w);
+bool is_obstacle(int w);
 int is_transparent(int w);
 int is_destructable(int w);
+bool is_light(int w);
 
 #endif

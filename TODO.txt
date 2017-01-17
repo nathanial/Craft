@@ -1,0 +1,7 @@
+Trigger neighbor chunk to reload if it is exposed
+
+Save light levels, so we can detect changes (and determine whether chunk border values have been modified)
+If block is removed, propagate existing light
+If block is added, start light propagation from scratch
+If light_fill touches chunk edge, reload neighbor chunk
+Ensure block maps are updated on load.

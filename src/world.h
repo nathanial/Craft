@@ -1,8 +1,10 @@
 #ifndef _world_h_
 #define _world_h_
 
-typedef void (*world_func)(int, int, int, int, void *);
+#include "chunk.h"
 
-void create_world(int p, int q, world_func func, void *arg);
+class Map;
+
+void create_world(ChunkPtr chunk, int p, int q);
 
 #endif

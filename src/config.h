@@ -17,11 +17,11 @@
 // rendering options
 #define SHOW_LIGHTS 1
 #define SHOW_PLANTS 1
-#define SHOW_CLOUDS 1
+#define SHOW_CLOUDS 0
 #define SHOW_TREES 1
 #define SHOW_ITEM 1
 #define SHOW_CROSSHAIRS 1
-#define SHOW_WIREFRAME 1
+#define SHOW_WIREFRAME 0
 #define SHOW_INFO_TEXT 1
 #define SHOW_CHAT_TEXT 1
 #define SHOW_PLAYER_NAMES 1
@@ -44,11 +44,39 @@
 #define CRAFT_KEY_SIGN '`'
 
 // advanced parameters
-#define CREATE_CHUNK_RADIUS 10
-#define RENDER_CHUNK_RADIUS 10
+#define CREATE_CHUNK_RADIUS 20
+#define RENDER_CHUNK_RADIUS 20
 #define RENDER_SIGN_RADIUS 4
-#define DELETE_CHUNK_RADIUS 14
+#define DELETE_CHUNK_RADIUS 24
 #define CHUNK_SIZE 32
+#define CHUNK_HEIGHT 256
 #define COMMIT_INTERVAL 5
+
+#define MAX_CHUNKS 8000
+#define MAX_PLAYERS 128
+#define WORKERS 4
+#define MAX_TEXT_LENGTH 256
+#define MAX_NAME_LENGTH 32
+#define MAX_PATH_LENGTH 256
+#define MAX_ADDR_LENGTH 256
+
+#define ALIGN_LEFT 0
+#define ALIGN_CENTER 1
+#define ALIGN_RIGHT 2
+
+#define MODE_OFFLINE 0
+#define MODE_ONLINE 1
+
+#define WORKER_IDLE 0
+#define WORKER_BUSY 1
+#define WORKER_DONE 2
+
+#define XZ_SIZE (CHUNK_SIZE * 3 + 2)
+#define XZ_LO (CHUNK_SIZE)
+#define XZ_HI (CHUNK_SIZE * 2 + 1)
+#define Y_SIZE 258
+#define XYZ(x, y, z) ((y) * XZ_SIZE * XZ_SIZE + (x) * XZ_SIZE + (z))
+#define XZ(x, z) ((x) * XZ_SIZE + (z))
+
 
 #endif

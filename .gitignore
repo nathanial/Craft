@@ -13,4 +13,6 @@ log.txt
 *.exe
 *.dll
 *.pyc
-
+.idea/
+deps/
+craft.cbp
