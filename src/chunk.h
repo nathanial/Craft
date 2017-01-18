@@ -5,7 +5,7 @@
 #ifndef CRAFT_CHUNK_H
 #define CRAFT_CHUNK_H
 
-#include <GL/gl.h>
+#include <GL/glew.h>
 #include "map.h"
 #include "sign.h"
 
@@ -27,5 +27,6 @@ void init_chunk(Chunk *chunk, int p, int q);
 void dirty_chunk(Chunk *chunk);
 int has_lights(Chunk *chunk);
 Chunk *find_chunk(int p, int q);
-
+int chunk_distance(Chunk *chunk, int p, int q);
+int chunk_visible(float planes[6][4], int p, int q, int miny, int maxy);
 #endif //CRAFT_CHUNK_H

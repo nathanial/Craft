@@ -6,6 +6,7 @@
 #include "config.h"
 #include "db.h"
 #include "model.h"
+#include "util.h"
 
 extern Model *g;
 
@@ -73,4 +74,52 @@ Chunk *find_chunk(int p, int q) {
         }
     }
     return 0;
+}
+
+
+int chunk_distance(Chunk *chunk, int p, int q) {
+    int dp = ABS(chunk->p - p);
+    int dq = ABS(chunk->q - q);
+    return MAX(dp, dq);
+}
+
+int chunk_visible(float planes[6][4], int p, int q, int miny, int maxy) {
+    int x = p * CHUNK_SIZE - 1;
+    int z = q * CHUNK_SIZE - 1;
+    int d = CHUNK_SIZE + 1;
+    float points[8][3] = {
+            {x + 0, miny, z + 0},
+            {x + d, miny, z + 0},
+            {x + 0, miny, z + d},
+            {x + d, miny, z + d},
+            {x + 0, maxy, z + 0},
+            {x + d, maxy, z + 0},
+            {x + 0, maxy, z + d},
+            {x + d, maxy, z + d}
+    };
+    int n = g->ortho ? 4 : 6;
+    for (int i = 0; i < n; i++) {
+        int in = 0;
+        int out = 0;
+        for (int j = 0; j < 8; j++) {
+            float d =
+                    planes[i][0] * points[j][0] +
+                    planes[i][1] * points[j][1] +
+                    planes[i][2] * points[j][2] +
+                    planes[i][3];
+            if (d < 0) {
+                out++;
+            }
+            else {
+                in++;
+            }
+            if (in && out) {
+                break;
+            }
+        }
+        if (in == 0) {
+            return 0;
+        }
+    }
+    return 1;
 }
