@@ -20,7 +20,7 @@
 #include "util.h"
 #include "world.h"
 #include "chunk.h"
-#include "Model.h"
+#include "model.h"
 
 static Model model;
 Model *g = &model;

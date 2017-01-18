@@ -5,7 +5,7 @@
 #include "chunk.h"
 #include "config.h"
 #include "db.h"
-#include "Model.h"
+#include "model.h"
 
 extern Model *g;
 
