@@ -667,9 +667,7 @@ void compute_chunk(WorkerItem *item) {
                     continue;
                 }
                 // END TODO
-                if (is_transparent(w)) {
-                    map_set(item->light_maps[1][1], ex, highest[XZ(x,z)] + 1, ez, 15);
-                }
+                map_set(item->light_maps[1][1], ex, 30, ez, 30);
             } END_MAP_FOR_EACH;
         }
     }
