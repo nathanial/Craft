@@ -627,18 +627,6 @@ void compute_chunk(WorkerItem *item) {
     int oy = -1;
     int oz = item->q * CHUNK_SIZE - CHUNK_SIZE - 1;
 
-    // check for lights
-    int has_light = 0;
-    if (SHOW_LIGHTS) {
-        for (int a = 0; a < 3; a++) {
-            for (int b = 0; b < 3; b++) {
-                Map *map = item->light_maps[a][b];
-                if (map && map->size) {
-                    has_light = 1;
-                }
-            }
-        }
-    }
 
     // populate opaque array
     for (int a = 0; a < 3; a++) {
@@ -665,8 +653,41 @@ void compute_chunk(WorkerItem *item) {
                     highest[XZ(x, z)] = MAX(highest[XZ(x, z)], y);
                 }
             } END_MAP_FOR_EACH;
+
+            MAP_FOR_EACH(map, ex, ey, ez, ew) {
+                int x = ex - ox;
+                int y = ey - oy;
+                int z = ez - oz;
+                int w = ew;
+                // TODO: this should be unnecessary
+                if (x < 0 || y < 0 || z < 0) {
+                    continue;
+                }
+                if (x >= XZ_SIZE || y >= Y_SIZE || z >= XZ_SIZE) {
+                    continue;
+                }
+                // END TODO
+                if (is_transparent(w)) {
+                    map_set(item->light_maps[1][1], ex, highest[XZ(x,z)] + 1, ez, 15);
+                }
+            } END_MAP_FOR_EACH;
         }
     }
+
+
+    // check for lights
+    int has_light = 0;
+    if (SHOW_LIGHTS) {
+        for (int a = 0; a < 3; a++) {
+            for (int b = 0; b < 3; b++) {
+                Map *map = item->light_maps[a][b];
+                if (map && map->size) {
+                    has_light = 1;
+                }
+            }
+        }
+    }
+
 
     // flood fill light intensities
     if (has_light) {
