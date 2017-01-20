@@ -6,7 +6,9 @@
 #define CRAFT_MODEL_H
 
 #include <GLFW/glfw3.h>
-#include <tinycthread.h>
+extern "C" {
+    #include "tinycthread.h"
+}
 #include "chunk.h"
 #include "config.h"
 

@@ -14,14 +14,18 @@
 #include "item.h"
 #include "map.h"
 #include "matrix.h"
-#include "noise.h"
 #include "sign.h"
-#include "tinycthread.h"
 #include "util.h"
 #include "world.h"
 #include "chunk.h"
 #include "model.h"
 #include "draw.h"
+
+extern "C" {
+    #include "tinycthread.h"
+    #include "noise.h"
+}
+
 
 static Model model;
 Model *g = &model;
@@ -892,17 +896,17 @@ void delete_chunks() {
     State *states[3] = {s1, s2, s3};
     for (int i = 0; i < count; i++) {
         Chunk *chunk = g->chunks + i;
-        int delete = 1;
+        int _delete = 1;
         for (int j = 0; j < 3; j++) {
             State *s = states[j];
             int p = chunked(s->x);
             int q = chunked(s->z);
             if (chunk_distance(chunk, p, q) < g->delete_radius) {
-                delete = 0;
+                _delete = 0;
                 break;
             }
         }
-        if (delete) {
+        if (_delete) {
             map_free(&chunk->map);
             map_free(&chunk->lights);
             sign_list_free(&chunk->signs);

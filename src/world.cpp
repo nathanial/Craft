@@ -1,5 +1,7 @@
 #include "config.h"
-#include "noise.h"
+extern "C" {
+    #include "noise.h"
+}
 #include "world.h"
 
 void create_world(int p, int q, world_func func, void *arg) {

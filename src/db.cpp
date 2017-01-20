@@ -1,8 +1,10 @@
 #include <string.h>
 #include "db.h"
 #include "ring.h"
-#include "sqlite3.h"
-#include "tinycthread.h"
+extern "C" {
+    #include "tinycthread.h"
+    #include "sqlite3.h"
+}
 
 static int db_enabled = 0;
 
