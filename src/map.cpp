@@ -1,6 +1,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include "map.h"
+#include <functional>
 
 int hash_int(int key) {
     key = ~key + (key << 15);
@@ -104,11 +105,27 @@ void map_grow(Map *map) {
     new_map.mask = (map->mask << 1) | 1;
     new_map.size = 0;
     new_map.data = (MapEntry *)calloc(new_map.mask + 1, sizeof(MapEntry));
-    MAP_FOR_EACH(map, ex, ey, ez, ew) {
+    map_for_each(map, [&](int ex, int ey, int ez, int ew) {
         map_set(&new_map, ex, ey, ez, ew);
-    } END_MAP_FOR_EACH;
+    });
     free(map->data);
     map->mask = new_map.mask;
     map->size = new_map.size;
     map->data = new_map.data;
+}
+
+
+void map_for_each(Map *map, std::function<void (int, int, int, int)> func) {
+    for (unsigned int i = 0; i <= map->mask; i++) {
+        MapEntry *entry = map->data + i;
+        if (EMPTY_ENTRY(entry)) {
+            continue;
+        }
+        int ex = entry->e.x + map->dx;
+        int ey = entry->e.y + map->dy;
+        int ez = entry->e.z + map->dz;
+        int ew = entry->e.w;
+
+        func(ex,ey,ez,ew);
+    }
 }

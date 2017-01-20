@@ -29,4 +29,6 @@ int has_lights(Chunk *chunk);
 Chunk *find_chunk(int p, int q);
 int chunk_distance(Chunk *chunk, int p, int q);
 int chunk_visible(float planes[6][4], int p, int q, int miny, int maxy);
+
+// void each_block(const Chunk &chunk, std::function<void (int, int, int, int)>);
 #endif //CRAFT_CHUNK_H
