@@ -17,7 +17,7 @@ void Chunk::init(int p, int q) {
     this->sign_faces = 0;
     this->buffer = 0;
     this->sign_buffer = 0;
-    dirty_chunk(this);
+    this->dirty_chunk();
     SignList *signs = &this->signs;
     sign_list_alloc(signs, 16);
     db_load_signs(signs, p, q);
@@ -43,12 +43,12 @@ int Chunk::set_block(int x, int y, int z, int w){
 }
 
 
-void dirty_chunk(Chunk *chunk) {
-    chunk->dirty = 1;
-    if (chunk->has_lights()) {
+void Chunk::dirty_chunk() {
+    this->dirty = 1;
+    if (this->has_lights()) {
         for (int dp = -1; dp <= 1; dp++) {
             for (int dq = -1; dq <= 1; dq++) {
-                Chunk *other = find_chunk(chunk->p + dp, chunk->q + dq);
+                Chunk *other = find_chunk(this->p + dp, this->q + dq);
                 if (other) {
                     other->dirty = 1;
                 }
