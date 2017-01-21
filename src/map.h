@@ -1,11 +1,10 @@
 #ifndef _map_h_
 #define _map_h_
 
-#define EMPTY_ENTRY(entry) ((entry)->value == 0)
-
 #include <functional>
 #include <unordered_map>
 #include <cmath>
+
 
 struct MapEntry {
     unsigned short x;
@@ -19,7 +18,6 @@ struct MapEntry {
 };
 
 namespace std {
-
     template <>
     struct hash<MapEntry>
     {
@@ -28,17 +26,11 @@ namespace std {
             using std::size_t;
             using std::hash;
             using std::string;
-
-            // Compute individual hash values for first,
-            // second and third and combine them using XOR
-            // and bit shifting:
-
             return ((hash<int>()(k.x)
                      ^ (hash<int>()(k.y) << 1)) >> 1)
                    ^ (hash<int>()(k.z) << 1);
         }
     };
-
 }
 
 class Map {

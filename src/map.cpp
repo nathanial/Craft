@@ -1,7 +1,6 @@
 #include <stdlib.h>
-#include <string.h>
 #include "map.h"
-#include <functional>
+#include <unordered_map>
 
 Map::Map(int dx, int dy, int dz) {
     this->dx = dx;
