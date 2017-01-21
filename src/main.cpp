@@ -346,7 +346,7 @@ int hit_test(
     get_sight_vector(rx, ry, &vx, &vy, &vz);
     for (int i = 0; i < g->chunk_count; i++) {
         Chunk *chunk = g->chunks + i;
-        if (chunk_distance(chunk, p, q) > 1) {
+        if (chunk->distance(p, q) > 1) {
             continue;
         }
         int hx, hy, hz;
@@ -899,7 +899,7 @@ void delete_chunks() {
             State *s = states[j];
             int p = chunked(s->x);
             int q = chunked(s->z);
-            if (chunk_distance(chunk, p, q) < g->delete_radius) {
+            if (chunk->distance(p, q) < g->delete_radius) {
                 _delete = 0;
                 break;
             }
@@ -1292,7 +1292,7 @@ int render_chunks(Attrib *attrib, Player *player) {
     glUniform1f(attrib->timer, time_of_day());
     for (int i = 0; i < g->chunk_count; i++) {
         Chunk *chunk = g->chunks + i;
-        if (chunk_distance(chunk, p, q) > g->render_radius) {
+        if (chunk->distance(p, q) > g->render_radius) {
             continue;
         }
         if (!chunk_visible(
@@ -1322,7 +1322,7 @@ void render_signs(Attrib *attrib, Player *player) {
     glUniform1i(attrib->extra1, 1);
     for (int i = 0; i < g->chunk_count; i++) {
         Chunk *chunk = g->chunks + i;
-        if (chunk_distance(chunk, p, q) > g->sign_radius) {
+        if (chunk->distance(p, q) > g->sign_radius) {
             continue;
         }
         if (!chunk_visible(

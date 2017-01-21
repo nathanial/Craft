@@ -28,13 +28,12 @@ public:
     int get_block(int x, int y, int z) const;
     int set_block(int x, int y, int z, int w);
     void foreach_block(std::function<void (int, int, int, int)> func);
+    int distance(int p, int q);
 };
 
 void dirty_chunk(Chunk *chunk);
 int has_lights(Chunk *chunk);
 Chunk *find_chunk(int p, int q);
-int chunk_distance(Chunk *chunk, int p, int q);
 int chunk_visible(float planes[6][4], int p, int q, int miny, int maxy);
 
-// void each_block(const Chunk &chunk, std::function<void (int, int, int, int)>);
 #endif //CRAFT_CHUNK_H

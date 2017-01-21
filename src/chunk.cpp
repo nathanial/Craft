@@ -90,9 +90,9 @@ Chunk *find_chunk(int p, int q) {
 }
 
 
-int chunk_distance(Chunk *chunk, int p, int q) {
-    int dp = ABS(chunk->p - p);
-    int dq = ABS(chunk->q - q);
+int Chunk::distance(int p, int q) {
+    int dp = ABS(this->p - p);
+    int dq = ABS(this->q - q);
     return MAX(dp, dq);
 }
 
