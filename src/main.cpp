@@ -905,8 +905,8 @@ void delete_chunks() {
             }
         }
         if (_delete) {
-            map_free(chunk->blocks);
-            map_free(chunk->lights);
+            delete chunk->blocks;
+            delete chunk->lights;
             sign_list_free(&chunk->signs);
             del_buffer(chunk->buffer);
             del_buffer(chunk->sign_buffer);
@@ -920,8 +920,8 @@ void delete_chunks() {
 void delete_all_chunks() {
     for (int i = 0; i < g->chunk_count; i++) {
         Chunk *chunk = g->chunks + i;
-        map_free(chunk->blocks);
-        map_free(chunk->lights);
+        delete chunk->blocks;
+        delete chunk->lights;
         sign_list_free(&chunk->signs);
         del_buffer(chunk->buffer);
         del_buffer(chunk->sign_buffer);
@@ -940,8 +940,8 @@ void check_workers() {
                 if (item->load) {
                     Map *block_map = item->block_maps[1][1];
                     Map *light_map = item->light_maps[1][1];
-                    map_free(chunk->blocks);
-                    map_free(chunk->lights);
+                    delete chunk->blocks;
+                    delete chunk->lights;
                     map_copy(chunk->blocks, block_map);
                     map_copy(chunk->lights, light_map);
                     request_chunk(item->p, item->q);
@@ -953,12 +953,10 @@ void check_workers() {
                     Map *block_map = item->block_maps[a][b];
                     Map *light_map = item->light_maps[a][b];
                     if (block_map) {
-                        map_free(block_map);
-                        free(block_map);
+                        delete block_map;
                     }
                     if (light_map) {
-                        map_free(light_map);
-                        free(light_map);
+                        delete light_map;
                     }
                 }
             }

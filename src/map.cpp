@@ -20,7 +20,7 @@ int hash(int x, int y, int z) {
     return x ^ y ^ z;
 }
 
-Map::Map(int dx, int dy, int dz, int mask) {
+Map::Map(int dx, int dy, int dz, unsigned int mask) {
     this->dx = dx;
     this->dy = dy;
     this->dz = dz;
@@ -29,8 +29,10 @@ Map::Map(int dx, int dy, int dz, int mask) {
     this->data = (MapEntry *)calloc(this->mask + 1, sizeof(MapEntry));
 }
 
-void map_free(Map *map) {
-    free(map->data);
+Map::~Map() {
+    if(this->data != nullptr){
+        free(this->data);
+    }
 }
 
 void map_copy(Map *dst, Map *src) {
@@ -99,8 +101,6 @@ int map_get(const Map *map, int x, int y, int z) {
 
 void map_grow(Map *map) {
     Map new_map(map->dx,map->dy,map->dz, (map->mask << 1) | 1);
-    new_map.size = 0;
-    new_map.data = (MapEntry *)calloc(new_map.mask + 1, sizeof(MapEntry));
     map_for_each(map, [&](int ex, int ey, int ez, int ew) {
         map_set(&new_map, ex, ey, ez, ew);
     });
@@ -108,6 +108,7 @@ void map_grow(Map *map) {
     map->mask = new_map.mask;
     map->size = new_map.size;
     map->data = new_map.data;
+    new_map.data = nullptr;
 }
 
 
