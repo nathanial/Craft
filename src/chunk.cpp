@@ -17,17 +17,19 @@ void Chunk::init(int p, int q) {
     this->sign_faces = 0;
     this->buffer = 0;
     this->sign_buffer = 0;
+
+    int dx = p * CHUNK_SIZE - 1;
+    int dy = 0;
+    int dz = q * CHUNK_SIZE - 1;
+
+    this->blocks = new Map(dx,dy,dz, 0x7fff);
+    this->lights = new Map(dx,dy,dz, 0xf);
+
     this->set_dirty_flag();
     SignList *signs = &this->signs;
     sign_list_alloc(signs, 16);
     db_load_signs(signs, p, q);
-    Map *block_map = &this->blocks;
-    Map *light_map = &this->lights;
-    int dx = p * CHUNK_SIZE - 1;
-    int dy = 0;
-    int dz = q * CHUNK_SIZE - 1;
-    map_alloc(block_map, dx, dy, dz, 0x7fff);
-    map_alloc(light_map, dx, dy, dz, 0xf);
+
 }
 
 int Chunk::get_block(int x, int y, int z) const {
@@ -39,15 +41,15 @@ int Chunk::get_light(int x, int y, int z) const {
 }
 
 int Chunk::set_light(int x, int y, int z, int w) {
-    return map_set(&this->lights, x, y, z, w);
+    return map_set(this->lights, x, y, z, w);
 }
 
 void Chunk::foreach_block(std::function<void (int, int, int, int)> func) {
-    map_for_each(&this->blocks, func);
+    map_for_each(this->blocks, func);
 }
 
 int Chunk::set_block(int x, int y, int z, int w){
-    return map_set(&this->blocks, x, y, z, w);
+    return map_set(this->blocks, x, y, z, w);
 }
 
 
@@ -78,7 +80,7 @@ int Chunk::has_lights() {
             if (!other) {
                 continue;
             }
-            Map *map = &other->lights;
+            Map *map = other->lights;
             if (map->size) {
                 return 1;
             }
