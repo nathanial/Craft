@@ -303,7 +303,7 @@ int highest_block(float x, float z) {
 }
 
 int _hit_test(
-    Map *map, float max_distance, int previous,
+    Chunk *chunk, float max_distance, int previous,
     float x, float y, float z,
     float vx, float vy, float vz,
     int *hx, int *hy, int *hz)
@@ -317,7 +317,7 @@ int _hit_test(
         int ny = roundf(y);
         int nz = roundf(z);
         if (nx != px || ny != py || nz != pz) {
-            int hw = map_get(map, nx, ny, nz);
+            int hw = chunk->get_block(nx, ny, nz);
             if (hw > 0) {
                 if (previous) {
                     *hx = px; *hy = py; *hz = pz;
@@ -350,7 +350,7 @@ int hit_test(
             continue;
         }
         int hx, hy, hz;
-        int hw = _hit_test(&chunk->blocks, 8, previous,
+        int hw = _hit_test(chunk, 8, previous,
             x, y, z, vx, vy, vz, &hx, &hy, &hz);
         if (hw > 0) {
             float d = sqrtf(
