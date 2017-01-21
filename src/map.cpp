@@ -25,7 +25,7 @@ Map::Map(int dx, int dy, int dz, unsigned int mask) {
     this->dy = dy;
     this->dz = dz;
     this->mask = mask;
-    this->size = 0;
+    this->_size = 0;
     this->data = (MapEntry *)calloc(this->mask + 1, sizeof(MapEntry));
 }
 
@@ -37,7 +37,7 @@ Map::~Map() {
 
 Map* Map::clone() {
     Map *m = new Map(this->dx, this->dy, this->dz, this->mask);
-    m->size = this->size;
+    m->_size = this->_size;
     memcpy(m->data, this->data, (m->mask + 1) * sizeof(MapEntry));
     return m;
 }
@@ -68,8 +68,8 @@ int Map::set(int x, int y, int z, int w) {
         entry->e.y = y;
         entry->e.z = z;
         entry->e.w = w;
-        this->size++;
-        if (this->size * 2 > this->mask) {
+        this->_size++;
+        if (this->_size * 2 > this->mask) {
             this->grow();
         }
         return 1;
@@ -103,11 +103,14 @@ void Map::grow() {
     });
     free(this->data);
     this->mask = new_map.mask;
-    this->size = new_map.size;
+    this->_size = new_map._size;
     this->data = new_map.data;
     new_map.data = nullptr;
 }
 
+unsigned int Map::size() const {
+    return this->_size;
+}
 
 void Map::each(std::function<void (int, int, int, int)> func) {
     for (unsigned int i = 0; i <= this->mask; i++) {

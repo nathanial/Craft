@@ -19,13 +19,13 @@ typedef union {
 class Map {
 private:
     MapEntry *data;
+    unsigned int _size;
 
 public:
     int dx;
     int dy;
     int dz;
     unsigned int mask;
-    unsigned int size;
 
     Map(int dx, int dy, int dz, unsigned int mask);
 
@@ -43,6 +43,7 @@ public:
     int get(int x, int y, int z);
     void each(std::function<void (int, int, int, int)>);
     void grow();
+    unsigned int size() const;
 };
 
 #endif

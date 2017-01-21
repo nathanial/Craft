@@ -681,7 +681,7 @@ void compute_chunk(WorkerItem *item) {
         for (int a = 0; a < 3; a++) {
             for (int b = 0; b < 3; b++) {
                 Map *map = item->light_maps[a][b];
-                if (map && map->size) {
+                if (map && map->size()) {
                     has_light = 1;
                 }
             }

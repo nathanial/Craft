@@ -81,7 +81,7 @@ int Chunk::has_lights() {
                 continue;
             }
             Map *map = other->lights;
-            if (map->size) {
+            if (map->size()) {
                 return 1;
             }
         }
