@@ -293,7 +293,7 @@ int highest_block(float x, float z) {
     int q = chunked(z);
     Chunk *chunk = find_chunk(p, q);
     if (chunk) {
-        Map *map = &chunk->map;
+        Map *map = &chunk->blocks;
         map_for_each(map, [&](int ex, int ey, int ez, int ew){
             if (is_obstacle(ew) && ex == nx && ez == nz) {
                 result = MAX(result, ey);
@@ -351,7 +351,7 @@ int hit_test(
             continue;
         }
         int hx, hy, hz;
-        int hw = _hit_test(&chunk->map, 8, previous,
+        int hw = _hit_test(&chunk->blocks, 8, previous,
             x, y, z, vx, vy, vz, &hx, &hy, &hz);
         if (hw > 0) {
             float d = sqrtf(
@@ -407,7 +407,7 @@ int collide(int height, float *x, float *y, float *z) {
     if (!chunk) {
         return result;
     }
-    Map *map = &chunk->map;
+    Map *map = &chunk->blocks;
     int nx = roundf(*x);
     int ny = roundf(*y);
     int nz = roundf(*z);
@@ -840,7 +840,7 @@ void gen_chunk_buffer(Chunk *chunk) {
                 other = find_chunk(chunk->p + dp, chunk->q + dq);
             }
             if (other) {
-                item->block_maps[dp + 1][dq + 1] = &other->map;
+                item->block_maps[dp + 1][dq + 1] = &other->blocks;
                 item->light_maps[dp + 1][dq + 1] = &other->lights;
             }
             else {
@@ -875,13 +875,13 @@ void request_chunk(int p, int q) {
 }
 
 void create_chunk(Chunk *chunk, int p, int q) {
-    init_chunk(chunk, p, q);
+    chunk->init_chunk(p, q);
 
     WorkerItem _item;
     WorkerItem *item = &_item;
     item->p = chunk->p;
     item->q = chunk->q;
-    item->block_maps[1][1] = &chunk->map;
+    item->block_maps[1][1] = &chunk->blocks;
     item->light_maps[1][1] = &chunk->lights;
     load_chunk(item);
 
@@ -907,7 +907,7 @@ void delete_chunks() {
             }
         }
         if (_delete) {
-            map_free(&chunk->map);
+            map_free(&chunk->blocks);
             map_free(&chunk->lights);
             sign_list_free(&chunk->signs);
             del_buffer(chunk->buffer);
@@ -922,7 +922,7 @@ void delete_chunks() {
 void delete_all_chunks() {
     for (int i = 0; i < g->chunk_count; i++) {
         Chunk *chunk = g->chunks + i;
-        map_free(&chunk->map);
+        map_free(&chunk->blocks);
         map_free(&chunk->lights);
         sign_list_free(&chunk->signs);
         del_buffer(chunk->buffer);
@@ -942,9 +942,9 @@ void check_workers() {
                 if (item->load) {
                     Map *block_map = item->block_maps[1][1];
                     Map *light_map = item->light_maps[1][1];
-                    map_free(&chunk->map);
+                    map_free(&chunk->blocks);
                     map_free(&chunk->lights);
-                    map_copy(&chunk->map, block_map);
+                    map_copy(&chunk->blocks, block_map);
                     map_copy(&chunk->lights, light_map);
                     request_chunk(item->p, item->q);
                 }
@@ -1046,7 +1046,7 @@ void ensure_chunks_worker(Player *player, Worker *worker) {
         load = 1;
         if (g->chunk_count < MAX_CHUNKS) {
             chunk = g->chunks + g->chunk_count++;
-            init_chunk(chunk, a, b);
+            chunk->init_chunk(a, b);
         }
         else {
             return;
@@ -1064,7 +1064,7 @@ void ensure_chunks_worker(Player *player, Worker *worker) {
             }
             if (other) {
                 Map *block_map = (Map *)malloc(sizeof(Map));
-                map_copy(block_map, &other->map);
+                map_copy(block_map, &other->blocks);
                 Map *light_map = (Map *)malloc(sizeof(Map));
                 map_copy(light_map, &other->lights);
                 item->block_maps[dp + 1][dq + 1] = block_map;
@@ -1203,7 +1203,7 @@ void set_light(int p, int q, int x, int y, int z, int w) {
 void _set_block(int p, int q, int x, int y, int z, int w, int dirty) {
     Chunk *chunk = find_chunk(p, q);
     if (chunk) {
-        Map *map = &chunk->map;
+        Map *map = &chunk->blocks;
         if (map_set(map, x, y, z, w)) {
             if (dirty) {
                 dirty_chunk(chunk);
@@ -1254,7 +1254,7 @@ int get_block(int x, int y, int z) {
     int q = chunked(z);
     Chunk *chunk = find_chunk(p, q);
     if (chunk) {
-        Map *map = &chunk->map;
+        Map *map = &chunk->blocks;
         return map_get(map, x, y, z);
     }
     return 0;

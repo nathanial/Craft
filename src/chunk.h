@@ -9,9 +9,11 @@
 #include "map.h"
 #include "sign.h"
 
-typedef struct {
-    Map map;
+class Chunk {
+public:
+    Map blocks;
     Map lights;
+
     SignList signs;
     int p, q; // chunk position
     int faces;
@@ -21,9 +23,11 @@ typedef struct {
     int maxy;
     GLuint buffer;
     GLuint sign_buffer;
-} Chunk;
 
-void init_chunk(Chunk *chunk, int p, int q);
+    void init_chunk(int p, int q);
+
+};
+
 void dirty_chunk(Chunk *chunk);
 int has_lights(Chunk *chunk);
 Chunk *find_chunk(int p, int q);

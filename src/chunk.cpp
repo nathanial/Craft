@@ -10,19 +10,19 @@
 
 extern Model *g;
 
-void init_chunk(Chunk *chunk, int p, int q) {
-    chunk->p = p;
-    chunk->q = q;
-    chunk->faces = 0;
-    chunk->sign_faces = 0;
-    chunk->buffer = 0;
-    chunk->sign_buffer = 0;
-    dirty_chunk(chunk);
-    SignList *signs = &chunk->signs;
+void Chunk::init_chunk(int p, int q) {
+    this->p = p;
+    this->q = q;
+    this->faces = 0;
+    this->sign_faces = 0;
+    this->buffer = 0;
+    this->sign_buffer = 0;
+    dirty_chunk(this);
+    SignList *signs = &this->signs;
     sign_list_alloc(signs, 16);
     db_load_signs(signs, p, q);
-    Map *block_map = &chunk->map;
-    Map *light_map = &chunk->lights;
+    Map *block_map = &this->blocks;
+    Map *light_map = &this->lights;
     int dx = p * CHUNK_SIZE - 1;
     int dy = 0;
     int dz = q * CHUNK_SIZE - 1;
