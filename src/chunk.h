@@ -11,8 +11,8 @@
 
 class Chunk {
 public:
-    Map blocks;
     Map lights;
+    Map blocks;
 
     SignList signs;
     int p, q; // chunk position

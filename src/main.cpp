@@ -1186,8 +1186,7 @@ void toggle_light(int x, int y, int z) {
 void set_light(int p, int q, int x, int y, int z, int w) {
     Chunk *chunk = find_chunk(p, q);
     if (chunk) {
-        Map *map = &chunk->lights;
-        if (map_set(map, x, y, z, w)) {
+        if (chunk->set_light(x, y, z, w)) {
             chunk->set_dirty_flag();
             db_insert_light(p, q, x, y, z, w);
         }
