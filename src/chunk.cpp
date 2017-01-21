@@ -22,8 +22,8 @@ void Chunk::init(int p, int q) {
     int dy = 0;
     int dz = q * CHUNK_SIZE - 1;
 
-    this->blocks = new Map(dx,dy,dz, 0x7fff);
-    this->lights = new Map(dx,dy,dz, 0xf);
+    this->blocks = new Map(dx,dy,dz);
+    this->lights = new Map(dx,dy,dz);
 
     this->set_dirty_flag();
     SignList *signs = &this->signs;
@@ -40,15 +40,15 @@ int Chunk::get_light(int x, int y, int z) const {
     return this->lights->get(x, y, z);
 }
 
-int Chunk::set_light(int x, int y, int z, int w) {
+int Chunk::set_light(int x, int y, int z, char w) {
     return this->lights->set(x, y, z, w);
 }
 
-void Chunk::foreach_block(std::function<void (int, int, int, int)> func) {
+void Chunk::foreach_block(std::function<void (int, int, int, char)> func) {
     this->blocks->each(func);
 }
 
-int Chunk::set_block(int x, int y, int z, int w){
+int Chunk::set_block(int x, int y, int z, char w){
     return this->blocks->set(x, y, z, w);
 }
 

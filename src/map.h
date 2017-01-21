@@ -4,30 +4,33 @@
 #define EMPTY_ENTRY(entry) ((entry)->value == 0)
 
 #include <functional>
-
+#include <map>
+#include <cmath>
 
 typedef union {
-    unsigned int value;
+    long long unsigned int value;
     struct {
-        unsigned char x;
-        unsigned char y;
-        unsigned char z;
-        char w;
+        unsigned short x;
+        unsigned short y;
+        unsigned short z;
     } e;
 } MapEntry;
 
+struct cmpByDistance {
+    bool operator()(const MapEntry& a, const MapEntry& b) const {
+        return a.value < b.value;
+    }
+};
+
 class Map {
 private:
-    MapEntry *data;
-    unsigned int _size;
-
+    std::map<MapEntry, char, cmpByDistance> _data;
 public:
     int dx;
     int dy;
     int dz;
-    unsigned int mask;
 
-    Map(int dx, int dy, int dz, unsigned int mask);
+    Map(int dx, int dy, int dz);
 
     ~Map();
 
@@ -39,10 +42,9 @@ public:
 
     Map* clone();
 
-    int set(int x, int y, int z, int w);
-    int get(int x, int y, int z);
-    void each(std::function<void (int, int, int, int)>);
-    void grow();
+    int set(int x, int y, int z, char w);
+    char get(int x, int y, int z);
+    void each(std::function<void (int, int, int, char)>);
     unsigned int size() const;
 };
 

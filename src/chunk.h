@@ -27,9 +27,9 @@ public:
     void init(int p, int q);
     int get_block(int x, int y, int z) const;
     int get_light(int x, int y, int z) const;
-    int set_block(int x, int y, int z, int w);
-    int set_light(int x, int y, int z, int w);
-    void foreach_block(std::function<void (int, int, int, int)> func);
+    int set_block(int x, int y, int z, char w);
+    int set_light(int x, int y, int z, char w);
+    void foreach_block(std::function<void (int, int, int, char)> func);
     int distance(int p, int q);
     int has_lights();
     void set_dirty_flag();
