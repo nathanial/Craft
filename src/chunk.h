@@ -30,7 +30,7 @@ public:
     void foreach_block(std::function<void (int, int, int, int)> func);
     int distance(int p, int q);
     int has_lights();
-    void Chunk::dirty_chunk();
+    void set_dirty_flag();
 };
 
 Chunk *find_chunk(int p, int q);

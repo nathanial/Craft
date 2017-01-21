@@ -1180,7 +1180,7 @@ void toggle_light(int x, int y, int z) {
         map_set(map, x, y, z, w);
         db_insert_light(p, q, x, y, z, w);
         client_light(x, y, z, w);
-        chunk->dirty_chunk();
+        chunk->set_dirty_flag();
     }
 }
 
@@ -1189,7 +1189,7 @@ void set_light(int p, int q, int x, int y, int z, int w) {
     if (chunk) {
         Map *map = &chunk->lights;
         if (map_set(map, x, y, z, w)) {
-            chunk->dirty_chunk();
+            chunk->set_dirty_flag();
             db_insert_light(p, q, x, y, z, w);
         }
     }
@@ -1203,7 +1203,7 @@ void _set_block(int p, int q, int x, int y, int z, int w, int dirty) {
     if (chunk) {
         if (chunk->set_block(x, y, z, w)) {
             if (dirty) {
-                chunk->dirty_chunk();
+                chunk->set_dirty_flag();
             }
             db_insert_block(p, q, x, y, z, w);
         }
@@ -2189,7 +2189,7 @@ void parse_buffer(char *buffer) {
         if (sscanf(line, "R,%d,%d", &kp, &kq) == 2) {
             Chunk *chunk = find_chunk(kp, kq);
             if (chunk) {
-                chunk->dirty_chunk();
+                chunk->set_dirty_flag();
             }
         }
         double elapsed;

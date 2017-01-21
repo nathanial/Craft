@@ -17,7 +17,7 @@ void Chunk::init(int p, int q) {
     this->sign_faces = 0;
     this->buffer = 0;
     this->sign_buffer = 0;
-    this->dirty_chunk();
+    this->set_dirty_flag();
     SignList *signs = &this->signs;
     sign_list_alloc(signs, 16);
     db_load_signs(signs, p, q);
@@ -43,7 +43,7 @@ int Chunk::set_block(int x, int y, int z, int w){
 }
 
 
-void Chunk::dirty_chunk() {
+void Chunk::set_dirty_flag() {
     this->dirty = 1;
     if (this->has_lights()) {
         for (int dp = -1; dp <= 1; dp++) {
