@@ -1175,9 +1175,8 @@ void toggle_light(int x, int y, int z) {
     int q = chunked(z);
     Chunk *chunk = find_chunk(p, q);
     if (chunk) {
-        Map *map = &chunk->lights;
-        int w = map_get(map, x, y, z) ? 0 : 15;
-        map_set(map, x, y, z, w);
+        int w = chunk->get_light(x, y, z) ? 0 : 15;
+        chunk->set_light(x, y, z, w);
         db_insert_light(p, q, x, y, z, w);
         client_light(x, y, z, w);
         chunk->set_dirty_flag();

@@ -30,7 +30,7 @@ void map_free(Map *map);
 void map_copy(Map *dst, Map *src);
 void map_grow(Map *map);
 int map_set(Map *map, int x, int y, int z, int w);
-int map_get(Map *map, int x, int y, int z);
+int map_get(const Map &map, int x, int y, int z);
 
 void map_for_each(Map *map, std::function<void (int, int, int, int)>);
 

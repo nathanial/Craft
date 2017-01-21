@@ -18,7 +18,7 @@ public:
     int p, q; // chunk position
     int faces;
     int sign_faces;
-    int dirty;
+    bool dirty;
     int miny;
     int maxy;
     GLuint buffer;
@@ -26,7 +26,9 @@ public:
 
     void init(int p, int q);
     int get_block(int x, int y, int z) const;
+    int get_light(int x, int y, int z) const;
     int set_block(int x, int y, int z, int w);
+    int set_light(int x, int y, int z, int w);
     void foreach_block(std::function<void (int, int, int, int)> func);
     int distance(int p, int q);
     int has_lights();
