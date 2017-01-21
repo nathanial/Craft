@@ -45,7 +45,7 @@ int Chunk::set_block(int x, int y, int z, int w){
 
 void dirty_chunk(Chunk *chunk) {
     chunk->dirty = 1;
-    if (has_lights(chunk)) {
+    if (chunk->has_lights()) {
         for (int dp = -1; dp <= 1; dp++) {
             for (int dq = -1; dq <= 1; dq++) {
                 Chunk *other = find_chunk(chunk->p + dp, chunk->q + dq);
@@ -57,15 +57,15 @@ void dirty_chunk(Chunk *chunk) {
     }
 }
 
-int has_lights(Chunk *chunk) {
+int Chunk::has_lights() {
     if (!SHOW_LIGHTS) {
         return 0;
     }
     for (int dp = -1; dp <= 1; dp++) {
         for (int dq = -1; dq <= 1; dq++) {
-            Chunk *other = chunk;
+            Chunk *other = this;
             if (dp || dq) {
-                other = find_chunk(chunk->p + dp, chunk->q + dq);
+                other = find_chunk(this->p + dp, this->q + dq);
             }
             if (!other) {
                 continue;
