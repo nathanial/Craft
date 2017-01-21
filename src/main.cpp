@@ -873,7 +873,7 @@ void request_chunk(int p, int q) {
 }
 
 void create_chunk(Chunk *chunk, int p, int q) {
-    chunk->init_chunk(p, q);
+    chunk->init(p, q);
 
     WorkerItem _item;
     WorkerItem *item = &_item;
@@ -1044,7 +1044,7 @@ void ensure_chunks_worker(Player *player, Worker *worker) {
         load = 1;
         if (g->chunk_count < MAX_CHUNKS) {
             chunk = g->chunks + g->chunk_count++;
-            chunk->init_chunk(a, b);
+            chunk->init(a, b);
         }
         else {
             return;

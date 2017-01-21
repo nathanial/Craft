@@ -10,7 +10,7 @@
 
 extern Model *g;
 
-void Chunk::init_chunk(int p, int q) {
+void Chunk::init(int p, int q) {
     this->p = p;
     this->q = q;
     this->faces = 0;
