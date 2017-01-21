@@ -33,23 +33,23 @@ void Chunk::init(int p, int q) {
 }
 
 int Chunk::get_block(int x, int y, int z) const {
-    return map_get(this->blocks, x, y, z);
+    return this->blocks->get(x, y, z);
 }
 
 int Chunk::get_light(int x, int y, int z) const {
-    return map_get(this->lights, x, y, z);
+    return this->lights->get(x, y, z);
 }
 
 int Chunk::set_light(int x, int y, int z, int w) {
-    return map_set(this->lights, x, y, z, w);
+    return this->lights->set(x, y, z, w);
 }
 
 void Chunk::foreach_block(std::function<void (int, int, int, int)> func) {
-    map_for_each(this->blocks, func);
+    this->blocks->each(func);
 }
 
 int Chunk::set_block(int x, int y, int z, int w){
-    return map_set(this->blocks, x, y, z, w);
+    return this->blocks->set(x, y, z, w);
 }
 
 

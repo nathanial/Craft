@@ -42,20 +42,20 @@ Map* Map::clone() {
     return m;
 }
 
-int map_set(Map *map, int x, int y, int z, int w) {
-    unsigned int index = hash(x, y, z) & map->mask;
-    x -= map->dx;
-    y -= map->dy;
-    z -= map->dz;
-    MapEntry *entry = map->data + index;
+int Map::set(int x, int y, int z, int w) {
+    unsigned int index = hash(x, y, z) & this->mask;
+    x -= this->dx;
+    y -= this->dy;
+    z -= this->dz;
+    MapEntry *entry = this->data + index;
     int overwrite = 0;
     while (!EMPTY_ENTRY(entry)) {
         if (entry->e.x == x && entry->e.y == y && entry->e.z == z) {
             overwrite = 1;
             break;
         }
-        index = (index + 1) & map->mask;
-        entry = map->data + index;
+        index = (index + 1) & this->mask;
+        entry = this->data + index;
     }
     if (overwrite) {
         if (entry->e.w != w) {
@@ -68,56 +68,56 @@ int map_set(Map *map, int x, int y, int z, int w) {
         entry->e.y = y;
         entry->e.z = z;
         entry->e.w = w;
-        map->size++;
-        if (map->size * 2 > map->mask) {
-            map_grow(map);
+        this->size++;
+        if (this->size * 2 > this->mask) {
+            this->grow();
         }
         return 1;
     }
     return 0;
 }
 
-int map_get(const Map *map, int x, int y, int z) {
-    unsigned int index = hash(x, y, z) & map->mask;
-    x -= map->dx;
-    y -= map->dy;
-    z -= map->dz;
+int Map::get(int x, int y, int z) {
+    unsigned int index = hash(x, y, z) & this->mask;
+    x -= this->dx;
+    y -= this->dy;
+    z -= this->dz;
     if (x < 0 || x > 255) return 0;
     if (y < 0 || y > 255) return 0;
     if (z < 0 || z > 255) return 0;
-    MapEntry *entry = map->data + index;
+    MapEntry *entry = this->data + index;
     while (!EMPTY_ENTRY(entry)) {
         if (entry->e.x == x && entry->e.y == y && entry->e.z == z) {
             return entry->e.w;
         }
-        index = (index + 1) & map->mask;
-        entry = map->data + index;
+        index = (index + 1) & this->mask;
+        entry = this->data + index;
     }
     return 0;
 }
 
-void map_grow(Map *map) {
-    Map new_map(map->dx,map->dy,map->dz, (map->mask << 1) | 1);
-    map_for_each(map, [&](int ex, int ey, int ez, int ew) {
-        map_set(&new_map, ex, ey, ez, ew);
+void Map::grow() {
+    Map new_map(this->dx, this->dy, this->dz, (this->mask << 1) | 1);
+    this->each([&](int ex, int ey, int ez, int ew) {
+        new_map.set(ex, ey, ez, ew);
     });
-    free(map->data);
-    map->mask = new_map.mask;
-    map->size = new_map.size;
-    map->data = new_map.data;
+    free(this->data);
+    this->mask = new_map.mask;
+    this->size = new_map.size;
+    this->data = new_map.data;
     new_map.data = nullptr;
 }
 
 
-void map_for_each(Map *map, std::function<void (int, int, int, int)> func) {
-    for (unsigned int i = 0; i <= map->mask; i++) {
-        MapEntry *entry = map->data + i;
+void Map::each(std::function<void (int, int, int, int)> func) {
+    for (unsigned int i = 0; i <= this->mask; i++) {
+        MapEntry *entry = this->data + i;
         if (EMPTY_ENTRY(entry)) {
             continue;
         }
-        int ex = entry->e.x + map->dx;
-        int ey = entry->e.y + map->dy;
-        int ez = entry->e.z + map->dz;
+        int ex = entry->e.x + this->dx;
+        int ey = entry->e.y + this->dy;
+        int ez = entry->e.z + this->dz;
         int ew = entry->e.w;
 
         func(ex,ey,ez,ew);

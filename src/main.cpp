@@ -637,7 +637,7 @@ void compute_chunk(WorkerItem *item) {
             if (!map) {
                 continue;
             }
-            map_for_each(map, [&](int ex, int ey, int ez, int ew) {
+            map->each([&](int ex, int ey, int ez, int ew) {
                 int x = ex - ox;
                 int y = ey - oy;
                 int z = ez - oz;
@@ -656,7 +656,7 @@ void compute_chunk(WorkerItem *item) {
                 }
             });
 
-            map_for_each(map, [&](int ex, int ey, int ez, int ew) {
+            map->each([&](int ex, int ey, int ez, int ew) {
                 int x = ex - ox;
                 int y = ey - oy;
                 int z = ez - oz;
@@ -669,7 +669,7 @@ void compute_chunk(WorkerItem *item) {
                     return;
                 }
                 // END TODO
-                map_set(item->light_maps[1][1], ex, 30, ez, 30);
+                item->light_maps[1][1]->set(ex, 30, ez, 30);
             });
         }
     }
@@ -697,7 +697,7 @@ void compute_chunk(WorkerItem *item) {
                 if (!map) {
                     continue;
                 }
-                map_for_each(map, [&](int ex, int ey, int ez, int ew) {
+                map->each([&](int ex, int ey, int ez, int ew) {
                     int x = ex - ox;
                     int y = ey - oy;
                     int z = ez - oz;
@@ -713,7 +713,7 @@ void compute_chunk(WorkerItem *item) {
     int miny = 256;
     int maxy = 0;
     int faces = 0;
-    map_for_each(map, [&](int ex, int ey, int ez, int ew) {
+    map->each([&](int ex, int ey, int ez, int ew) {
         if (ew <= 0) {
             return;
         }
@@ -741,7 +741,7 @@ void compute_chunk(WorkerItem *item) {
     // generate geometry
     GLfloat *data = malloc_faces(10, faces);
     int offset = 0;
-    map_for_each(map, [&](int ex, int ey, int ez, int ew) {
+    map->each([&](int ex, int ey, int ez, int ew) {
         if (ew <= 0) {
             return;
         }
@@ -854,7 +854,7 @@ void gen_chunk_buffer(Chunk *chunk) {
 
 void map_set_func(int x, int y, int z, int w, void *arg) {
     Map *map = (Map *)arg;
-    map_set(map, x, y, z, w);
+    map->set(x, y, z, w);
 }
 
 void load_chunk(WorkerItem *item) {

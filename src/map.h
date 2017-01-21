@@ -17,13 +17,15 @@ typedef union {
 } MapEntry;
 
 class Map {
+private:
+    MapEntry *data;
+
 public:
     int dx;
     int dy;
     int dz;
     unsigned int mask;
     unsigned int size;
-    MapEntry *data;
 
     Map(int dx, int dy, int dz, unsigned int mask);
 
@@ -36,12 +38,11 @@ public:
     Map& operator=(Map&&) = delete;
 
     Map* clone();
+
+    int set(int x, int y, int z, int w);
+    int get(int x, int y, int z);
+    void each(std::function<void (int, int, int, int)>);
+    void grow();
 };
-
-void map_grow(Map *map);
-int map_set(Map *map, int x, int y, int z, int w);
-int map_get(const Map *map, int x, int y, int z);
-
-void map_for_each(Map *map, std::function<void (int, int, int, int)>);
 
 #endif
