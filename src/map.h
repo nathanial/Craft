@@ -4,27 +4,46 @@
 #define EMPTY_ENTRY(entry) ((entry)->value == 0)
 
 #include <functional>
-#include <map>
+#include <unordered_map>
 #include <cmath>
 
-typedef union {
-    long long unsigned int value;
-    struct {
-        unsigned short x;
-        unsigned short y;
-        unsigned short z;
-    } e;
-} MapEntry;
+struct MapEntry {
+    unsigned short x;
+    unsigned short y;
+    unsigned short z;
 
-struct cmpByDistance {
-    bool operator()(const MapEntry& a, const MapEntry& b) const {
-        return a.value < b.value;
+    bool operator==(const MapEntry &other) const
+    {
+        return this->x == other.x && this->y == other.y && this->z == other.z;
     }
 };
 
+namespace std {
+
+    template <>
+    struct hash<MapEntry>
+    {
+        std::size_t operator()(const MapEntry& k) const
+        {
+            using std::size_t;
+            using std::hash;
+            using std::string;
+
+            // Compute individual hash values for first,
+            // second and third and combine them using XOR
+            // and bit shifting:
+
+            return ((hash<int>()(k.x)
+                     ^ (hash<int>()(k.y) << 1)) >> 1)
+                   ^ (hash<int>()(k.z) << 1);
+        }
+    };
+
+}
+
 class Map {
 private:
-    std::map<MapEntry, char, cmpByDistance> _data;
+    std::unordered_map<MapEntry, char> _data;
 public:
     int dx;
     int dy;
