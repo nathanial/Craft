@@ -27,19 +27,12 @@ public:
 
     Map(int dx, int dy, int dz, unsigned int mask);
 
-    Map() = delete;
-
     ~Map();
 
+    Map() = delete;
     Map(const Map&) = delete;
-
-
     Map& operator=(const Map&) = delete;
-
-    // no move
     Map(Map&&) = delete;
-
-    // no move-assign
     Map& operator=(Map&&) = delete;
 
     Map* clone();
