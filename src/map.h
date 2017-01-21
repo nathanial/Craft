@@ -25,11 +25,14 @@ public:
     unsigned int size;
     MapEntry *data;
 
-    explicit Map(int dx, int dy, int dz, unsigned int mask);
+    Map(int dx, int dy, int dz, unsigned int mask);
 
     Map() = delete;
 
     ~Map();
+
+    Map(const Map&) = delete;
+
 
     Map& operator=(const Map&) = delete;
 
@@ -38,9 +41,10 @@ public:
 
     // no move-assign
     Map& operator=(Map&&) = delete;
+
+    Map* clone();
 };
 
-void map_copy(Map *dst, Map *src);
 void map_grow(Map *map);
 int map_set(Map *map, int x, int y, int z, int w);
 int map_get(const Map *map, int x, int y, int z);

@@ -35,14 +35,11 @@ Map::~Map() {
     }
 }
 
-void map_copy(Map *dst, Map *src) {
-    dst->dx = src->dx;
-    dst->dy = src->dy;
-    dst->dz = src->dz;
-    dst->mask = src->mask;
-    dst->size = src->size;
-    dst->data = (MapEntry *)calloc(dst->mask + 1, sizeof(MapEntry));
-    memcpy(dst->data, src->data, (dst->mask + 1) * sizeof(MapEntry));
+Map* Map::clone() {
+    Map *m = new Map(this->dx, this->dy, this->dz, this->mask);
+    m->size = this->size;
+    memcpy(m->data, this->data, (m->mask + 1) * sizeof(MapEntry));
+    return m;
 }
 
 int map_set(Map *map, int x, int y, int z, int w) {

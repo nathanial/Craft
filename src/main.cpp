@@ -940,10 +940,8 @@ void check_workers() {
                 if (item->load) {
                     Map *block_map = item->block_maps[1][1];
                     Map *light_map = item->light_maps[1][1];
-                    delete chunk->blocks;
-                    delete chunk->lights;
-                    map_copy(chunk->blocks, block_map);
-                    map_copy(chunk->lights, light_map);
+                    chunk->blocks = block_map->clone();
+                    chunk->lights = light_map->clone();
                     request_chunk(item->p, item->q);
                 }
                 generate_chunk(chunk, item);
@@ -1059,12 +1057,8 @@ void ensure_chunks_worker(Player *player, Worker *worker) {
                 other = find_chunk(chunk->p + dp, chunk->q + dq);
             }
             if (other) {
-                Map *block_map = (Map *)malloc(sizeof(Map));
-                map_copy(block_map, other->blocks);
-                Map *light_map = (Map *)malloc(sizeof(Map));
-                map_copy(light_map, other->lights);
-                item->block_maps[dp + 1][dq + 1] = block_map;
-                item->light_maps[dp + 1][dq + 1] = light_map;
+                item->block_maps[dp + 1][dq + 1] = other->blocks->clone();
+                item->light_maps[dp + 1][dq + 1] = other->lights->clone();
             }
             else {
                 item->block_maps[dp + 1][dq + 1] = 0;
