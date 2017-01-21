@@ -25,7 +25,9 @@ public:
     GLuint sign_buffer;
 
     void init_chunk(int p, int q);
-
+    int get_block(int x, int y, int z) const;
+    int set_block(int x, int y, int z, int w);
+    void foreach_block(std::function<void (int, int, int, int)> func);
 };
 
 void dirty_chunk(Chunk *chunk);

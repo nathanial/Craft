@@ -293,8 +293,7 @@ int highest_block(float x, float z) {
     int q = chunked(z);
     Chunk *chunk = find_chunk(p, q);
     if (chunk) {
-        Map *map = &chunk->blocks;
-        map_for_each(map, [&](int ex, int ey, int ez, int ew){
+        chunk->foreach_block([&](int ex, int ey, int ez, int ew){
             if (is_obstacle(ew) && ex == nx && ez == nz) {
                 result = MAX(result, ey);
             }
@@ -407,7 +406,6 @@ int collide(int height, float *x, float *y, float *z) {
     if (!chunk) {
         return result;
     }
-    Map *map = &chunk->blocks;
     int nx = roundf(*x);
     int ny = roundf(*y);
     int nz = roundf(*z);
@@ -416,24 +414,24 @@ int collide(int height, float *x, float *y, float *z) {
     float pz = *z - nz;
     float pad = 0.25;
     for (int dy = 0; dy < height; dy++) {
-        if (px < -pad && is_obstacle(map_get(map, nx - 1, ny - dy, nz))) {
+        if (px < -pad && is_obstacle(chunk->get_block(nx - 1, ny - dy, nz))) {
             *x = nx - pad;
         }
-        if (px > pad && is_obstacle(map_get(map, nx + 1, ny - dy, nz))) {
+        if (px > pad && is_obstacle(chunk->get_block(nx + 1, ny - dy, nz))) {
             *x = nx + pad;
         }
-        if (py < -pad && is_obstacle(map_get(map, nx, ny - dy - 1, nz))) {
+        if (py < -pad && is_obstacle(chunk->get_block(nx, ny - dy - 1, nz))) {
             *y = ny - pad;
             result = 1;
         }
-        if (py > pad && is_obstacle(map_get(map, nx, ny - dy + 1, nz))) {
+        if (py > pad && is_obstacle(chunk->get_block(nx, ny - dy + 1, nz))) {
             *y = ny + pad;
             result = 1;
         }
-        if (pz < -pad && is_obstacle(map_get(map, nx, ny - dy, nz - 1))) {
+        if (pz < -pad && is_obstacle(chunk->get_block(nx, ny - dy, nz - 1))) {
             *z = nz - pad;
         }
-        if (pz > pad && is_obstacle(map_get(map, nx, ny - dy, nz + 1))) {
+        if (pz > pad && is_obstacle(chunk->get_block(nx, ny - dy, nz + 1))) {
             *z = nz + pad;
         }
     }
@@ -1203,8 +1201,7 @@ void set_light(int p, int q, int x, int y, int z, int w) {
 void _set_block(int p, int q, int x, int y, int z, int w, int dirty) {
     Chunk *chunk = find_chunk(p, q);
     if (chunk) {
-        Map *map = &chunk->blocks;
-        if (map_set(map, x, y, z, w)) {
+        if (chunk->set_block(x, y, z, w)) {
             if (dirty) {
                 dirty_chunk(chunk);
             }
@@ -1254,8 +1251,7 @@ int get_block(int x, int y, int z) {
     int q = chunked(z);
     Chunk *chunk = find_chunk(p, q);
     if (chunk) {
-        Map *map = &chunk->blocks;
-        return map_get(map, x, y, z);
+        return chunk->get_block(x,y,z);
     }
     return 0;
 }

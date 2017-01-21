@@ -30,6 +30,19 @@ void Chunk::init_chunk(int p, int q) {
     map_alloc(light_map, dx, dy, dz, 0xf);
 }
 
+int Chunk::get_block(int x, int y, int z) const {
+    return map_get(&this->blocks, x, y, z);
+}
+
+void Chunk::foreach_block(std::function<void (int, int, int, int)> func) {
+    map_for_each(&this->blocks, func);
+}
+
+int Chunk::set_block(int x, int y, int z, int w){
+    return map_set(&this->blocks, x, y, z, w);
+}
+
+
 void dirty_chunk(Chunk *chunk) {
     chunk->dirty = 1;
     if (has_lights(chunk)) {
