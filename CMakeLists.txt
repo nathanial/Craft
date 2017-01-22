@@ -11,7 +11,7 @@ add_executable(
         deps/lodepng/lodepng.cpp
     deps/noise/noise.c
     deps/sqlite/sqlite3.c
-    deps/tinycthread/tinycthread.c src/chunk.h src/chunk.cpp src/model.h src/draw.cpp src/draw.h)
+    deps/tinycthread/tinycthread.c src/chunk.h src/chunk.cpp src/model.h src/draw.cpp src/draw.h src/worker.cpp src/worker.h)
 
 add_definitions(-std=c++11 -O3 -fpermissive)
 
