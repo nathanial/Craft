@@ -1,5 +1,6 @@
 #include <stdlib.h>
 #include "map.h"
+#include "config.h"
 #include <unordered_map>
 
 Map::Map(int dx, int dy, int dz) {
@@ -10,13 +11,6 @@ Map::Map(int dx, int dy, int dz) {
 
 Map::~Map() { }
 
-static int minX = 0;
-static int maxX = 0;
-static int minY = 0;
-static int maxY = 0;
-static int minZ = 0;
-static int maxZ = 0;
-
 Map* Map::clone() {
     Map *m = new Map(this->dx, this->dy, this->dz);
     m->_data = this->_data;
@@ -24,38 +18,17 @@ Map* Map::clone() {
 }
 
 int Map::set(int x, int y, int z, char w) {
+
     x -= this->dx;
     y -= this->dy;
     z -= this->dz;
+
+    if(x < 0 || x > CHUNK_SIZE || y < 0 || y >= CHUNK_HEIGHT || z < 0 || z > CHUNK_SIZE ){
+        //printf("Bad Index %d,%d,%d\n", x, y, z);
+        return 0;
+    }
+
     MapEntry entry { x, y, z };
-    bool changed = false;
-    if(x < minX){
-        minX = x;
-        changed = true;
-    }
-    if(x > maxX){
-        maxX = x;
-        changed = true;
-    }
-    if(y < minY){
-        minY = y;
-        changed = true;
-    }
-    if(y > maxY){
-        maxY = y;
-        changed = true;
-    }
-    if(z < minZ){
-        minZ = z;
-        changed = true;
-    }
-    if(z > maxZ) {
-        maxZ = z;
-        changed = true;
-    }
-    if(changed){
-        printf("%d..%d,%d..%d,%d..%d\n", minX, maxX, minY, maxY, minZ, maxZ);
-    }
     int overwrite = 0;
     if(this->_data.count(entry) > 0){
         overwrite = 1;
@@ -72,6 +45,10 @@ char Map::get(int x, int y, int z) {
     y -= this->dy;
     z -= this->dz;
     MapEntry entry = { x, y, z };
+    if(x < 0 || x > CHUNK_SIZE || y < 0 || y >= CHUNK_HEIGHT || z < 0 || z > CHUNK_SIZE){
+        // printf("Bad Index %d,%d,%d\n", x, y, z);
+        return 0;
+    }
     return this->_data[entry];
 }
 

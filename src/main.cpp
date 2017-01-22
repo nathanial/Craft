@@ -588,7 +588,7 @@ void compute_chunk(WorkerItem *item) {
     int oy = -1;
     int oz = item->q * CHUNK_SIZE - CHUNK_SIZE - 1;
 
-    printf("Chunk %d,%d,%d\n", ox, oy, oz);
+    // printf("Chunk %d,%d,%d\n", ox, oy, oz);
 
     // populate opaque array
     for (int a = 0; a < 3; a++) {
@@ -605,11 +605,10 @@ void compute_chunk(WorkerItem *item) {
                 // TODO: this should be unnecessary
                 if (x < 0 || y < 0 || z < 0) {
                     printf("OOPS %d,%d,%d\n", x,y,z);
-                    exit(1);
+                    return;
                 }
                 if (x >= XZ_SIZE || y >= Y_SIZE || z >= XZ_SIZE) {
                     printf("OOPS 2 %d,%d,%d\n", x,y,z);
-                    exit(1);
                     return;
                 }
                 // END TODO
