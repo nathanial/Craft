@@ -42,5 +42,7 @@ char *tokenize(char *str, const char *delim, char **key);
 int char_width(char input);
 int string_width(const char *input);
 int wrap(const char *input, int max_width, char *output, int max_length);
+void get_sight_vector(float rx, float ry, float *vx, float *vy, float *vz);
+void get_motion_vector(int flying, int sz, int sx, float rx, float ry, float *vx, float *vy, float *vz);
 
 #endif

@@ -8,8 +8,7 @@ Map::Map(int dx, int dy, int dz) {
     this->dz = dz;
 }
 
-Map::~Map() {
-}
+Map::~Map() { }
 
 static int minX = 0;
 static int maxX = 0;
@@ -28,10 +27,7 @@ int Map::set(int x, int y, int z, char w) {
     x -= this->dx;
     y -= this->dy;
     z -= this->dz;
-    MapEntry entry;
-    entry.x = x;
-    entry.y = y;
-    entry.z = z;
+    MapEntry entry { x, y, z };
     bool changed = false;
     if(x < minX){
         minX = x;
@@ -75,10 +71,7 @@ char Map::get(int x, int y, int z) {
     x -= this->dx;
     y -= this->dy;
     z -= this->dz;
-    MapEntry entry;
-    entry.x = x;
-    entry.y = y;
-    entry.z = z;
+    MapEntry entry = { x, y, z };
     return this->_data[entry];
 }
 
