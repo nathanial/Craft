@@ -815,17 +815,12 @@ void gen_chunk_buffer(Chunk *chunk) {
     chunk->dirty = 0;
 }
 
-void map_set_func(int x, int y, int z, int w, void *arg) {
-    Map *map = (Map *)arg;
-    map->set(x, y, z, w);
-}
-
 void load_chunk(WorkerItem *item) {
     int p = item->p;
     int q = item->q;
     Map *block_map = item->block_maps[1][1];
     Map *light_map = item->light_maps[1][1];
-    create_world(p, q, map_set_func, block_map);
+    create_world(block_map, p, q);
     db_load_blocks(block_map, p, q);
     db_load_lights(light_map, p, q);
 }
