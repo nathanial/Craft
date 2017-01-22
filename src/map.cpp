@@ -13,7 +13,7 @@ Map::~Map() { }
 
 Map* Map::clone() {
     Map *m = new Map(this->dx, this->dy, this->dz);
-    m->_data = this->_data;
+    std::copy(&this->_data[0][0][0], &this->_data[0][0][0] + (CHUNK_SIZE+1)*(CHUNK_SIZE+1)*CHUNK_HEIGHT,  &m->_data[0][0][0]);
     return m;
 }
 
@@ -23,17 +23,16 @@ int Map::set(int x, int y, int z, char w) {
     y -= this->dy;
     z -= this->dz;
 
-    if(x < 0 || x > CHUNK_SIZE || y < 0 || y >= CHUNK_HEIGHT || z < 0 || z > CHUNK_SIZE ){
+    if(x < 0 || x >= CHUNK_SIZE + 1 || y < 0 || y >= CHUNK_HEIGHT + 1|| z < 0 || z >= CHUNK_SIZE + 1){
         //printf("Bad Index %d,%d,%d\n", x, y, z);
         return 0;
     }
 
-    MapEntry entry { x, y, z };
     int overwrite = 0;
-    if(this->_data.count(entry) > 0){
+    if(this->_data[x][y][z] > 0){
         overwrite = 1;
     }
-    this->_data[entry] = w;
+    this->_data[x][y][z] = w;
     if(w){
         return 1;
     }
@@ -44,20 +43,25 @@ char Map::get(int x, int y, int z) {
     x -= this->dx;
     y -= this->dy;
     z -= this->dz;
-    MapEntry entry = { x, y, z };
-    if(x < 0 || x > CHUNK_SIZE || y < 0 || y >= CHUNK_HEIGHT || z < 0 || z > CHUNK_SIZE){
+    if(x < 0 || x >= CHUNK_SIZE + 1 || y < 0 || y >= CHUNK_HEIGHT + 1|| z < 0 || z >= CHUNK_SIZE + 1){
         // printf("Bad Index %d,%d,%d\n", x, y, z);
         return 0;
     }
-    return this->_data[entry];
+    return this->_data[x][y][z];
 }
 
 unsigned int Map::size() const {
-    return this->_data.size();
+    return CHUNK_SIZE * CHUNK_SIZE * CHUNK_HEIGHT;
 }
 
 void Map::each(std::function<void (int, int, int, char)> func) {
-    for (const auto& kv : this->_data) {
-        func(kv.first.x + this->dx, kv.first.y + this->dy, kv.first.z + this->dz, kv.second);
+    for(int x = 0; x < CHUNK_SIZE + 1; x++){
+        for(int y = 0; y < CHUNK_HEIGHT + 1; y++){
+            for(int z = 0; z < CHUNK_SIZE + 1; z++){
+                if(this->_data[x][y][z] != 0){
+                    func(x + this->dx, y + this->dy, z + this->dz, this->_data[x][y][z]);
+                }
+            }
+        }
     }
 }

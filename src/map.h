@@ -4,37 +4,11 @@
 #include <functional>
 #include <cmath>
 #include <unordered_map>
-
-struct MapEntry {
-    unsigned short x;
-    unsigned short y;
-    unsigned short z;
-
-    bool operator==(const MapEntry &other) const
-    {
-        return this->x == other.x && this->y == other.y && this->z == other.z;
-    }
-};
-
-namespace std {
-    template <>
-    struct hash<MapEntry>
-    {
-        std::size_t operator()(const MapEntry& k) const
-        {
-            using std::size_t;
-            using std::hash;
-            using std::string;
-            return ((hash<int>()(k.x)
-                     ^ (hash<int>()(k.y) << 1)) >> 1)
-                   ^ (hash<int>()(k.z) << 1);
-        }
-    };
-}
+#include "config.h"
 
 class Map {
 private:
-    std::unordered_map<MapEntry, char> _data;
+    char _data[CHUNK_SIZE + 1][CHUNK_HEIGHT + 1][CHUNK_SIZE + 1] = {{{0}}};
 public:
     int dx;
     int dy;
