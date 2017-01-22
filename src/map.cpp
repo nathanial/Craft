@@ -32,25 +32,34 @@ int Map::set(int x, int y, int z, char w) {
     entry.x = x;
     entry.y = y;
     entry.z = z;
+    bool changed = false;
     if(x < minX){
         minX = x;
+        changed = true;
     }
     if(x > maxX){
         maxX = x;
+        changed = true;
     }
     if(y < minY){
         minY = y;
+        changed = true;
     }
     if(y > maxY){
         maxY = y;
+        changed = true;
     }
     if(z < minZ){
         minZ = z;
+        changed = true;
     }
     if(z > maxZ) {
         maxZ = z;
+        changed = true;
     }
-    // printf("%d..%d,%d..%d,%d..%d\n", minX, maxX, minY, maxY, minZ, maxZ);
+    if(changed){
+        printf("%d..%d,%d..%d,%d..%d\n", minX, maxX, minY, maxY, minZ, maxZ);
+    }
     int overwrite = 0;
     if(this->_data.count(entry) > 0){
         overwrite = 1;

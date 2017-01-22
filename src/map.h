@@ -2,9 +2,8 @@
 #define _map_h_
 
 #include <functional>
-#include <unordered_map>
 #include <cmath>
-
+#include <unordered_map>
 
 struct MapEntry {
     unsigned short x;
