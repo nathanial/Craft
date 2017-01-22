@@ -12,7 +12,8 @@ extern "C" {
 #include "chunk.h"
 #include "config.h"
 
-typedef struct {
+class WorkerItem {
+public:
     int p;
     int q;
     int load;
@@ -22,34 +23,38 @@ typedef struct {
     int maxy;
     int faces;
     GLfloat *data;
-} WorkerItem;
+};
 
-typedef struct {
+class Worker {
+public:
     int index;
     int state;
     thrd_t thrd;
     mtx_t mtx;
     cnd_t cnd;
     WorkerItem item;
-} Worker;
+};
 
-typedef struct {
+class Block {
+public:
     int x;
     int y;
     int z;
     int w;
-} Block;
+};
 
-typedef struct {
+class State {
+public:
     float x;
     float y;
     float z;
     float rx;
     float ry;
     float t;
-} State;
+};
 
-typedef struct {
+class Attrib {
+public:
     GLuint program;
     GLuint position;
     GLuint normal;
@@ -62,18 +67,20 @@ typedef struct {
     GLuint extra2;
     GLuint extra3;
     GLuint extra4;
-} Attrib;
+};
 
-typedef struct {
+class Player {
+public:
     int id;
     char name[MAX_NAME_LENGTH];
     State state;
     State state1;
     State state2;
     GLuint buffer;
-} Player;
+};
 
-typedef struct {
+class Model {
+public:
     GLFWwindow *window;
     Worker workers[WORKERS];
     Chunk chunks[MAX_CHUNKS];
@@ -109,6 +116,6 @@ typedef struct {
     Block block1;
     Block copy0;
     Block copy1;
-} Model;
+};
 
 #endif //CRAFT_MODEL_H
