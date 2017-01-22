@@ -550,12 +550,6 @@ void occlusion(
     }
 }
 
-#define XZ_SIZE (CHUNK_SIZE * 3 + 2)
-#define XZ_LO (CHUNK_SIZE)
-#define XZ_HI (CHUNK_SIZE * 2 + 1)
-#define Y_SIZE 258
-#define XYZ(x, y, z) ((y) * XZ_SIZE * XZ_SIZE + (x) * XZ_SIZE + (z))
-#define XZ(x, z) ((x) * XZ_SIZE + (z))
 
 void light_fill(
     char *opaque, char *light,
@@ -594,6 +588,7 @@ void compute_chunk(WorkerItem *item) {
     int oy = -1;
     int oz = item->q * CHUNK_SIZE - CHUNK_SIZE - 1;
 
+    printf("Chunk %d,%d,%d\n", ox, oy, oz);
 
     // populate opaque array
     for (int a = 0; a < 3; a++) {
@@ -609,9 +604,12 @@ void compute_chunk(WorkerItem *item) {
                 int w = ew;
                 // TODO: this should be unnecessary
                 if (x < 0 || y < 0 || z < 0) {
-                    return;
+                    printf("OOPS %d,%d,%d\n", x,y,z);
+                    exit(1);
                 }
                 if (x >= XZ_SIZE || y >= Y_SIZE || z >= XZ_SIZE) {
+                    printf("OOPS 2 %d,%d,%d\n", x,y,z);
+                    exit(1);
                     return;
                 }
                 // END TODO
