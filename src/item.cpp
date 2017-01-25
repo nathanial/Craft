@@ -156,17 +156,17 @@ int is_plant(int w) {
     }
 }
 
-int is_obstacle(int w) {
+bool is_obstacle(int w) {
     w = ABS(w);
     if (is_plant(w)) {
-        return 0;
+        return false;
     }
     switch (w) {
         case EMPTY:
         case CLOUD:
-            return 0;
+            return false;
         default:
-            return 1;
+            return true;
     }
 }
 
