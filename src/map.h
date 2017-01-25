@@ -8,7 +8,7 @@
 
 class Map {
 private:
-    char _data[CHUNK_SIZE + 1][CHUNK_HEIGHT + 1][CHUNK_SIZE + 1] = {{{0}}};
+    char _data[CHUNK_SIZE][CHUNK_HEIGHT][CHUNK_SIZE] = {{{0}}};
 public:
     int dx;
     int dy;

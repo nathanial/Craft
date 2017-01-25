@@ -19,9 +19,9 @@ void Chunk::init(int p, int q) {
     this->buffer = 0;
     this->sign_buffer = 0;
 
-    int dx = p * CHUNK_SIZE - 1;
+    int dx = p * CHUNK_SIZE;
     int dy = 0;
-    int dz = q * CHUNK_SIZE - 1;
+    int dz = q * CHUNK_SIZE;
 
     this->blocks = new Map(dx,dy,dz);
     this->lights = new Map(dx,dy,dz);

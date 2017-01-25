@@ -52,7 +52,7 @@
 #define CHUNK_HEIGHT 256
 #define COMMIT_INTERVAL 5
 
-#define MAX_CHUNKS 8192
+#define MAX_CHUNKS 10
 #define MAX_PLAYERS 128
 #define WORKERS 4
 #define MAX_TEXT_LENGTH 256

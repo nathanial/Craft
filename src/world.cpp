@@ -6,9 +6,8 @@ extern "C" {
 #include "map.h"
 
 void create_world(Map *blocks, int p, int q) {
-    int pad = 0;
-    for (int dx = -pad; dx < CHUNK_SIZE + pad; dx++) {
-        for (int dz = -pad; dz < CHUNK_SIZE + pad; dz++) {
+    for (int dx = 0; dx < CHUNK_SIZE; dx++) {
+        for (int dz = 0; dz < CHUNK_SIZE; dz++) {
             int flag = 1;
             if (dx < 0 || dz < 0 || dx >= CHUNK_SIZE || dz >= CHUNK_SIZE) {
                 flag = -1;

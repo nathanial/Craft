@@ -529,9 +529,9 @@ void compute_chunk(WorkerItem *item) {
     char *light = (char *)calloc(XZ_SIZE * XZ_SIZE * Y_SIZE, sizeof(char));
     char *highest = (char *)calloc(XZ_SIZE * XZ_SIZE, sizeof(char));
 
-    int ox = item->p * CHUNK_SIZE - CHUNK_SIZE - 1;
+    int ox = item->p * CHUNK_SIZE - CHUNK_SIZE;
     int oy = -1;
-    int oz = item->q * CHUNK_SIZE - CHUNK_SIZE - 1;
+    int oz = item->q * CHUNK_SIZE - CHUNK_SIZE;
 
     // printf("Chunk %d,%d,%d\n", ox, oy, oz);
 
@@ -576,6 +576,7 @@ void compute_chunk(WorkerItem *item) {
                     return;
                 }
                 // END TODO
+
                 item->light_maps[1][1]->set(ex, 30, ez, 30);
             });
         }
@@ -1091,6 +1092,7 @@ void set_light(int p, int q, int x, int y, int z, int w) {
 }
 
 void _set_block(int p, int q, int x, int y, int z, int w, int dirty) {
+    printf("Inner Set Block %d,%d,%d,%d,%d\n", p, q, x, y, z);
     Chunk *chunk = find_chunk(p, q);
     if (chunk) {
         if (chunk->set_block(x, y, z, w)) {
@@ -1112,21 +1114,8 @@ void _set_block(int p, int q, int x, int y, int z, int w, int dirty) {
 void set_block(int x, int y, int z, int w) {
     int p = chunked(x);
     int q = chunked(z);
+    printf("Set Block (p:%d,q:%d) (x:%d,y:%d,z:%d)\n", p, q, x, y, z);
     _set_block(p, q, x, y, z, w, 1);
-    for (int dx = -1; dx <= 1; dx++) {
-        for (int dz = -1; dz <= 1; dz++) {
-            if (dx == 0 && dz == 0) {
-                continue;
-            }
-            if (dx && chunked(x + dx) == p) {
-                continue;
-            }
-            if (dz && chunked(z + dz) == q) {
-                continue;
-            }
-            _set_block(p + dx, q + dz, x, y, z, -w, 1);
-        }
-    }
     client_block(x, y, z, w);
 }
 

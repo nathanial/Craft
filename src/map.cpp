@@ -13,18 +13,18 @@ Map::~Map() { }
 
 Map* Map::clone() {
     Map *m = new Map(this->dx, this->dy, this->dz);
-    std::copy(&this->_data[0][0][0], &this->_data[0][0][0] + (CHUNK_SIZE+1)*(CHUNK_SIZE+1)*CHUNK_HEIGHT,  &m->_data[0][0][0]);
+    std::copy(&this->_data[0][0][0], &this->_data[0][0][0] + (CHUNK_SIZE)*(CHUNK_SIZE)*CHUNK_HEIGHT,  &m->_data[0][0][0]);
     return m;
 }
 
 int Map::set(int x, int y, int z, char w) {
-
     x -= this->dx;
     y -= this->dy;
     z -= this->dz;
 
-    if(x < 0 || x >= CHUNK_SIZE + 1 || y < 0 || y >= CHUNK_HEIGHT + 1|| z < 0 || z >= CHUNK_SIZE + 1){
+    if(x < 0 || x >= CHUNK_SIZE || y < 0 || y >= CHUNK_HEIGHT || z < 0 || z >= CHUNK_SIZE){
         //printf("Bad Index %d,%d,%d\n", x, y, z);
+        //throw new std::invalid_argument("oops");
         return 0;
     }
 
@@ -43,7 +43,7 @@ char Map::get(int x, int y, int z) {
     x -= this->dx;
     y -= this->dy;
     z -= this->dz;
-    if(x < 0 || x >= CHUNK_SIZE + 1 || y < 0 || y >= CHUNK_HEIGHT + 1|| z < 0 || z >= CHUNK_SIZE + 1){
+    if(x < 0 || x >= CHUNK_SIZE || y < 0 || y >= CHUNK_HEIGHT || z < 0 || z >= CHUNK_SIZE){
         // printf("Bad Index %d,%d,%d\n", x, y, z);
         return 0;
     }
@@ -55,9 +55,9 @@ unsigned int Map::size() const {
 }
 
 void Map::each(std::function<void (int, int, int, char)> func) {
-    for(int x = 0; x < CHUNK_SIZE + 1; x++){
-        for(int y = 0; y < CHUNK_HEIGHT + 1; y++){
-            for(int z = 0; z < CHUNK_SIZE + 1; z++){
+    for(int x = 0; x < CHUNK_SIZE; x++){
+        for(int y = 0; y < CHUNK_HEIGHT; y++){
+            for(int z = 0; z < CHUNK_SIZE; z++){
                 if(this->_data[x][y][z] != 0){
                     func(x + this->dx, y + this->dy, z + this->dz, this->_data[x][y][z]);
                 }
