@@ -36,6 +36,7 @@ public:
 };
 
 Chunk *find_chunk(int p, int q);
+int highest_block(float x, float z);
 int chunk_visible(float planes[6][4], int p, int q, int miny, int maxy);
 
 #endif //CRAFT_CHUNK_H

@@ -254,3 +254,7 @@ void get_motion_vector(int flying, int sz, int sx, float rx, float ry,
         *vz = sinf(rx + strafe);
     }
 }
+
+int chunked(float x) {
+    return floorf(roundf(x) / CHUNK_SIZE);
+}

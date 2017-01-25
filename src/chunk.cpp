@@ -7,6 +7,7 @@
 #include "db.h"
 #include "model.h"
 #include "util.h"
+#include "item.h"
 
 extern Model *g;
 
@@ -145,4 +146,22 @@ int chunk_visible(float planes[6][4], int p, int q, int miny, int maxy) {
         }
     }
     return 1;
+}
+
+int highest_block(float x, float z) {
+    int result = -1;
+    int nx = roundf(x);
+    int nz = roundf(z);
+    int p = chunked(x);
+    int q = chunked(z);
+    printf("Highest Block %f %f\n", x, z);
+    Chunk *chunk = find_chunk(p, q);
+    if (chunk) {
+        chunk->foreach_block([&](int ex, int ey, int ez, int ew){
+            if (is_obstacle(ew) && ex == nx && ez == nz) {
+                result = MAX(result, ey);
+            }
+        });
+    }
+    return result;
 }

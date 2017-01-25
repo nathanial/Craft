@@ -510,10 +510,6 @@ configure_file("${GLFW_SOURCE_DIR}/src/glfw3.pc.in"
 #--------------------------------------------------------------------
 add_subdirectory(src)
 
-if (GLFW_BUILD_EXAMPLES)
-    add_subdirectory(examples)
-endif()
-
 if (GLFW_BUILD_TESTS)
     add_subdirectory(tests)
 endif()
