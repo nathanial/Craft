@@ -56,38 +56,14 @@ int Chunk::set_block(int x, int y, int z, char w){
 
 void Chunk::set_dirty_flag() {
     this->dirty = 1;
-    if (this->has_lights()) {
-        for (int dp = -1; dp <= 1; dp++) {
-            for (int dq = -1; dq <= 1; dq++) {
-                Chunk *other = find_chunk(this->p + dp, this->q + dq);
-                if (other) {
-                    other->dirty = 1;
-                }
-            }
-        }
-    }
-}
-
-int Chunk::has_lights() {
-    if (!SHOW_LIGHTS) {
-        return 0;
-    }
     for (int dp = -1; dp <= 1; dp++) {
         for (int dq = -1; dq <= 1; dq++) {
-            Chunk *other = this;
-            if (dp || dq) {
-                other = find_chunk(this->p + dp, this->q + dq);
-            }
-            if (!other) {
-                continue;
-            }
-            Map *map = other->lights;
-            if (map->size()) {
-                return 1;
+            Chunk *other = find_chunk(this->p + dp, this->q + dq);
+            if (other) {
+                other->dirty = 1;
             }
         }
     }
-    return 0;
 }
 
 Chunk *find_chunk(int p, int q) {

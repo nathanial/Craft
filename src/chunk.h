@@ -31,7 +31,6 @@ public:
     int set_light(int x, int y, int z, char w);
     void foreach_block(std::function<void (int, int, int, char)> func);
     int distance(int p, int q);
-    int has_lights();
     void set_dirty_flag();
 };
 
