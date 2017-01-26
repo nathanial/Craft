@@ -525,7 +525,7 @@ void light_fill(
     light_fill(opaque, light, x, y, z + 1, w, 0);
 }
 
-void compute_chunk(WorkerItem *item) {
+void compute_chunk(WorkerItemPtr item) {
     char *opaque = (char *)calloc(XZ_SIZE * XZ_SIZE * Y_SIZE, sizeof(char));
     char *light = (char *)calloc(XZ_SIZE * XZ_SIZE * Y_SIZE, sizeof(char));
     char *highest = (char *)calloc(XZ_SIZE * XZ_SIZE, sizeof(char));
@@ -718,7 +718,7 @@ void compute_chunk(WorkerItem *item) {
     item->data = data;
 }
 
-void generate_chunk(Chunk *chunk, WorkerItem *item) {
+void generate_chunk(Chunk *chunk, WorkerItemPtr item) {
     chunk->miny = item->miny;
     chunk->maxy = item->maxy;
     chunk->faces = item->faces;
@@ -728,32 +728,13 @@ void generate_chunk(Chunk *chunk, WorkerItem *item) {
 }
 
 void gen_chunk_buffer(Chunk *chunk) {
-    WorkerItem _item;
-    WorkerItem *item = &_item;
-    item->p = chunk->p;
-    item->q = chunk->q;
-    for (int dp = -1; dp <= 1; dp++) {
-        for (int dq = -1; dq <= 1; dq++) {
-            Chunk *other = chunk;
-            if (dp || dq) {
-                other = find_chunk(chunk->p + dp, chunk->q + dq);
-            }
-            if (other) {
-                item->block_maps[dp + 1][dq + 1] = other->blocks;
-                item->light_maps[dp + 1][dq + 1] = other->lights;
-            }
-            else {
-                item->block_maps[dp + 1][dq + 1] = 0;
-                item->light_maps[dp + 1][dq + 1] = 0;
-            }
-        }
-    }
+    auto item = chunk->create_worker_item();
     compute_chunk(item);
     generate_chunk(chunk, item);
     chunk->dirty = 0;
 }
 
-void load_chunk(WorkerItem *item) {
+void load_chunk(WorkerItemPtr item) {
     int p = item->p;
     int q = item->q;
     Map *block_map = item->block_maps[1][1];
@@ -771,12 +752,7 @@ void request_chunk(int p, int q) {
 void create_chunk(Chunk *chunk, int p, int q) {
     chunk->init(p, q);
 
-    WorkerItem _item;
-    WorkerItem *item = &_item;
-    item->p = chunk->p;
-    item->q = chunk->q;
-    item->block_maps[1][1] = chunk->blocks;
-    item->light_maps[1][1] = chunk->lights;
+    auto item = chunk->create_worker_item();
     load_chunk(item);
 
     request_chunk(p, q);
@@ -801,8 +777,7 @@ void delete_chunks() {
             }
         }
         if (_delete) {
-            delete chunk->blocks;
-            delete chunk->lights;
+            chunk->destroy();
             sign_list_free(&chunk->signs);
             del_buffer(chunk->buffer);
             del_buffer(chunk->sign_buffer);
@@ -816,8 +791,7 @@ void delete_chunks() {
 void delete_all_chunks() {
     for (int i = 0; i < g->chunk_count; i++) {
         Chunk *chunk = g->chunks + i;
-        delete chunk->blocks;
-        delete chunk->lights;
+        chunk->destroy();
         sign_list_free(&chunk->signs);
         del_buffer(chunk->buffer);
         del_buffer(chunk->sign_buffer);
@@ -830,14 +804,13 @@ void check_workers() {
         Worker *worker = g->workers + i;
         mtx_lock(&worker->mtx);
         if (worker->state == WORKER_DONE) {
-            WorkerItem *item = &worker->item;
+            auto item = worker->item;
             Chunk *chunk = find_chunk(item->p, item->q);
             if (chunk) {
                 if (item->load) {
                     Map *block_map = item->block_maps[1][1];
                     Map *light_map = item->light_maps[1][1];
-                    chunk->blocks = block_map->clone();
-                    chunk->lights = light_map->clone();
+                    chunk->set_blocks_and_lights(block_map->clone(), light_map->clone());
                     request_chunk(item->p, item->q);
                 }
                 generate_chunk(chunk, item);
@@ -942,26 +915,8 @@ void ensure_chunks_worker(Player *player, Worker *worker) {
             return;
         }
     }
-    WorkerItem *item = &worker->item;
-    item->p = chunk->p;
-    item->q = chunk->q;
-    item->load = load;
-    for (int dp = -1; dp <= 1; dp++) {
-        for (int dq = -1; dq <= 1; dq++) {
-            Chunk *other = chunk;
-            if (dp || dq) {
-                other = find_chunk(chunk->p + dp, chunk->q + dq);
-            }
-            if (other) {
-                item->block_maps[dp + 1][dq + 1] = other->blocks->clone();
-                item->light_maps[dp + 1][dq + 1] = other->lights->clone();
-            }
-            else {
-                item->block_maps[dp + 1][dq + 1] = 0;
-                item->light_maps[dp + 1][dq + 1] = 0;
-            }
-        }
-    }
+    worker->item = chunk->create_worker_item();
+    worker->item->load = load;
     chunk->dirty = 0;
     worker->state = WORKER_BUSY;
     cnd_signal(&worker->cnd);
@@ -989,7 +944,7 @@ int worker_run(void *arg) {
             cnd_wait(&worker->cnd, &worker->mtx);
         }
         mtx_unlock(&worker->mtx);
-        WorkerItem *item = &worker->item;
+        auto item = worker->item;
         if (item->load) {
             load_chunk(item);
         }

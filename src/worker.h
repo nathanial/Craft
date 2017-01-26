@@ -10,6 +10,7 @@
 extern "C" {
     #include "tinycthread.h"
 }
+#include <memory>
 
 class WorkerItem {
 public:
@@ -24,6 +25,8 @@ public:
     GLfloat *data;
 };
 
+typedef std::shared_ptr<WorkerItem> WorkerItemPtr;
+
 class Worker {
 public:
     int index;
@@ -31,7 +34,7 @@ public:
     thrd_t thrd;
     mtx_t mtx;
     cnd_t cnd;
-    WorkerItem item;
+    WorkerItemPtr item;
 };
 
 #endif //CRAFT_WORKER_H

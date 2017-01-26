@@ -30,7 +30,42 @@ void Chunk::init(int p, int q) {
     SignList *signs = &this->signs;
     sign_list_alloc(signs, 16);
     db_load_signs(signs, p, q);
+}
 
+std::shared_ptr<WorkerItem> Chunk::create_worker_item(){
+    auto item = std::make_shared<WorkerItem>();
+    item->p = this->p;
+    item->q = this->q;
+    for (int dp = -1; dp <= 1; dp++) {
+        for (int dq = -1; dq <= 1; dq++) {
+            Chunk *other = this;
+            if (dp || dq) {
+                other = find_chunk(this->p + dp, this->q + dq);
+            }
+            if(this == other){
+                item->block_maps[dp + 1][dq + 1] = other->blocks;
+                item->light_maps[dp + 1][dq + 1] = other->lights;
+            } else if (other) {
+                item->block_maps[dp + 1][dq + 1] = other->blocks->clone();
+                item->light_maps[dp + 1][dq + 1] = other->lights->clone();
+            }
+            else {
+                item->block_maps[dp + 1][dq + 1] = 0;
+                item->light_maps[dp + 1][dq + 1] = 0;
+            }
+        }
+    }
+    return item;
+}
+
+void Chunk::destroy(){
+    delete this->blocks;
+    delete this->lights;
+}
+
+void Chunk::set_blocks_and_lights(Map *blocks, Map *lights) {
+    this->blocks = blocks;
+    this->lights = lights;
 }
 
 int Chunk::get_block(int x, int y, int z) const {

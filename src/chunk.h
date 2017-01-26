@@ -8,11 +8,16 @@
 #include <GL/glew.h>
 #include "map.h"
 #include "sign.h"
+#include <memory>
+
+class WorkerItem;
 
 class Chunk {
-public:
+private:
     Map *lights;
     Map *blocks;
+
+public:
 
     SignList signs;
     int p, q; // chunk position
@@ -32,6 +37,9 @@ public:
     void foreach_block(std::function<void (int, int, int, char)> func);
     int distance(int p, int q);
     void set_dirty_flag();
+    std::shared_ptr<WorkerItem> create_worker_item();
+    void destroy();
+    void set_blocks_and_lights(Map *blocks, Map *lights);
 };
 
 Chunk *find_chunk(int p, int q);
