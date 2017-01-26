@@ -7,9 +7,8 @@
 #include "config.h"
 
 class Map {
-private:
-    char _data[CHUNK_SIZE][CHUNK_HEIGHT][CHUNK_SIZE] = {{{0}}};
 public:
+    char _data[CHUNK_SIZE][CHUNK_HEIGHT][CHUNK_SIZE] = {{{0}}};
     int dx;
     int dy;
     int dz;

@@ -515,6 +515,7 @@ void light_fill(
     if (!force && opaque[XYZ(x, y, z)]) {
         return;
     }
+    //printf("Light Fill %d,%d,%d | %d,%d\n",x,y,z, w, force);
     light[XYZ(x, y, z)] = w--;
     light_fill(opaque, light, x - 1, y, z, w, 0);
     light_fill(opaque, light, x + 1, y, z, w, 0);
@@ -582,35 +583,27 @@ void compute_chunk(WorkerItem *item) {
         }
     }
 
+    printf("Compute Chunk %d,%d\n", item->p, item->q);
 
-    // check for lights
-    int has_light = 0;
-    if (SHOW_LIGHTS) {
-        for (int a = 0; a < 3; a++) {
-            for (int b = 0; b < 3; b++) {
-                Map *map = item->light_maps[a][b];
-                if (map && map->size()) {
-                    has_light = 1;
-                }
+    for (int a = 0; a < 3; a++) {
+        for (int b = 0; b < 3; b++) {
+            Map *map = item->light_maps[a][b];
+            if (!map) {
+                continue;
             }
-        }
-    }
-
-
-    // flood fill light intensities
-    if (has_light) {
-        for (int a = 0; a < 3; a++) {
-            for (int b = 0; b < 3; b++) {
-                Map *map = item->light_maps[a][b];
-                if (!map) {
-                    continue;
+            for(int x = 0; x < CHUNK_SIZE; x++){
+                for(int y = CHUNK_HEIGHT - 1; y >= 0; y--){
+                    for(int z = 0; z < CHUNK_SIZE; z++){
+                        int ew = map->_data[x][y][z];
+                        if(ew > 0){
+                            //printf("Light Fill %d,%d,%d | %d\n",x,y,z, ew);
+                            int lx = (x + map->dx) - ox;
+                            int ly = (y + map->dy) - oy;
+                            int lz = (z + map->dz) - oz;
+                            light_fill(opaque, light, lx, ly, lz, ew, 0);
+                        }
+                    }
                 }
-                map->each([&](int ex, int ey, int ez, int ew) {
-                    int x = ex - ox;
-                    int y = ey - oy;
-                    int z = ez - oz;
-                    light_fill(opaque, light, x, y, z, ew, 1);
-                });
             }
         }
     }

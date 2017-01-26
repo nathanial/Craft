@@ -13,7 +13,7 @@ add_executable(
     deps/sqlite/sqlite3.c
     deps/tinycthread/tinycthread.c src/chunk.h src/chunk.cpp src/model.h src/draw.cpp src/draw.h src/worker.cpp src/worker.h)
 
-add_definitions(-std=c++11 -O3 -fpermissive)
+add_definitions(-std=c++11 -O2 -fpermissive)
 
 add_subdirectory(deps/glfw)
 include_directories(deps/glew/include)
