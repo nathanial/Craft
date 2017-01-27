@@ -80,7 +80,7 @@ void draw_lines(Attrib *attrib, GLuint buffer, int components, int count) {
     glBindBuffer(GL_ARRAY_BUFFER, 0);
 }
 
-void draw_chunk(Attrib *attrib, Chunk *chunk) {
+void draw_chunk(Attrib *attrib, ChunkPtr chunk) {
     draw_triangles_3d_ao(attrib, chunk->buffer, chunk->faces * 6);
 }
 
@@ -95,7 +95,7 @@ void draw_text(Attrib *attrib, GLuint buffer, int length) {
     glDisable(GL_BLEND);
 }
 
-void draw_signs(Attrib *attrib, Chunk *chunk) {
+void draw_signs(Attrib *attrib, ChunkPtr chunk) {
     glEnable(GL_POLYGON_OFFSET_FILL);
     glPolygonOffset(-8, -1024);
     draw_triangles_3d_text(attrib, chunk->sign_buffer, chunk->sign_faces * 6);

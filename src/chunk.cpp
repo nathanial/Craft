@@ -38,7 +38,7 @@ std::shared_ptr<WorkerItem> Chunk::create_worker_item(){
     item->q = this->q;
     for (int dp = -1; dp <= 1; dp++) {
         for (int dq = -1; dq <= 1; dq++) {
-            Chunk *other = this;
+            auto other = this;
             if (dp || dq) {
                 other = find_chunk(this->p + dp, this->q + dq);
             }
@@ -93,7 +93,7 @@ void Chunk::set_dirty_flag() {
     this->dirty = 1;
     for (int dp = -1; dp <= 1; dp++) {
         for (int dq = -1; dq <= 1; dq++) {
-            Chunk *other = find_chunk(this->p + dp, this->q + dq);
+            auto other = find_chunk(this->p + dp, this->q + dq);
             if (other) {
                 other->dirty = 1;
             }
@@ -101,9 +101,9 @@ void Chunk::set_dirty_flag() {
     }
 }
 
-Chunk *find_chunk(int p, int q) {
+ChunkPtr find_chunk(int p, int q) {
     for (int i = 0; i < g->chunk_count; i++) {
-        Chunk *chunk = g->chunks + i;
+        auto chunk = g->chunks + i;
         if (chunk->p == p && chunk->q == q) {
             return chunk;
         }
@@ -166,7 +166,7 @@ int highest_block(float x, float z) {
     int p = chunked(x);
     int q = chunked(z);
     printf("Highest Block %f %f\n", x, z);
-    Chunk *chunk = find_chunk(p, q);
+    auto chunk = find_chunk(p, q);
     if (chunk) {
         chunk->foreach_block([&](int ex, int ey, int ez, int ew){
             if (is_obstacle(ew) && ex == nx && ez == nz) {
