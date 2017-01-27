@@ -61,9 +61,10 @@ class Model {
 private:
     Chunk chunks[MAX_CHUNKS];
 public:
+    int chunk_count;
+
     GLFWwindow *window;
     Worker workers[WORKERS];
-    int chunk_count;
     int create_radius;
     int render_radius;
     int delete_radius;
@@ -98,6 +99,11 @@ public:
 
     ChunkPtr get_chunk(int i);
     void clear_chunks();
+    ChunkPtr find_chunk(int p, int q);
+
+    void each_chunk(std::function<void (ChunkPtr chunk)>);
+    void delete_chunks();
+    void delete_all_chunks();
 };
 
 #endif //CRAFT_MODEL_H

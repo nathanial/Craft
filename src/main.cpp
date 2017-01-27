@@ -292,25 +292,24 @@ int hit_test(
     int q = chunked(z);
     float vx, vy, vz;
     get_sight_vector(rx, ry, &vx, &vy, &vz);
-    for (int i = 0; i < g->chunk_count; i++) {
-        auto chunk = g->get_chunk(i);
+    g->each_chunk([&](ChunkPtr chunk){
         if (chunk->distance(p, q) > 1) {
-            continue;
+            return;
         }
         int hx, hy, hz;
         int hw = _hit_test(chunk, 8, previous,
-            x, y, z, vx, vy, vz, &hx, &hy, &hz);
+                           x, y, z, vx, vy, vz, &hx, &hy, &hz);
         if (hw > 0) {
             printf("HIT %d\n", hw);
             float d = sqrtf(
-                powf(hx - x, 2) + powf(hy - y, 2) + powf(hz - z, 2));
+                    powf(hx - x, 2) + powf(hy - y, 2) + powf(hz - z, 2));
             if (best == 0 || d < best) {
                 best = d;
                 *bx = hx; *by = hy; *bz = hz;
                 result = hw;
             }
         }
-    }
+    });
     return result;
 }
 
@@ -758,46 +757,7 @@ void create_chunk(ChunkPtr chunk, int p, int q) {
     request_chunk(p, q);
 }
 
-void delete_chunks() {
-    int count = g->chunk_count;
-    State *s1 = &g->players->state;
-    State *s2 = &(g->players + g->observe1)->state;
-    State *s3 = &(g->players + g->observe2)->state;
-    State *states[3] = {s1, s2, s3};
-    for (int i = 0; i < count; i++) {
-        auto chunk = g->get_chunk(i);
-        int _delete = 1;
-        for (int j = 0; j < 3; j++) {
-            State *s = states[j];
-            int p = chunked(s->x);
-            int q = chunked(s->z);
-            if (chunk->distance(p, q) < g->delete_radius) {
-                _delete = 0;
-                break;
-            }
-        }
-        if (_delete) {
-            chunk->destroy();
-            sign_list_free(&chunk->signs);
-            del_buffer(chunk->buffer);
-            del_buffer(chunk->sign_buffer);
-            auto other = g->get_chunk(--count);
-            memcpy(chunk, other, sizeof(Chunk));
-        }
-    }
-    g->chunk_count = count;
-}
 
-void delete_all_chunks() {
-    for (int i = 0; i < g->chunk_count; i++) {
-        auto chunk = g->get_chunk(i);
-        chunk->destroy();
-        sign_list_free(&chunk->signs);
-        del_buffer(chunk->buffer);
-        del_buffer(chunk->sign_buffer);
-    }
-    g->chunk_count = 0;
-}
 
 void check_workers() {
     for (int i = 0; i < WORKERS; i++) {
@@ -805,7 +765,7 @@ void check_workers() {
         mtx_lock(&worker->mtx);
         if (worker->state == WORKER_DONE) {
             auto item = worker->item;
-            auto chunk = find_chunk(item->p, item->q);
+            auto chunk = g->find_chunk(item->p, item->q);
             if (chunk) {
                 if (item->load) {
                     Map *block_map = item->block_maps[1][1];
@@ -842,7 +802,7 @@ void force_chunks(Player *player) {
         for (int dq = -r; dq <= r; dq++) {
             int a = p + dp;
             int b = q + dq;
-            auto chunk = find_chunk(a, b);
+            auto chunk = g->find_chunk(a, b);
             if (chunk) {
                 if (chunk->dirty) {
                     gen_chunk_buffer(chunk);
@@ -880,7 +840,7 @@ void ensure_chunks_worker(Player *player, Worker *worker) {
             if (index != worker->index) {
                 continue;
             }
-            auto chunk = find_chunk(a, b);
+            auto chunk = g->find_chunk(a, b);
             if (chunk && !chunk->dirty) {
                 continue;
             }
@@ -904,7 +864,7 @@ void ensure_chunks_worker(Player *player, Worker *worker) {
     int a = best_a;
     int b = best_b;
     int load = 0;
-    auto chunk = find_chunk(a, b);
+    auto chunk = g->find_chunk(a, b);
     if (!chunk) {
         load = 1;
         if (g->chunk_count < MAX_CHUNKS) {
@@ -959,7 +919,7 @@ int worker_run(void *arg) {
 void unset_sign(int x, int y, int z) {
     int p = chunked(x);
     int q = chunked(z);
-    auto chunk = find_chunk(p, q);
+    auto chunk = g->find_chunk(p, q);
     if (chunk) {
         SignList *signs = &chunk->signs;
         if (sign_list_remove_all(signs, x, y, z)) {
@@ -975,7 +935,7 @@ void unset_sign(int x, int y, int z) {
 void unset_sign_face(int x, int y, int z, int face) {
     int p = chunked(x);
     int q = chunked(z);
-    auto chunk = find_chunk(p, q);
+    auto chunk = g->find_chunk(p, q);
     if (chunk) {
         SignList *signs = &chunk->signs;
         if (sign_list_remove(signs, x, y, z, face)) {
@@ -995,7 +955,7 @@ void _set_sign(
         unset_sign_face(x, y, z, face);
         return;
     }
-    auto chunk = find_chunk(p, q);
+    auto chunk = g->find_chunk(p, q);
     if (chunk) {
         SignList *signs = &chunk->signs;
         sign_list_add(signs, x, y, z, face, text);
@@ -1016,7 +976,7 @@ void set_sign(int x, int y, int z, int face, const char *text) {
 void toggle_light(int x, int y, int z) {
     int p = chunked(x);
     int q = chunked(z);
-    auto chunk = find_chunk(p, q);
+    auto chunk = g->find_chunk(p, q);
     if (chunk) {
         int w = chunk->get_light(x, y, z) ? 0 : 15;
         chunk->set_light(x, y, z, w);
@@ -1027,7 +987,7 @@ void toggle_light(int x, int y, int z) {
 }
 
 void set_light(int p, int q, int x, int y, int z, int w) {
-    auto chunk = find_chunk(p, q);
+    auto chunk = g->find_chunk(p, q);
     if (chunk) {
         if (chunk->set_light(x, y, z, w)) {
             chunk->set_dirty_flag();
@@ -1041,7 +1001,7 @@ void set_light(int p, int q, int x, int y, int z, int w) {
 
 void _set_block(int p, int q, int x, int y, int z, int w, int dirty) {
     printf("Inner Set Block %d,%d,%d,%d,%d\n", p, q, x, y, z);
-    auto chunk = find_chunk(p, q);
+    auto chunk = g->find_chunk(p, q);
     if (chunk) {
         if (chunk->set_block(x, y, z, w)) {
             if (dirty) {
@@ -1078,7 +1038,7 @@ void record_block(int x, int y, int z, int w) {
 int get_block(int x, int y, int z) {
     int p = chunked(x);
     int q = chunked(z);
-    auto chunk = find_chunk(p, q);
+    auto chunk = g->find_chunk(p, q);
     if (chunk) {
         return chunk->get_block(x,y,z);
     }
@@ -1149,18 +1109,17 @@ void render_signs(Attrib *attrib, Player *player) {
     glUniformMatrix4fv(attrib->matrix, 1, GL_FALSE, matrix);
     glUniform1i(attrib->sampler, 3);
     glUniform1i(attrib->extra1, 1);
-    for (int i = 0; i < g->chunk_count; i++) {
-        auto chunk = g->get_chunk(i);
+    g->each_chunk([&](ChunkPtr chunk){
         if (chunk->distance(p, q) > g->sign_radius) {
-            continue;
+            return;
         }
         if (!chunk_visible(
-            planes, chunk->p, chunk->q, chunk->miny, chunk->maxy))
+                planes, chunk->p, chunk->q, chunk->miny, chunk->maxy))
         {
-            continue;
+            return;
         }
         draw_signs(attrib, chunk);
-    }
+    });
 }
 
 void render_sign(Attrib *attrib, Player *player) {
@@ -1957,7 +1916,7 @@ void parse_buffer(char *buffer) {
             db_set_key(kp, kq, kk);
         }
         if (sscanf(line, "R,%d,%d", &kp, &kq) == 2) {
-            auto chunk = find_chunk(kp, kq);
+            auto chunk = g->find_chunk(kp, kq);
             if (chunk) {
                 chunk->set_dirty_flag();
             }
@@ -2253,7 +2212,7 @@ int main(int argc, char **argv) {
             // PREPARE TO RENDER //
             g->observe1 = g->observe1 % g->player_count;
             g->observe2 = g->observe2 % g->player_count;
-            delete_chunks();
+            g->delete_chunks();
             del_buffer(me->buffer);
             me->buffer = gen_player_buffer(s->x, s->y, s->z, s->rx, s->ry);
             for (int i = 1; i < g->player_count; i++) {
@@ -2385,7 +2344,7 @@ int main(int argc, char **argv) {
         client_stop();
         client_disable();
         del_buffer(sky_buffer);
-        delete_all_chunks();
+        g->delete_all_chunks();
         delete_all_players();
     }
 

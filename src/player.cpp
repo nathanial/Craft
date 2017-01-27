@@ -10,7 +10,7 @@ int collide(int height, float *x, float *y, float *z) {
     int result = 0;
     int p = chunked(*x);
     int q = chunked(*z);
-    auto chunk = find_chunk(p, q);
+    auto chunk = g->find_chunk(p, q);
     if (!chunk) {
         return result;
     }
