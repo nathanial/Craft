@@ -103,7 +103,7 @@ void Chunk::set_dirty_flag() {
 
 ChunkPtr find_chunk(int p, int q) {
     for (int i = 0; i < g->chunk_count; i++) {
-        auto chunk = g->chunks + i;
+        auto chunk = g->get_chunk(i);
         if (chunk->p == p && chunk->q == q) {
             return chunk;
         }

@@ -5,7 +5,7 @@
 #ifndef CRAFT_MODEL_H
 #define CRAFT_MODEL_H
 
-#include <GLFW/glfw3.h>
+#include <GL/glew.h>
 extern "C" {
     #include "tinycthread.h"
 }
@@ -58,10 +58,11 @@ public:
 };
 
 class Model {
+private:
+    Chunk chunks[MAX_CHUNKS];
 public:
     GLFWwindow *window;
     Worker workers[WORKERS];
-    Chunk chunks[MAX_CHUNKS];
     int chunk_count;
     int create_radius;
     int render_radius;
@@ -94,6 +95,9 @@ public:
     Block block1;
     Block copy0;
     Block copy1;
+
+    ChunkPtr get_chunk(int i);
+    void clear_chunks();
 };
 
 #endif //CRAFT_MODEL_H

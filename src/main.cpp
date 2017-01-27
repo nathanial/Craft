@@ -293,7 +293,7 @@ int hit_test(
     float vx, vy, vz;
     get_sight_vector(rx, ry, &vx, &vy, &vz);
     for (int i = 0; i < g->chunk_count; i++) {
-        auto chunk = g->chunks + i;
+        auto chunk = g->get_chunk(i);
         if (chunk->distance(p, q) > 1) {
             continue;
         }
@@ -765,7 +765,7 @@ void delete_chunks() {
     State *s3 = &(g->players + g->observe2)->state;
     State *states[3] = {s1, s2, s3};
     for (int i = 0; i < count; i++) {
-        auto chunk = g->chunks + i;
+        auto chunk = g->get_chunk(i);
         int _delete = 1;
         for (int j = 0; j < 3; j++) {
             State *s = states[j];
@@ -781,7 +781,7 @@ void delete_chunks() {
             sign_list_free(&chunk->signs);
             del_buffer(chunk->buffer);
             del_buffer(chunk->sign_buffer);
-            auto other = g->chunks + (--count);
+            auto other = g->get_chunk(--count);
             memcpy(chunk, other, sizeof(Chunk));
         }
     }
@@ -790,7 +790,7 @@ void delete_chunks() {
 
 void delete_all_chunks() {
     for (int i = 0; i < g->chunk_count; i++) {
-        auto chunk = g->chunks + i;
+        auto chunk = g->get_chunk(i);
         chunk->destroy();
         sign_list_free(&chunk->signs);
         del_buffer(chunk->buffer);
@@ -849,7 +849,7 @@ void force_chunks(Player *player) {
                 }
             }
             else if (g->chunk_count < MAX_CHUNKS) {
-                chunk = g->chunks + g->chunk_count++;
+                chunk = g->get_chunk(g->chunk_count++);
                 create_chunk(chunk, a, b);
                 gen_chunk_buffer(chunk);
             }
@@ -908,7 +908,7 @@ void ensure_chunks_worker(Player *player, Worker *worker) {
     if (!chunk) {
         load = 1;
         if (g->chunk_count < MAX_CHUNKS) {
-            chunk = g->chunks + g->chunk_count++;
+            chunk = g->get_chunk(g->chunk_count++);
             chunk->init(a, b);
         }
         else {
@@ -1120,7 +1120,7 @@ int render_chunks(Attrib *attrib, Player *player) {
     glUniform1i(attrib->extra4, g->ortho);
     glUniform1f(attrib->timer, time_of_day());
     for (int i = 0; i < g->chunk_count; i++) {
-        auto chunk = g->chunks + i;
+        auto chunk = g->get_chunk(i);
         if (chunk->distance(p, q) > g->render_radius) {
             continue;
         }
@@ -1150,7 +1150,7 @@ void render_signs(Attrib *attrib, Player *player) {
     glUniform1i(attrib->sampler, 3);
     glUniform1i(attrib->extra1, 1);
     for (int i = 0; i < g->chunk_count; i++) {
-        auto chunk = g->chunks + i;
+        auto chunk = g->get_chunk(i);
         if (chunk->distance(p, q) > g->sign_radius) {
             continue;
         }
@@ -1998,7 +1998,7 @@ void parse_buffer(char *buffer) {
 }
 
 void reset_model() {
-    memset(g->chunks, 0, sizeof(Chunk) * MAX_CHUNKS);
+    g->clear_chunks();
     g->chunk_count = 0;
     memset(g->players, 0, sizeof(Player) * MAX_PLAYERS);
     g->player_count = 0;
