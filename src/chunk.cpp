@@ -38,11 +38,11 @@ std::shared_ptr<WorkerItem> Chunk::create_worker_item(){
     item->q = this->q;
     for (int dp = -1; dp <= 1; dp++) {
         for (int dq = -1; dq <= 1; dq++) {
-            auto other = this;
-            if (dp || dq) {
-                other = g->find_chunk(this->p + dp, this->q + dq);
+            auto other = g->find_chunk(this->p + dp, this->q + dq);
+            if(other == nullptr){
+                continue;
             }
-            if(this == other){
+            if(this == other.get()){
                 item->block_maps[dp + 1][dq + 1] = other->blocks;
                 item->light_maps[dp + 1][dq + 1] = other->lights;
             } else if (other) {
@@ -61,6 +61,10 @@ std::shared_ptr<WorkerItem> Chunk::create_worker_item(){
 void Chunk::destroy(){
     delete this->blocks;
     delete this->lights;
+
+    sign_list_free(&this->signs);
+    del_buffer(this->buffer);
+    del_buffer(this->sign_buffer);
 }
 
 void Chunk::set_blocks_and_lights(Map *blocks, Map *lights) {

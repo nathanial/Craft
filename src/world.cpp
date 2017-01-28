@@ -6,6 +6,9 @@ extern "C" {
 #include "map.h"
 
 void create_world(Map *blocks, int p, int q) {
+    if(blocks == nullptr){
+        throw new std::invalid_argument("Blocks must not be null");
+    }
     for (int dx = 0; dx < CHUNK_SIZE; dx++) {
         for (int dz = 0; dz < CHUNK_SIZE; dz++) {
             int flag = 1;

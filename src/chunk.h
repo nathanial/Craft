@@ -42,7 +42,7 @@ public:
     void set_blocks_and_lights(Map *blocks, Map *lights);
 };
 
-typedef Chunk* ChunkPtr;
+typedef std::shared_ptr<Chunk> ChunkPtr;
 
 int highest_block(float x, float z);
 int chunk_visible(float planes[6][4], int p, int q, int miny, int maxy);

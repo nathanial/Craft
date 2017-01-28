@@ -808,8 +808,8 @@ void force_chunks(Player *player) {
                     gen_chunk_buffer(chunk);
                 }
             }
-            else if (g->chunk_count < MAX_CHUNKS) {
-                chunk = g->get_chunk(g->chunk_count++);
+            else if (g->chunk_count() < MAX_CHUNKS) {
+                ChunkPtr chunk = g->create_chunk(a,b);
                 create_chunk(chunk, a, b);
                 gen_chunk_buffer(chunk);
             }
@@ -867,8 +867,8 @@ void ensure_chunks_worker(Player *player, Worker *worker) {
     auto chunk = g->find_chunk(a, b);
     if (!chunk) {
         load = 1;
-        if (g->chunk_count < MAX_CHUNKS) {
-            chunk = g->get_chunk(g->chunk_count++);
+        if (g->chunk_count() < MAX_CHUNKS) {
+            chunk = g->create_chunk(a,b);
             chunk->init(a, b);
         }
         else {
@@ -1079,19 +1079,18 @@ int render_chunks(Attrib *attrib, Player *player) {
     glUniform1f(attrib->extra3, g->render_radius * CHUNK_SIZE);
     glUniform1i(attrib->extra4, g->ortho);
     glUniform1f(attrib->timer, time_of_day());
-    for (int i = 0; i < g->chunk_count; i++) {
-        auto chunk = g->get_chunk(i);
+    g->each_chunk([&](ChunkPtr chunk) {
         if (chunk->distance(p, q) > g->render_radius) {
-            continue;
+            return;
         }
         if (!chunk_visible(
             planes, chunk->p, chunk->q, chunk->miny, chunk->maxy))
         {
-            continue;
+            return;
         }
         draw_chunk(attrib, chunk);
         result += chunk->faces;
-    }
+    });
     return result;
 }
 
@@ -1958,7 +1957,6 @@ void parse_buffer(char *buffer) {
 
 void reset_model() {
     g->clear_chunks();
-    g->chunk_count = 0;
     memset(g->players, 0, sizeof(Player) * MAX_PLAYERS);
     g->player_count = 0;
     g->observe1 = 0;
@@ -2256,7 +2254,7 @@ int main(int argc, char **argv) {
                     text_buffer, 1024,
                     "(%d, %d) (%.2f, %.2f, %.2f) [%d, %d, %d] %d%cm %dfps",
                     chunked(s->x), chunked(s->z), s->x, s->y, s->z,
-                    g->player_count, g->chunk_count,
+                    g->player_count, g->chunk_count(),
                     face_count * 2, hour, am_pm, fps.fps);
                 render_text(&text_attrib, ALIGN_LEFT, tx, ty, ts, text_buffer);
                 ty -= ts * 2;

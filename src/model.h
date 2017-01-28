@@ -12,6 +12,8 @@ extern "C" {
 #include "chunk.h"
 #include "config.h"
 #include "worker.h"
+#include <functional>
+#include <tuple>
 
 class Block {
 public:
@@ -57,12 +59,20 @@ public:
     GLuint buffer;
 };
 
+typedef std::tuple<int, int> ChunkPosition;
+
+struct ChunkPositionHash : public std::unary_function<ChunkPosition, std::size_t>
+{
+    std::size_t operator()(const ChunkPosition& k) const
+    {
+        return std::get<0>(k) ^ (std::get<1>(k) << 1);
+    }
+};
+
 class Model {
 private:
-    Chunk chunks[MAX_CHUNKS];
+    std::unordered_map<ChunkPosition, ChunkPtr, ChunkPositionHash> chunks;
 public:
-    int chunk_count;
-
     GLFWwindow *window;
     Worker workers[WORKERS];
     int create_radius;
@@ -97,13 +107,16 @@ public:
     Block copy0;
     Block copy1;
 
-    ChunkPtr get_chunk(int i);
+    ChunkPtr get_chunk(int p, int q);
     void clear_chunks();
     ChunkPtr find_chunk(int p, int q);
 
     void each_chunk(std::function<void (ChunkPtr chunk)>);
     void delete_chunks();
     void delete_all_chunks();
+
+    int chunk_count() const;
+    ChunkPtr create_chunk(int p, int q);
 };
 
 #endif //CRAFT_MODEL_H
