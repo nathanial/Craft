@@ -40,7 +40,6 @@ public:
     int distance(int p, int q);
     void set_dirty_flag();
     std::shared_ptr<WorkerItem> create_worker_item();
-    void destroy();
     void set_blocks_and_lights(Map *blocks, Map *lights);
 };
 

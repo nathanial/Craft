@@ -34,6 +34,12 @@ void Chunk::init(int p, int q) {
 
 Chunk::~Chunk() {
     printf("Destruct Chunk %d,%d\n", this->p, this->q);
+    delete this->blocks;
+    delete this->lights;
+
+    sign_list_free(&this->signs);
+    del_buffer(this->buffer);
+    del_buffer(this->sign_buffer);
 }
 
 std::shared_ptr<WorkerItem> Chunk::create_worker_item(){
@@ -60,15 +66,6 @@ std::shared_ptr<WorkerItem> Chunk::create_worker_item(){
         }
     }
     return item;
-}
-
-void Chunk::destroy(){
-    delete this->blocks;
-    delete this->lights;
-
-    sign_list_free(&this->signs);
-    del_buffer(this->buffer);
-    del_buffer(this->sign_buffer);
 }
 
 void Chunk::set_blocks_and_lights(Map *blocks, Map *lights) {

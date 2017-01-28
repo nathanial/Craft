@@ -18,7 +18,6 @@ void Model::clear_chunks(){
 ChunkPtr Model::find_chunk(int p, int q) {
     auto chunk = this->get_chunk(p,q);
     if(chunk == nullptr){
-        printf("Chunk does not exist %d,%d\n", p, q);
         return nullptr;
     }
     return chunk;
