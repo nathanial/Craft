@@ -561,7 +561,7 @@ void compute_chunk(WorkerItemPtr item) {
                     int lz = z - oz;
                     if(is_light(ew)){
                         printf("FOUND LIGHT %d\n", ew);
-                        light_fill(opaque, light, lx, ly, lz, 30, 0);
+                        light_fill(opaque, light, lx, ly, lz, 15, 0);
                     }
                 });
             }
@@ -1923,7 +1923,7 @@ int main(int argc, char **argv) {
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
-    load_png_texture("textures/sky.png");
+    load_png_texture("textures/galaxy.png");
 
     GLuint sign;
     glGenTextures(1, &sign);
