@@ -23,8 +23,6 @@ public:
     Map(Map&&) = delete;
     Map& operator=(Map&&) = delete;
 
-    Map* clone();
-
     int set(int x, int y, int z, char w);
     char get(int x, int y, int z);
     void each(std::function<void (int, int, int, char)>);

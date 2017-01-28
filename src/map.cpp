@@ -11,11 +11,6 @@ Map::Map(int dx, int dy, int dz) {
 
 Map::~Map() { }
 
-Map* Map::clone() {
-    Map *m = new Map(this->dx, this->dy, this->dz);
-    std::copy(&this->_data[0][0][0], &this->_data[0][0][0] + (CHUNK_SIZE)*(CHUNK_SIZE)*CHUNK_HEIGHT,  &m->_data[0][0][0]);
-    return m;
-}
 
 int Map::set(int x, int y, int z, char w) {
     x -= this->dx;
