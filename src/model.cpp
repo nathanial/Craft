@@ -4,7 +4,11 @@
 #include <vector>
 
 ChunkPtr Model::get_chunk(int p, int q) {
-    return this->chunks[std::make_tuple(p, q)];
+    if(this->chunks.count(std::make_tuple(p,q)) <= 0){
+        return nullptr;
+    } else {
+        return this->chunks.at(std::make_tuple(p,q));
+    }
 }
 
 void Model::clear_chunks(){
@@ -25,6 +29,7 @@ void Model::each_chunk(std::function<void (ChunkPtr chunk)> func) {
         auto chunk = kv.second;
         if(chunk == nullptr){
             printf("Missing Chunk %d,%d\n", std::get<0>(kv.first), std::get<1>(kv.first));
+            throw "Missing Chunk";
         } else {
             func(chunk);
         }
@@ -54,6 +59,7 @@ void Model::delete_chunks(){
         }
     });
     for(auto & position : deletion_list){
+        printf("Delete %d,%d\n", std::get<0>(position), std::get<0>(position));
         this->chunks.erase(position);
     }
 }
@@ -68,6 +74,9 @@ int Model::chunk_count() const {
 
 ChunkPtr Model::create_chunk(int p, int q) {
     auto chunk = std::make_shared<Chunk>();
+    if(chunk == nullptr){
+        throw "Couldn't Make Shared Ptr";
+    }
     this->chunks[std::make_tuple(p,q)] = chunk;
     return chunk;
 }

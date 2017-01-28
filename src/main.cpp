@@ -553,7 +553,7 @@ void compute_chunk(WorkerItemPtr item) {
                     return;
                 }
                 if (x >= XZ_SIZE || y >= Y_SIZE || z >= XZ_SIZE) {
-                    printf("OOPS 2 %d,%d,%d\n", x,y,z);
+                    //printf("OOPS 2 %d,%d,%d\n", x,y,z);
                     return;
                 }
                 // END TODO

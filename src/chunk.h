@@ -19,6 +19,8 @@ private:
 
 public:
 
+    ~Chunk();
+
     SignList signs;
     int p, q; // chunk position
     int faces;

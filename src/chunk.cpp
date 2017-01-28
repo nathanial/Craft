@@ -32,6 +32,10 @@ void Chunk::init(int p, int q) {
     db_load_signs(signs, p, q);
 }
 
+Chunk::~Chunk() {
+    printf("Destruct Chunk %d,%d\n", this->p, this->q);
+}
+
 std::shared_ptr<WorkerItem> Chunk::create_worker_item(){
     auto item = std::make_shared<WorkerItem>();
     item->p = this->p;
