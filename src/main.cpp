@@ -541,35 +541,32 @@ void compute_chunk(WorkerItemPtr item) {
                     return;
                 }
                 // END TODO
-                opaque[XYZ(x, y, z)] = !is_transparent(w);
+                opaque[XYZ(x, y, z)] = !is_transparent(w) && !is_light(w);
                 if (opaque[XYZ(x, y, z)]) {
                     highest[XZ(x, z)] = MAX(highest[XZ(x, z)], y);
                 }
             });
-
-            for(int i = 0; i < CHUNK_SIZE; i++){
-                for(int j = 0; j < CHUNK_SIZE; j++){
-                    chunk->set_light(i + chunk->p * CHUNK_SIZE, 30, j + chunk->q * CHUNK_SIZE, 30);
-                }
-            }
         }
     }
 
     printf("Compute Chunk %d,%d\n", item->p, item->q);
 
-//    for (int a = 0; a < 3; a++) {
-//        for (int b = 0; b < 3; b++) {
-//            auto chunk = item->neighborhood[a][b];
-//            if(chunk){
-//                chunk->foreach_light([&](int x, int y, int z, char ew){
-//                    int lx = x - ox;
-//                    int ly = y - oy;
-//                    int lz = z - oz;
-//                    light_fill(opaque, light, lx, ly, lz, ew, 0);
-//                });
-//            }
-//        }
-//    }
+    for (int a = 0; a < 3; a++) {
+        for (int b = 0; b < 3; b++) {
+            auto chunk = item->neighborhood[a][b];
+            if(chunk){
+                chunk->foreach_block([&](int x, int y, int z, char ew){
+                    int lx = x - ox;
+                    int ly = y - oy;
+                    int lz = z - oz;
+                    if(is_light(ew)){
+                        printf("FOUND LIGHT %d\n", ew);
+                        light_fill(opaque, light, lx, ly, lz, 30, 0);
+                    }
+                });
+            }
+        }
+    }
 
     // count exposed faces
     int miny = 256;
@@ -701,7 +698,6 @@ void load_chunk(WorkerItemPtr item) {
     auto chunk = item->neighborhood[1][1];
     create_world(chunk, p, q);
     db_load_blocks(chunk, p, q);
-    db_load_lights(chunk, p, q);
 }
 
 void request_chunk(int p, int q) {
@@ -916,32 +912,6 @@ void set_sign(int x, int y, int z, int face, const char *text) {
     client_sign(x, y, z, face, text);
 }
 
-void toggle_light(int x, int y, int z) {
-    int p = chunked(x);
-    int q = chunked(z);
-    auto chunk = g->find_chunk(p, q);
-    if (chunk) {
-        int w = chunk->get_light(x, y, z) ? 0 : 15;
-        chunk->set_light(x, y, z, w);
-        db_insert_light(p, q, x, y, z, w);
-        client_light(x, y, z, w);
-        chunk->set_dirty_flag();
-    }
-}
-
-void set_light(int p, int q, int x, int y, int z, int w) {
-    auto chunk = g->find_chunk(p, q);
-    if (chunk) {
-        if (chunk->set_light(x, y, z, w)) {
-            chunk->set_dirty_flag();
-            db_insert_light(p, q, x, y, z, w);
-        }
-    }
-    else {
-        db_insert_light(p, q, x, y, z, w);
-    }
-}
-
 void _set_block(int p, int q, int x, int y, int z, int w, int dirty) {
     printf("Inner Set Block %d,%d,%d,%d,%d\n", p, q, x, y, z);
     auto chunk = g->find_chunk(p, q);
@@ -958,7 +928,6 @@ void _set_block(int p, int q, int x, int y, int z, int w, int dirty) {
     }
     if (w == 0 && chunked(x) == p && chunked(z) == q) {
         unset_sign(x, y, z);
-        set_light(p, q, x, y, z, 0);
     }
 }
 
@@ -1520,15 +1489,6 @@ void parse_command(const char *buffer, int forward) {
     }
 }
 
-void on_light() {
-    State *s = &g->players->state;
-    int hx, hy, hz;
-    int hw = hit_test(0, s->x, s->y, s->z, s->rx, s->ry, &hx, &hy, &hz);
-    if (hy > 0 && hy < 256 && is_destructable(hw)) {
-        toggle_light(hx, hy, hz);
-    }
-}
-
 void on_left_click() {
     State *s = &g->players->state;
     int hx, hy, hz;
@@ -1737,12 +1697,7 @@ void on_mouse_button(GLFWwindow *window, int button, int action, int mods) {
     }
     if (button == GLFW_MOUSE_BUTTON_RIGHT) {
         if (exclusive) {
-            if (control) {
-                on_light();
-            }
-            else {
-                on_right_click();
-            }
+            on_right_click();
         }
     }
     if (button == GLFW_MOUSE_BUTTON_MIDDLE) {
@@ -1827,11 +1782,6 @@ void parse_buffer(char *buffer) {
             if (player_intersects_block(2, s->x, s->y, s->z, bx, by, bz)) {
                 s->y = highest_block(s->x, s->z) + 2;
             }
-        }
-        if (sscanf(line, "L,%d,%d,%d,%d,%d,%d",
-            &bp, &bq, &bx, &by, &bz, &bw) == 6)
-        {
-            set_light(bp, bq, bx, by, bz, bw);
         }
         float px, py, pz, prx, pry;
         if (sscanf(line, "P,%d,%f,%f,%f,%f,%f",

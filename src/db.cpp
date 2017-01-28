@@ -421,24 +421,6 @@ void db_load_blocks(ChunkPtr chunk, int p, int q) {
     mtx_unlock(&load_mtx);
 }
 
-void db_load_lights(ChunkPtr chunk, int p, int q) {
-    if (!db_enabled) {
-        return;
-    }
-    mtx_lock(&load_mtx);
-    sqlite3_reset(load_lights_stmt);
-    sqlite3_bind_int(load_lights_stmt, 1, p);
-    sqlite3_bind_int(load_lights_stmt, 2, q);
-    while (sqlite3_step(load_lights_stmt) == SQLITE_ROW) {
-        int x = sqlite3_column_int(load_lights_stmt, 0);
-        int y = sqlite3_column_int(load_lights_stmt, 1);
-        int z = sqlite3_column_int(load_lights_stmt, 2);
-        int w = sqlite3_column_int(load_lights_stmt, 3);
-        chunk->set_light(x, y, z, w);
-    }
-    mtx_unlock(&load_mtx);
-}
-
 void db_load_signs(SignList *list, int p, int q) {
     if (!db_enabled) {
         return;

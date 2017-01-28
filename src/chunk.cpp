@@ -13,8 +13,7 @@ extern Model *g;
 
 
 Chunk::Chunk(int p, int q) :
-        blocks(new Map(p * CHUNK_SIZE,0,q * CHUNK_SIZE)),
-        lights(new Map(p * CHUNK_SIZE, 0, q * CHUNK_SIZE))
+    blocks(new Map(p * CHUNK_SIZE,0,q * CHUNK_SIZE))
 {
     this->p = p;
     this->q = q;
@@ -55,26 +54,14 @@ int Chunk::get_block(int x, int y, int z) const {
     return this->blocks->get(x, y, z);
 }
 
-int Chunk::get_light(int x, int y, int z) const {
-    return this->lights->get(x, y, z);
-}
-
-int Chunk::set_light(int x, int y, int z, char w) {
-    return this->lights->set(x, y, z, w);
-}
 
 void Chunk::foreach_block(std::function<void (int, int, int, char)> func) {
     this->blocks->each(func);
 }
 
-void Chunk::foreach_light(std::function<void (int, int, int, char)> func) {
-    this->lights->each(func);
-}
-
 int Chunk::set_block(int x, int y, int z, char w){
     return this->blocks->set(x, y, z, w);
 }
-
 
 void Chunk::set_dirty_flag() {
     this->dirty = 1;

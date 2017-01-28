@@ -6,7 +6,7 @@ const int items[] = {
     GRASS,
     SAND,
     STONE,
-    BRICK,
+    BEACON,
     WOOD,
     CEMENT,
     DIRT,
@@ -195,5 +195,14 @@ int is_destructable(int w) {
             return 0;
         default:
             return 1;
+    }
+}
+
+bool is_light(int w){
+    switch(w){
+        case BEACON:
+            return true;
+        default:
+            return false;
     }
 }
