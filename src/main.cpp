@@ -565,7 +565,7 @@ void compute_chunk(WorkerItemPtr item) {
 
             for(int i = 0; i < CHUNK_SIZE; i++){
                 for(int j = 0; j < CHUNK_SIZE; j++){
-                    chunk->set_light(i, 30, j, 30);
+                    chunk->set_light(i + chunk->p * CHUNK_SIZE, 30, j + chunk->q * CHUNK_SIZE, 30);
                 }
             }
         }
