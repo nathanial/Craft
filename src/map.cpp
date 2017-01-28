@@ -24,7 +24,7 @@ int Map::set(int x, int y, int z, char w) {
 
     if(x < 0 || x >= CHUNK_SIZE || y < 0 || y >= CHUNK_HEIGHT || z < 0 || z >= CHUNK_SIZE){
         printf("Bad Index %d,%d,%d\n", x, y, z);
-        throw new std::invalid_argument("oops");
+//        throw new std::invalid_argument("oops");
         return 0;
     }
 
