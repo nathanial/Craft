@@ -34,27 +34,11 @@ Model *g = &model;
 
 
 float time_of_day() {
-    if (g->day_length <= 0) {
-        return 0.5;
-    }
-    float t;
-    t = glfwGetTime();
-    t = t / g->day_length;
-    t = t - (int)t;
-    return t;
+    return 12.0;
 }
 
 float get_daylight() {
-    return 1;
-//    float timer = time_of_day();
-//    if (timer < 0.5) {
-//        float t = (timer - 0.25) * 100;
-//        return 1 / (1 + powf(2, -t));
-//    }
-//    else {
-//        float t = (timer - 0.85) * 100;
-//        return 1 - 1 / (1 + powf(2, -t));
-//    }
+    return 0;
 }
 
 int get_scale_factor() {
@@ -573,19 +557,19 @@ void compute_chunk(WorkerItemPtr item) {
 
     printf("Compute Chunk %d,%d\n", item->p, item->q);
 
-    for (int a = 0; a < 3; a++) {
-        for (int b = 0; b < 3; b++) {
-            auto chunk = item->neighborhood[a][b];
-            if(chunk){
-                chunk->foreach_light([&](int x, int y, int z, char ew){
-                    int lx = x - ox;
-                    int ly = y - oy;
-                    int lz = z - oz;
-                    light_fill(opaque, light, lx, ly, lz, ew, 0);
-                });
-            }
-        }
-    }
+//    for (int a = 0; a < 3; a++) {
+//        for (int b = 0; b < 3; b++) {
+//            auto chunk = item->neighborhood[a][b];
+//            if(chunk){
+//                chunk->foreach_light([&](int x, int y, int z, char ew){
+//                    int lx = x - ox;
+//                    int ly = y - oy;
+//                    int lz = z - oz;
+//                    light_fill(opaque, light, lx, ly, lz, ew, 0);
+//                });
+//            }
+//        }
+//    }
 
     // count exposed faces
     int miny = 256;
