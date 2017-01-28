@@ -52,25 +52,10 @@ std::shared_ptr<WorkerItem> Chunk::create_worker_item(){
             if(other == nullptr){
                 continue;
             }
-            if(this == other.get()){
-                item->block_maps[dp + 1][dq + 1] = other->blocks;
-                item->light_maps[dp + 1][dq + 1] = other->lights;
-            } else if (other) {
-                item->block_maps[dp + 1][dq + 1] = other->blocks->clone();
-                item->light_maps[dp + 1][dq + 1] = other->lights->clone();
-            }
-            else {
-                item->block_maps[dp + 1][dq + 1] = 0;
-                item->light_maps[dp + 1][dq + 1] = 0;
-            }
+            item->neighborhood[dp + 1][dq + 1] = other;
         }
     }
     return item;
-}
-
-void Chunk::set_blocks_and_lights(Map *blocks, Map *lights) {
-    this->blocks = blocks;
-    this->lights = lights;
 }
 
 int Chunk::get_block(int x, int y, int z) const {
@@ -87,6 +72,10 @@ int Chunk::set_light(int x, int y, int z, char w) {
 
 void Chunk::foreach_block(std::function<void (int, int, int, char)> func) {
     this->blocks->each(func);
+}
+
+void Chunk::foreach_light(std::function<void (int, int, int, char)> func) {
+    this->lights->each(func);
 }
 
 int Chunk::set_block(int x, int y, int z, char w){

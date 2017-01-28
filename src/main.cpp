@@ -538,11 +538,11 @@ void compute_chunk(WorkerItemPtr item) {
     // populate opaque array
     for (int a = 0; a < 3; a++) {
         for (int b = 0; b < 3; b++) {
-            Map *map = item->block_maps[a][b];
-            if (!map) {
+            auto chunk = item->neighborhood[a][b];
+            if(!chunk){
                 continue;
             }
-            map->each([&](int ex, int ey, int ez, int ew) {
+            chunk->foreach_block([&](int ex, int ey, int ez, int ew) {
                 int x = ex - ox;
                 int y = ey - oy;
                 int z = ez - oz;
@@ -563,22 +563,11 @@ void compute_chunk(WorkerItemPtr item) {
                 }
             });
 
-            map->each([&](int ex, int ey, int ez, int ew) {
-                int x = ex - ox;
-                int y = ey - oy;
-                int z = ez - oz;
-                int w = ew;
-                // TODO: this should be unnecessary
-                if (x < 0 || y < 0 || z < 0) {
-                    return;
+            for(int i = 0; i < CHUNK_SIZE; i++){
+                for(int j = 0; j < CHUNK_SIZE; j++){
+                    chunk->set_light(i, 30, j, 30);
                 }
-                if (x >= XZ_SIZE || y >= Y_SIZE || z >= XZ_SIZE) {
-                    return;
-                }
-                // END TODO
-
-                item->light_maps[1][1]->set(ex, 30, ez, 30);
-            });
+            }
         }
     }
 
@@ -586,34 +575,23 @@ void compute_chunk(WorkerItemPtr item) {
 
     for (int a = 0; a < 3; a++) {
         for (int b = 0; b < 3; b++) {
-            Map *map = item->light_maps[a][b];
-            if (!map) {
-                continue;
-            }
-            for(int x = 0; x < CHUNK_SIZE; x++){
-                for(int y = CHUNK_HEIGHT - 1; y >= 0; y--){
-                    for(int z = 0; z < CHUNK_SIZE; z++){
-                        int ew = map->_data[x][y][z];
-                        if(ew > 0){
-                            //printf("Light Fill %d,%d,%d | %d\n",x,y,z, ew);
-                            int lx = (x + map->dx) - ox;
-                            int ly = (y + map->dy) - oy;
-                            int lz = (z + map->dz) - oz;
-                            light_fill(opaque, light, lx, ly, lz, ew, 0);
-                        }
-                    }
-                }
+            auto chunk = item->neighborhood[a][b];
+            if(chunk){
+                chunk->foreach_light([&](int x, int y, int z, char ew){
+                    int lx = x - ox;
+                    int ly = y - oy;
+                    int lz = z - oz;
+                    light_fill(opaque, light, lx, ly, lz, ew, 0);
+                });
             }
         }
     }
-
-    Map *map = item->block_maps[1][1];
 
     // count exposed faces
     int miny = 256;
     int maxy = 0;
     int faces = 0;
-    map->each([&](int ex, int ey, int ez, int ew) {
+    item->neighborhood[1][1]->foreach_block([&](int ex, int ey, int ez, int ew) {
         if (ew <= 0) {
             return;
         }
@@ -641,7 +619,7 @@ void compute_chunk(WorkerItemPtr item) {
     // generate geometry
     GLfloat *data = malloc_faces(10, faces);
     int offset = 0;
-    map->each([&](int ex, int ey, int ez, int ew) {
+    item->neighborhood[1][1]->foreach_block([&](int ex, int ey, int ez, int ew) {
         if (ew <= 0) {
             return;
         }
@@ -736,11 +714,10 @@ void gen_chunk_buffer(ChunkPtr chunk) {
 void load_chunk(WorkerItemPtr item) {
     int p = item->p;
     int q = item->q;
-    Map *block_map = item->block_maps[1][1];
-    Map *light_map = item->light_maps[1][1];
-    create_world(block_map, p, q);
-    db_load_blocks(block_map, p, q);
-    db_load_lights(light_map, p, q);
+    auto chunk = item->neighborhood[1][1];
+    create_world(chunk, p, q);
+    db_load_blocks(chunk, p, q);
+    db_load_lights(chunk, p, q);
 }
 
 void request_chunk(int p, int q) {
@@ -768,24 +745,9 @@ void check_workers() {
             auto chunk = g->find_chunk(item->p, item->q);
             if (chunk) {
                 if (item->load) {
-                    Map *block_map = item->block_maps[1][1];
-                    Map *light_map = item->light_maps[1][1];
-                    chunk->set_blocks_and_lights(block_map->clone(), light_map->clone());
                     request_chunk(item->p, item->q);
                 }
                 generate_chunk(chunk, item);
-            }
-            for (int a = 0; a < 3; a++) {
-                for (int b = 0; b < 3; b++) {
-                    Map *block_map = item->block_maps[a][b];
-                    Map *light_map = item->light_maps[a][b];
-                    if (block_map) {
-                        delete block_map;
-                    }
-                    if (light_map) {
-                        delete light_map;
-                    }
-                }
             }
             worker->state = WORKER_IDLE;
         }

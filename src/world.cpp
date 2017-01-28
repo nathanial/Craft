@@ -5,8 +5,8 @@ extern "C" {
 #include "world.h"
 #include "map.h"
 
-void create_world(Map *blocks, int p, int q) {
-    if(blocks == nullptr){
+void create_world(ChunkPtr chunk, int p, int q) {
+    if(!chunk){
         throw new std::invalid_argument("Blocks must not be null");
     }
     for (int dx = 0; dx < CHUNK_SIZE; dx++) {
@@ -29,18 +29,18 @@ void create_world(Map *blocks, int p, int q) {
             }
             // sand and grass terrain
             for (int y = 0; y < h; y++) {
-                blocks->set(x, y, z, w * flag);
+                chunk->set_block(x, y, z, w * flag);
             }
             if (w == 1) {
                 if (SHOW_PLANTS) {
                     // grass
                     if (simplex2(-x * 0.1, z * 0.1, 4, 0.8, 2) > 0.6) {
-                        blocks->set(x, h, z, 17 * flag);
+                        chunk->set_block(x, h, z, 17 * flag);
                     }
                     // flowers
                     if (simplex2(x * 0.05, -z * 0.05, 4, 0.8, 2) > 0.7) {
                         int w = 18 + simplex2(x * 0.1, z * 0.1, 4, 0.8, 2) * 7;
-                        blocks->set(x, h, z, w * flag);
+                        chunk->set_block(x, h, z, w * flag);
                     }
                 }
                 // trees
@@ -57,13 +57,13 @@ void create_world(Map *blocks, int p, int q) {
                                 int d = (ox * ox) + (oz * oz) +
                                     (y - (h + 4)) * (y - (h + 4));
                                 if (d < 11) {
-                                    blocks->set(x + ox, y, z + oz, 15);
+                                    chunk->set_block(x + ox, y, z + oz, 15);
                                 }
                             }
                         }
                     }
                     for (int y = h; y < h + 7; y++) {
-                        blocks->set(x, y, z, 5);
+                        chunk->set_block(x, y, z, 5);
                     }
                 }
             }
@@ -73,7 +73,7 @@ void create_world(Map *blocks, int p, int q) {
                     if (simplex3(
                         x * 0.01, y * 0.1, z * 0.01, 8, 0.5, 2) > 0.75)
                     {
-                        blocks->set(x, y, z, 16 * flag);
+                        chunk->set_block(x, y, z, 16 * flag);
                     }
                 }
             }

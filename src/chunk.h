@@ -36,11 +36,13 @@ public:
     int get_light(int x, int y, int z) const;
     int set_block(int x, int y, int z, char w);
     int set_light(int x, int y, int z, char w);
-    void foreach_block(std::function<void (int, int, int, char)> func);
     int distance(int p, int q);
     void set_dirty_flag();
     std::shared_ptr<WorkerItem> create_worker_item();
     void set_blocks_and_lights(Map *blocks, Map *lights);
+
+    void foreach_block(std::function<void (int, int, int, char)> func);
+    void foreach_light(std::function<void (int, int, int, char)> func);
 };
 
 typedef std::shared_ptr<Chunk> ChunkPtr;
