@@ -11,21 +11,17 @@
 
 extern Model *g;
 
-void Chunk::init(int p, int q) {
+
+Chunk::Chunk(int p, int q) :
+        blocks(new Map(p * CHUNK_SIZE,0,q * CHUNK_SIZE)),
+        lights(new Map(p * CHUNK_SIZE, 0, q * CHUNK_SIZE))
+{
     this->p = p;
     this->q = q;
     this->faces = 0;
     this->sign_faces = 0;
     this->buffer = 0;
     this->sign_buffer = 0;
-
-    int dx = p * CHUNK_SIZE;
-    int dy = 0;
-    int dz = q * CHUNK_SIZE;
-
-    this->blocks = new Map(dx,dy,dz);
-    this->lights = new Map(dx,dy,dz);
-
     this->set_dirty_flag();
     SignList *signs = &this->signs;
     sign_list_alloc(signs, 16);
@@ -34,9 +30,6 @@ void Chunk::init(int p, int q) {
 
 Chunk::~Chunk() {
     printf("Destruct Chunk %d,%d\n", this->p, this->q);
-    delete this->blocks;
-    delete this->lights;
-
     sign_list_free(&this->signs);
     del_buffer(this->buffer);
     del_buffer(this->sign_buffer);

@@ -14,8 +14,8 @@ class WorkerItem;
 
 class Chunk {
 private:
-    Map *lights;
-    Map *blocks;
+    std::unique_ptr<Map> lights;
+    std::unique_ptr<Map> blocks;
 
 public:
 
@@ -31,7 +31,7 @@ public:
     GLuint buffer;
     GLuint sign_buffer;
 
-    void init(int p, int q);
+    Chunk(int p, int q);
     int get_block(int x, int y, int z) const;
     int get_light(int x, int y, int z) const;
     int set_block(int x, int y, int z, char w);

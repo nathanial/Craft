@@ -72,7 +72,7 @@ int Model::chunk_count() const {
 }
 
 ChunkPtr Model::create_chunk(int p, int q) {
-    auto chunk = std::make_shared<Chunk>();
+    auto chunk = std::make_shared<Chunk>(p, q);
     if(chunk == nullptr){
         throw "Couldn't Make Shared Ptr";
     }
