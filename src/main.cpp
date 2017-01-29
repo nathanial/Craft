@@ -1888,6 +1888,7 @@ int main(int argc, char **argv) {
     glfwSetCharCallback(g->window, on_char);
     glfwSetMouseButtonCallback(g->window, on_mouse_button);
     glfwSetScrollCallback(g->window, on_scroll);
+    glfwWindowHint(GLFW_SAMPLES, 4);
 
     if (glewInit() != GLEW_OK) {
         return -1;

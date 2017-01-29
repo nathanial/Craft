@@ -5,6 +5,7 @@ extern "C" {
 #include "world.h"
 #include "item.h"
 #include "biomes/rolling_planes.h"
+#include "biomes/mountains.h"
 
 void create_world(ChunkPtr chunk, int p, int q) {
     if(!chunk){
@@ -12,5 +13,10 @@ void create_world(ChunkPtr chunk, int p, int q) {
     }
 
     RollingPlanes planes;
-    planes.create_chunk(chunk, p, q);
+    Mountains mountains;
+    if(p > 0) {
+        mountains.create_chunk(chunk, p, q);
+    } else {
+        planes.create_chunk(chunk, p, q);
+    }
 }
