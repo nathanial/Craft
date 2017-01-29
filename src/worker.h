@@ -6,7 +6,7 @@
 #define CRAFT_WORKER_H
 
 #include <GLFW/glfw3.h>
-#include "map.h"
+#include "block_map.h"
 extern "C" {
     #include "tinycthread.h"
 }

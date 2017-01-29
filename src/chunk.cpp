@@ -3,7 +3,6 @@
 //
 
 #include "chunk.h"
-#include "config.h"
 #include "db.h"
 #include "model.h"
 #include "util.h"
@@ -13,7 +12,8 @@ extern Model *g;
 
 
 Chunk::Chunk(int p, int q) :
-    blocks(new Map(p * CHUNK_SIZE,0,q * CHUNK_SIZE))
+    blocks(new BlockMap<CHUNK_SIZE, CHUNK_HEIGHT>()),
+    light_levels(new BlockMap<CHUNK_SIZE, CHUNK_HEIGHT>())
 {
     this->p = p;
     this->q = q;
@@ -51,16 +51,22 @@ std::shared_ptr<WorkerItem> Chunk::create_worker_item(){
 }
 
 int Chunk::get_block(int x, int y, int z) const {
-    return this->blocks->get(x, y, z);
+    return this->blocks->get(x - this->p * CHUNK_SIZE, y, z - this->q * CHUNK_SIZE);
+}
+
+int Chunk::get_block_or_zero(int x, int y, int z) const {
+    return this->blocks->get_or_default(x - this->p * CHUNK_SIZE, y, z - this->q * CHUNK_SIZE, 0);
 }
 
 
 void Chunk::foreach_block(std::function<void (int, int, int, char)> func) {
-    this->blocks->each(func);
+    this->blocks->each([&](int x, int y, int z, char w){
+        func(x + this->p * CHUNK_SIZE, y, z + this->q * CHUNK_SIZE, w);
+    });
 }
 
 int Chunk::set_block(int x, int y, int z, char w){
-    return this->blocks->set(x, y, z, w);
+    return this->blocks->set(x - this->p * CHUNK_SIZE, y, z - this->q * CHUNK_SIZE, w);
 }
 
 void Chunk::set_dirty_flag() {
@@ -79,6 +85,14 @@ int Chunk::distance(int p, int q) {
     int dp = ABS(this->p - p);
     int dq = ABS(this->q - q);
     return MAX(dp, dq);
+}
+
+int Chunk::set_light_level(int x, int y, int z, char value) {
+    return this->light_levels->set(x - this->p * CHUNK_SIZE, y, z - this->q * CHUNK_SIZE, value);
+}
+
+int Chunk::get_light_level(int x, int y, int z) const {
+    return this->light_levels->get(x - this->p * CHUNK_SIZE, y, z - this->q * CHUNK_SIZE);
 }
 
 int chunk_visible(float planes[6][4], int p, int q, int miny, int maxy) {

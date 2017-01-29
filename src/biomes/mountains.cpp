@@ -24,15 +24,19 @@ void Mountains::create_chunk(ChunkPtr chunk, int p, int q) {
             }
             int mh = g * (32 * mountain_factor) + 16;
             int h = f * mh;
-            int w = 1;
+            int w = GRASS;
             int t = 12;
             if (h <= t) {
                 h = t;
-                w = 2;
+                w = SAND;
             }
             // sand and grass terrain
             for (int y = 0; y < h; y++) {
-                chunk->set_block(x, y, z, w);
+                if(w == GRASS && y < (h - 1)){
+                    chunk->set_block(x, y, z, DIRT);
+                } else {
+                    chunk->set_block(x, y, z, w);
+                }
             }
 
             if(simplex2(x, z, 6, 0.5, 2) > 0.80){

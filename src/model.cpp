@@ -36,6 +36,16 @@ void Model::each_chunk(std::function<void (ChunkPtr chunk)> func) {
     }
 }
 
+char Model::get_block(int x, int y, int z) {
+    int p = chunked(x);
+    int q = chunked(z);
+    auto chunk = this->find_chunk(p, q);
+    if(!chunk){
+        return 0;
+    }
+    return chunk->get_block(x,y,z);
+}
+
 void Model::delete_chunks(){
     State *s1 = &this->players->state;
     State *s2 = &(this->players + this->observe1)->state;

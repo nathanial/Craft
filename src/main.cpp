@@ -12,7 +12,7 @@
 #include "cube.h"
 #include "db.h"
 #include "item.h"
-#include "map.h"
+#include "block_map.h"
 #include "matrix.h"
 #include "sign.h"
 #include "util.h"
@@ -21,6 +21,7 @@
 #include "model.h"
 #include "draw.h"
 #include "player.h"
+#include "height_map.h"
 
 extern "C" {
     #include "tinycthread.h"
@@ -249,7 +250,7 @@ int _hit_test(
         int ny = roundf(y);
         int nz = roundf(z);
         if (nx != px || ny != py || nz != pz) {
-            int hw = chunk->get_block(nx, ny, nz);
+            int hw = chunk->get_block_or_zero(nx, ny, nz);
             if (hw > 0) {
                 if (previous) {
                     *hx = px; *hy = py; *hz = pz;
@@ -479,27 +480,32 @@ void occlusion(
 }
 
 
+typedef BlockMap<CHUNK_SIZE * 3, CHUNK_HEIGHT> BigBlockMap;
+
 void light_fill(
-    char *opaque, char *light,
+    BigBlockMap *opaque, BigBlockMap *light,
     int x, int y, int z, int w, int force)
 {
-    if (x + w < XZ_LO || z + w < XZ_LO) {
+    if(w <= 0) {
         return;
     }
-    if (x - w > XZ_HI || z - w > XZ_HI) {
+    if(x < 0 || x >= CHUNK_SIZE * 3) {
         return;
     }
-    if (y < 0 || y >= Y_SIZE) {
+    if(y < 0 || y >= CHUNK_HEIGHT){
         return;
     }
-    if (light[XYZ(x, y, z)] >= w) {
+    if(z < 0 || z >= CHUNK_SIZE * 3){
         return;
     }
-    if (!force && opaque[XYZ(x, y, z)]) {
+    if (light->get(x, y, z) >= w) {
+        return;
+    }
+    if (!force && opaque->get(x, y, z)) {
         return;
     }
     //printf("Light Fill %d,%d,%d | %d,%d\n",x,y,z, w, force);
-    light[XYZ(x, y, z)] = w--;
+    light->set(x, y, z, w--);
     light_fill(opaque, light, x - 1, y, z, w, 0);
     light_fill(opaque, light, x + 1, y, z, w, 0);
     light_fill(opaque, light, x, y - 1, z, w, 0);
@@ -508,10 +514,11 @@ void light_fill(
     light_fill(opaque, light, x, y, z + 1, w, 0);
 }
 
+
 void compute_chunk(WorkerItemPtr item) {
-    char *opaque = (char *)calloc(XZ_SIZE * XZ_SIZE * Y_SIZE, sizeof(char));
-    char *light = (char *)calloc(XZ_SIZE * XZ_SIZE * Y_SIZE, sizeof(char));
-    char *highest = (char *)calloc(XZ_SIZE * XZ_SIZE, sizeof(char));
+    auto opaque = new BigBlockMap();
+    auto light = new BigBlockMap();
+    auto highest = new HeightMap<CHUNK_SIZE * 3>();
 
     int ox = item->p * CHUNK_SIZE - CHUNK_SIZE;
     int oy = -1;
@@ -541,9 +548,9 @@ void compute_chunk(WorkerItemPtr item) {
                     return;
                 }
                 // END TODO
-                opaque[XYZ(x, y, z)] = !is_transparent(w) && !is_light(w);
-                if (opaque[XYZ(x, y, z)]) {
-                    highest[XZ(x, z)] = MAX(highest[XZ(x, z)], y);
+                opaque->set(x,y,z, !is_transparent(w) && !is_light(w));
+                if (opaque->get(x, y, z)) {
+                    highest->set(x, z, MAX(highest->get(x, z), y));
                 }
             });
         }
@@ -560,7 +567,6 @@ void compute_chunk(WorkerItemPtr item) {
                     int ly = y - oy;
                     int lz = z - oz;
                     if(is_light(ew)){
-                        printf("FOUND LIGHT %d\n", ew);
                         light_fill(opaque, light, lx, ly, lz, 15, 0);
                     }
                 });
@@ -579,12 +585,12 @@ void compute_chunk(WorkerItemPtr item) {
         int x = ex - ox;
         int y = ey - oy;
         int z = ez - oz;
-        int f1 = !opaque[XYZ(x - 1, y, z)];
-        int f2 = !opaque[XYZ(x + 1, y, z)];
-        int f3 = !opaque[XYZ(x, y + 1, z)];
-        int f4 = !opaque[XYZ(x, y - 1, z)] && (ey > 0);
-        int f5 = !opaque[XYZ(x, y, z - 1)];
-        int f6 = !opaque[XYZ(x, y, z + 1)];
+        int f1 = !opaque->get(x - 1, y, z);
+        int f2 = !opaque->get(x + 1, y, z);
+        int f3 = !opaque->get(x, y + 1, z);
+        int f4 = !opaque->get(x, y - 1, z) && (ey > 0);
+        int f5 = !opaque->get(x, y, z - 1);
+        int f6 = !opaque->get(x, y, z + 1);
         int total = f1 + f2 + f3 + f4 + f5 + f6;
         if (total == 0) {
             return;
@@ -607,12 +613,12 @@ void compute_chunk(WorkerItemPtr item) {
         int x = ex - ox;
         int y = ey - oy;
         int z = ez - oz;
-        int f1 = !opaque[XYZ(x - 1, y, z)];
-        int f2 = !opaque[XYZ(x + 1, y, z)];
-        int f3 = !opaque[XYZ(x, y + 1, z)];
-        int f4 = !opaque[XYZ(x, y - 1, z)] && (ey > 0);
-        int f5 = !opaque[XYZ(x, y, z - 1)];
-        int f6 = !opaque[XYZ(x, y, z + 1)];
+        int f1 = !opaque->get(x - 1, y, z);
+        int f2 = !opaque->get(x + 1, y, z);
+        int f3 = !opaque->get(x, y + 1, z);
+        int f4 = !opaque->get(x, y - 1, z) && (ey > 0);
+        int f5 = !opaque->get(x, y, z - 1);
+        int f6 = !opaque->get(x, y, z + 1);
         int total = f1 + f2 + f3 + f4 + f5 + f6;
         if (total == 0) {
             return;
@@ -624,12 +630,12 @@ void compute_chunk(WorkerItemPtr item) {
         for (int dx = -1; dx <= 1; dx++) {
             for (int dy = -1; dy <= 1; dy++) {
                 for (int dz = -1; dz <= 1; dz++) {
-                    neighbors[index] = opaque[XYZ(x + dx, y + dy, z + dz)];
-                    lights[index] = light[XYZ(x + dx, y + dy, z + dz)];
+                    neighbors[index] = opaque->get(x + dx, y + dy, z + dz);
+                    lights[index] = light->get(x + dx, y + dy, z + dz);
                     shades[index] = 0;
-                    if (y + dy <= highest[XZ(x + dx, z + dz)]) {
+                    if (y + dy <= highest->get(x + dx, z + dz)) {
                         for (int oy = 0; oy < 8; oy++) {
-                            if (opaque[XYZ(x + dx, y + dy + oy, z + dz)]) {
+                            if (opaque->get(x + dx, y + dy + oy, z + dz)) {
                                 shades[index] = 1.0 - oy * 0.125;
                                 break;
                             }
@@ -666,9 +672,9 @@ void compute_chunk(WorkerItemPtr item) {
         offset += total * 60;
     });
 
-    free(opaque);
-    free(light);
-    free(highest);
+    delete light;
+    delete highest;
+    delete opaque;
 
     item->miny = miny;
     item->maxy = maxy;
