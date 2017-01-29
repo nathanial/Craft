@@ -68,11 +68,9 @@ void create_world(ChunkPtr chunk, int p, int q) {
                         chunk->set_block(x, y, z, 5);
                     }
                 }
-
-            } else {
-                if(simplex2(x,z, 12, 0.2, 2) > 0.90){
-                    chunk->set_block(x,h+5,z,BEACON);
-                }
+            }
+            if(simplex2(x, z, 6, 0.5, 2) > 0.80){
+                chunk->set_block(x,h+10,z,BEACON);
             }
             // clouds
             if (SHOW_CLOUDS) {
