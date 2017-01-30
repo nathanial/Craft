@@ -480,7 +480,7 @@ void occlusion(
 
 
 void light_fill(
-    char *opaque, char *light,
+    BlockMap<CHUNK_SIZE * 3, CHUNK_HEIGHT> *opaque, char *light,
     int x, int y, int z, int w, int force)
 {
     if (x + w < XZ_LO || z + w < XZ_LO) {
@@ -495,7 +495,7 @@ void light_fill(
     if (light[XYZ(x, y, z)] >= w) {
         return;
     }
-    if (!force && opaque[XYZ(x, y, z)]) {
+    if (!force && opaque->get(x, y, z)) {
         return;
     }
     //printf("Light Fill %d,%d,%d | %d,%d\n",x,y,z, w, force);
@@ -509,7 +509,7 @@ void light_fill(
 }
 
 void compute_chunk(WorkerItemPtr item) {
-    char *opaque = (char *)calloc(XZ_SIZE * XZ_SIZE * Y_SIZE, sizeof(char));
+    auto opaque = new BlockMap<CHUNK_SIZE * 3, CHUNK_HEIGHT>();
     char *light = (char *)calloc(XZ_SIZE * XZ_SIZE * Y_SIZE, sizeof(char));
     char *highest = (char *)calloc(XZ_SIZE * XZ_SIZE, sizeof(char));
 
@@ -541,8 +541,8 @@ void compute_chunk(WorkerItemPtr item) {
                     return;
                 }
                 // END TODO
-                opaque[XYZ(x, y, z)] = !is_transparent(w) && !is_light(w);
-                if (opaque[XYZ(x, y, z)]) {
+                opaque->set(x,y,z, !is_transparent(w) && !is_light(w));
+                if (opaque->get(x, y, z)) {
                     highest[XZ(x, z)] = MAX(highest[XZ(x, z)], y);
                 }
             });
@@ -578,12 +578,12 @@ void compute_chunk(WorkerItemPtr item) {
         int x = ex - ox;
         int y = ey - oy;
         int z = ez - oz;
-        int f1 = !opaque[XYZ(x - 1, y, z)];
-        int f2 = !opaque[XYZ(x + 1, y, z)];
-        int f3 = !opaque[XYZ(x, y + 1, z)];
-        int f4 = !opaque[XYZ(x, y - 1, z)] && (ey > 0);
-        int f5 = !opaque[XYZ(x, y, z - 1)];
-        int f6 = !opaque[XYZ(x, y, z + 1)];
+        int f1 = !opaque->get(x - 1, y, z);
+        int f2 = !opaque->get(x + 1, y, z);
+        int f3 = !opaque->get(x, y + 1, z);
+        int f4 = !opaque->get(x, y - 1, z) && (ey > 0);
+        int f5 = !opaque->get(x, y, z - 1);
+        int f6 = !opaque->get(x, y, z + 1);
         int total = f1 + f2 + f3 + f4 + f5 + f6;
         if (total == 0) {
             return;
@@ -606,12 +606,12 @@ void compute_chunk(WorkerItemPtr item) {
         int x = ex - ox;
         int y = ey - oy;
         int z = ez - oz;
-        int f1 = !opaque[XYZ(x - 1, y, z)];
-        int f2 = !opaque[XYZ(x + 1, y, z)];
-        int f3 = !opaque[XYZ(x, y + 1, z)];
-        int f4 = !opaque[XYZ(x, y - 1, z)] && (ey > 0);
-        int f5 = !opaque[XYZ(x, y, z - 1)];
-        int f6 = !opaque[XYZ(x, y, z + 1)];
+        int f1 = !opaque->get(x - 1, y, z);
+        int f2 = !opaque->get(x + 1, y, z);
+        int f3 = !opaque->get(x, y + 1, z);
+        int f4 = !opaque->get(x, y - 1, z) && (ey > 0);
+        int f5 = !opaque->get(x, y, z - 1);
+        int f6 = !opaque->get(x, y, z + 1);
         int total = f1 + f2 + f3 + f4 + f5 + f6;
         if (total == 0) {
             return;
@@ -623,12 +623,12 @@ void compute_chunk(WorkerItemPtr item) {
         for (int dx = -1; dx <= 1; dx++) {
             for (int dy = -1; dy <= 1; dy++) {
                 for (int dz = -1; dz <= 1; dz++) {
-                    neighbors[index] = opaque[XYZ(x + dx, y + dy, z + dz)];
+                    neighbors[index] = opaque->get(x + dx, y + dy, z + dz);
                     lights[index] = light[XYZ(x + dx, y + dy, z + dz)];
                     shades[index] = 0;
                     if (y + dy <= highest[XZ(x + dx, z + dz)]) {
                         for (int oy = 0; oy < 8; oy++) {
-                            if (opaque[XYZ(x + dx, y + dy + oy, z + dz)]) {
+                            if (opaque->get(x + dx, y + dy + oy, z + dz)) {
                                 shades[index] = 1.0 - oy * 0.125;
                                 break;
                             }
