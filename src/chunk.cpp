@@ -86,6 +86,14 @@ int Chunk::distance(int p, int q) {
     return MAX(dp, dq);
 }
 
+int Chunk::set_light_level(int x, int y, int z, char value) {
+    return this->light_levels->set(x - this->p * CHUNK_SIZE, y, z - this->q * CHUNK_SIZE, value);
+}
+
+int Chunk::get_light_level(int x, int y, int z) const {
+    return this->light_levels->get(x - this->p * CHUNK_SIZE, y, z - this->q * CHUNK_SIZE);
+}
+
 int chunk_visible(float planes[6][4], int p, int q, int miny, int maxy) {
     int x = p * CHUNK_SIZE - 1;
     int z = q * CHUNK_SIZE - 1;

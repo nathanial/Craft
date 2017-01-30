@@ -7,6 +7,7 @@
 
 #include <GL/glew.h>
 #include "block_map.h"
+#include "height_map.h"
 #include "sign.h"
 #include <memory>
 
@@ -15,6 +16,8 @@ class WorkerItem;
 class Chunk {
 public:
     std::unique_ptr<BlockMap<CHUNK_SIZE, CHUNK_HEIGHT>> blocks;
+    std::unique_ptr<BlockMap<CHUNK_SIZE, CHUNK_HEIGHT>> light_levels;
+    std::unique_ptr<HeightMap<CHUNK_SIZE>> height_map;
 
     ~Chunk();
 
@@ -29,9 +32,14 @@ public:
     GLuint sign_buffer;
 
     Chunk(int p, int q);
+
     int get_block(int x, int y, int z) const;
     int get_block_or_zero(int x, int y, int z) const;
     int set_block(int x, int y, int z, char w);
+
+    int set_light_level(int x, int y, int z, char value);
+    int get_light_level(int x, int y, int z) const;
+
     int distance(int p, int q);
     void set_dirty_flag();
     std::shared_ptr<WorkerItem> create_worker_item();
