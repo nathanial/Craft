@@ -486,13 +486,16 @@ void light_fill(
     BigBlockMap *opaque, BigBlockMap *light,
     int x, int y, int z, int w, int force)
 {
-    if (x + w < XZ_LO || z + w < XZ_LO) {
+    if(w <= 0) {
         return;
     }
-    if (x - w > XZ_HI || z - w > XZ_HI) {
+    if(x < 0 || x >= CHUNK_SIZE * 3) {
         return;
     }
-    if (y < 0 || y >= Y_SIZE) {
+    if(y < 0 || y >= CHUNK_HEIGHT){
+        return;
+    }
+    if(z < 0 || z >= CHUNK_SIZE * 3){
         return;
     }
     if (light->get(x, y, z) >= w) {
