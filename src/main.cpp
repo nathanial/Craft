@@ -21,6 +21,7 @@
 #include "model.h"
 #include "draw.h"
 #include "player.h"
+#include "height_map.h"
 
 extern "C" {
     #include "tinycthread.h"
@@ -514,7 +515,7 @@ void light_fill(
 void compute_chunk(WorkerItemPtr item) {
     auto opaque = new BigBlockMap();
     auto light = new BigBlockMap();
-    char *highest = (char *)calloc(XZ_SIZE * XZ_SIZE, sizeof(char));
+    auto highest = new HeightMap<CHUNK_SIZE * 3>();
 
     int ox = item->p * CHUNK_SIZE - CHUNK_SIZE;
     int oy = -1;
@@ -546,7 +547,7 @@ void compute_chunk(WorkerItemPtr item) {
                 // END TODO
                 opaque->set(x,y,z, !is_transparent(w) && !is_light(w));
                 if (opaque->get(x, y, z)) {
-                    highest[XZ(x, z)] = MAX(highest[XZ(x, z)], y);
+                    highest->set(x, z, MAX(highest->get(x, z), y));
                 }
             });
         }
@@ -629,7 +630,7 @@ void compute_chunk(WorkerItemPtr item) {
                     neighbors[index] = opaque->get(x + dx, y + dy, z + dz);
                     lights[index] = light->get(x + dx, y + dy, z + dz);
                     shades[index] = 0;
-                    if (y + dy <= highest[XZ(x + dx, z + dz)]) {
+                    if (y + dy <= highest->get(x + dx, z + dz)) {
                         for (int oy = 0; oy < 8; oy++) {
                             if (opaque->get(x + dx, y + dy + oy, z + dz)) {
                                 shades[index] = 1.0 - oy * 0.125;
@@ -669,7 +670,7 @@ void compute_chunk(WorkerItemPtr item) {
     });
 
     delete light;
-    free(highest);
+    delete highest;
     delete opaque;
 
     item->miny = miny;
