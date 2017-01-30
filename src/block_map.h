@@ -9,15 +9,11 @@
 class BlockMap {
 public:
     char _data[CHUNK_SIZE][CHUNK_HEIGHT][CHUNK_SIZE] = {{{0}}};
-    int dx;
-    int dy;
-    int dz;
 
-    BlockMap(int dx, int dy, int dz);
+    BlockMap();
 
     ~BlockMap();
 
-    BlockMap() = delete;
     BlockMap(const BlockMap&) = delete;
     BlockMap& operator=(const BlockMap&) = delete;
     BlockMap(BlockMap&&) = delete;
