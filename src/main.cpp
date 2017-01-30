@@ -12,7 +12,7 @@
 #include "cube.h"
 #include "db.h"
 #include "item.h"
-#include "map.h"
+#include "block_map.h"
 #include "matrix.h"
 #include "sign.h"
 #include "util.h"

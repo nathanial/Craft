@@ -6,7 +6,7 @@
 #define CRAFT_CHUNK_H
 
 #include <GL/glew.h>
-#include "map.h"
+#include "block_map.h"
 #include "sign.h"
 #include <memory>
 
@@ -14,7 +14,7 @@ class WorkerItem;
 
 class Chunk {
 private:
-    std::unique_ptr<Map> blocks;
+    std::unique_ptr<BlockMap> blocks;
 
 public:
 

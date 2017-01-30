@@ -6,22 +6,22 @@
 #include <unordered_map>
 #include "config.h"
 
-class Map {
+class BlockMap {
 public:
     char _data[CHUNK_SIZE][CHUNK_HEIGHT][CHUNK_SIZE] = {{{0}}};
     int dx;
     int dy;
     int dz;
 
-    Map(int dx, int dy, int dz);
+    BlockMap(int dx, int dy, int dz);
 
-    ~Map();
+    ~BlockMap();
 
-    Map() = delete;
-    Map(const Map&) = delete;
-    Map& operator=(const Map&) = delete;
-    Map(Map&&) = delete;
-    Map& operator=(Map&&) = delete;
+    BlockMap() = delete;
+    BlockMap(const BlockMap&) = delete;
+    BlockMap& operator=(const BlockMap&) = delete;
+    BlockMap(BlockMap&&) = delete;
+    BlockMap& operator=(BlockMap&&) = delete;
 
     int set(int x, int y, int z, char w);
     char get(int x, int y, int z);

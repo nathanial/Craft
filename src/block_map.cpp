@@ -1,18 +1,18 @@
 #include <stdlib.h>
-#include "map.h"
+#include "block_map.h"
 #include "config.h"
 #include <unordered_map>
 
-Map::Map(int dx, int dy, int dz) {
+BlockMap::BlockMap(int dx, int dy, int dz) {
     this->dx = dx;
     this->dy = dy;
     this->dz = dz;
 }
 
-Map::~Map() { }
+BlockMap::~BlockMap() { }
 
 
-int Map::set(int x, int y, int z, char w) {
+int BlockMap::set(int x, int y, int z, char w) {
     x -= this->dx;
     y -= this->dy;
     z -= this->dz;
@@ -34,7 +34,7 @@ int Map::set(int x, int y, int z, char w) {
     return overwrite;
 }
 
-char Map::get(int x, int y, int z) {
+char BlockMap::get(int x, int y, int z) {
     x -= this->dx;
     y -= this->dy;
     z -= this->dz;
@@ -45,11 +45,11 @@ char Map::get(int x, int y, int z) {
     return this->_data[x][y][z];
 }
 
-unsigned int Map::size() const {
+unsigned int BlockMap::size() const {
     return CHUNK_SIZE * CHUNK_SIZE * CHUNK_HEIGHT;
 }
 
-void Map::each(std::function<void (int, int, int, char)> func) {
+void BlockMap::each(std::function<void (int, int, int, char)> func) {
     for(int x = 0; x < CHUNK_SIZE; x++){
         for(int y = 0; y < CHUNK_HEIGHT; y++){
             for(int z = 0; z < CHUNK_SIZE; z++){

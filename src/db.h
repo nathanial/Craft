@@ -1,7 +1,7 @@
 #ifndef _db_h_
 #define _db_h_
 
-#include "map.h"
+#include "block_map.h"
 #include "sign.h"
 #include "chunk.h"
 

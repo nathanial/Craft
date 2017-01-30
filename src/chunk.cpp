@@ -13,7 +13,7 @@ extern Model *g;
 
 
 Chunk::Chunk(int p, int q) :
-    blocks(new Map(p * CHUNK_SIZE,0,q * CHUNK_SIZE))
+    blocks(new BlockMap(p * CHUNK_SIZE,0,q * CHUNK_SIZE))
 {
     this->p = p;
     this->q = q;
