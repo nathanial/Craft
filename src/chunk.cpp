@@ -12,7 +12,8 @@ extern Model *g;
 
 
 Chunk::Chunk(int p, int q) :
-    blocks(new BlockMap<CHUNK_SIZE, CHUNK_HEIGHT>())
+    blocks(new BlockMap<CHUNK_SIZE, CHUNK_HEIGHT>()),
+    light_levels(new BlockMap<CHUNK_SIZE, CHUNK_HEIGHT>())
 {
     this->p = p;
     this->q = q;
