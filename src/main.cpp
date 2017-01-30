@@ -560,7 +560,6 @@ void compute_chunk(WorkerItemPtr item) {
                     int ly = y - oy;
                     int lz = z - oz;
                     if(is_light(ew)){
-                        printf("FOUND LIGHT %d\n", ew);
                         light_fill(opaque, light, lx, ly, lz, 15, 0);
                     }
                 });

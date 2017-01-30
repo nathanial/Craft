@@ -3,8 +3,6 @@
 
 #include "chunk.h"
 
-class BlockMap;
-
 void create_world(ChunkPtr chunk, int p, int q);
 
 #endif

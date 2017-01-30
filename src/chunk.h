@@ -13,10 +13,8 @@
 class WorkerItem;
 
 class Chunk {
-private:
-    std::unique_ptr<BlockMap> blocks;
-
 public:
+    std::unique_ptr<BlockMap<CHUNK_SIZE, CHUNK_HEIGHT>> blocks;
 
     ~Chunk();
 
