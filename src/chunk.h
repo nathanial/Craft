@@ -30,6 +30,7 @@ public:
 
     Chunk(int p, int q);
     int get_block(int x, int y, int z) const;
+    int get_block_or_zero(int x, int y, int z) const;
     int set_block(int x, int y, int z, char w);
     int distance(int p, int q);
     void set_dirty_flag();

@@ -38,9 +38,14 @@ public:
     }
     char get(int x, int y, int z) {
         if(x < 0 || x >= WIDTH || y < 0 || y >= HEIGHT|| z < 0 || z >= WIDTH){
-            // printf("Bad Index %d,%d,%d\n", x, y, z);
-            //throw new std::invalid_argument("Bad Index");
-            return 0;
+            printf("Bad Index %d,%d,%d\n", x, y, z);
+            throw new std::invalid_argument("Bad Index");
+        }
+        return this->_data[x][y][z];
+    }
+    char get_or_default(int x, int y, int z, char _default) {
+        if(x < 0 || x >= WIDTH || y < 0 || y >= HEIGHT|| z < 0 || z >= WIDTH){
+            return _default;
         }
         return this->_data[x][y][z];
     }

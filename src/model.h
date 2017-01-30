@@ -117,6 +117,8 @@ public:
 
     int chunk_count() const;
     ChunkPtr create_chunk(int p, int q);
+
+    char get_block(int x, int y, int z);
 };
 
 #endif //CRAFT_MODEL_H
