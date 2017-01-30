@@ -479,8 +479,10 @@ void occlusion(
 }
 
 
+typedef BlockMap<CHUNK_SIZE * 3, CHUNK_HEIGHT> BigBlockMap;
+
 void light_fill(
-    BlockMap<CHUNK_SIZE * 3, CHUNK_HEIGHT> *opaque, char *light,
+    BigBlockMap *opaque, BigBlockMap *light,
     int x, int y, int z, int w, int force)
 {
     if (x + w < XZ_LO || z + w < XZ_LO) {
@@ -492,14 +494,14 @@ void light_fill(
     if (y < 0 || y >= Y_SIZE) {
         return;
     }
-    if (light[XYZ(x, y, z)] >= w) {
+    if (light->get(x, y, z) >= w) {
         return;
     }
     if (!force && opaque->get(x, y, z)) {
         return;
     }
     //printf("Light Fill %d,%d,%d | %d,%d\n",x,y,z, w, force);
-    light[XYZ(x, y, z)] = w--;
+    light->set(x, y, z, w--);
     light_fill(opaque, light, x - 1, y, z, w, 0);
     light_fill(opaque, light, x + 1, y, z, w, 0);
     light_fill(opaque, light, x, y - 1, z, w, 0);
@@ -508,9 +510,10 @@ void light_fill(
     light_fill(opaque, light, x, y, z + 1, w, 0);
 }
 
+
 void compute_chunk(WorkerItemPtr item) {
-    auto opaque = new BlockMap<CHUNK_SIZE * 3, CHUNK_HEIGHT>();
-    char *light = (char *)calloc(XZ_SIZE * XZ_SIZE * Y_SIZE, sizeof(char));
+    auto opaque = new BigBlockMap();
+    auto light = new BigBlockMap();
     char *highest = (char *)calloc(XZ_SIZE * XZ_SIZE, sizeof(char));
 
     int ox = item->p * CHUNK_SIZE - CHUNK_SIZE;
@@ -624,7 +627,7 @@ void compute_chunk(WorkerItemPtr item) {
             for (int dy = -1; dy <= 1; dy++) {
                 for (int dz = -1; dz <= 1; dz++) {
                     neighbors[index] = opaque->get(x + dx, y + dy, z + dz);
-                    lights[index] = light[XYZ(x + dx, y + dy, z + dz)];
+                    lights[index] = light->get(x + dx, y + dy, z + dz);
                     shades[index] = 0;
                     if (y + dy <= highest[XZ(x + dx, z + dz)]) {
                         for (int oy = 0; oy < 8; oy++) {
@@ -665,9 +668,9 @@ void compute_chunk(WorkerItemPtr item) {
         offset += total * 60;
     });
 
-    free(opaque);
-    free(light);
+    delete light;
     free(highest);
+    delete opaque;
 
     item->miny = miny;
     item->maxy = maxy;
