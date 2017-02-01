@@ -12,11 +12,8 @@
 #include <stdlib.h>
 #include <string.h>
 #include "client.h"
-
-extern "C" {
-    #include "tinycthread.h"
-}
-
+#include <thread>
+#include <mutex>
 
 #define QUEUE_SIZE 1048576
 #define RECV_SIZE 4096
@@ -28,8 +25,8 @@ static int bytes_sent = 0;
 static int bytes_received = 0;
 static char *queue = 0;
 static int qsize = 0;
-static thrd_t recv_thread;
-static mtx_t mutex;
+static std::thread recv_thread;
+static std::mutex mutex;
 
 void client_enable() {
     client_enabled = 1;
@@ -161,14 +158,15 @@ char *client_recv() {
         return 0;
     }
     char *result = 0;
-    mtx_lock(&mutex);
+
+    std::lock_guard<std::mutex> lock(mutex);
     char *p = queue + qsize - 1;
     while (p >= queue && *p != '\n') {
         p--;
     }
     if (p >= queue) {
         int length = p - queue + 1;
-        result = malloc(sizeof(char) * (length + 1));
+        result = (char *)malloc(sizeof(char) * (length + 1));
         memcpy(result, queue, sizeof(char) * length);
         result[length] = '\0';
         int remaining = qsize - length;
@@ -176,12 +174,11 @@ char *client_recv() {
         qsize -= length;
         bytes_received += length;
     }
-    mtx_unlock(&mutex);
     return result;
 }
 
-int recv_worker(void *arg) {
-    char *data = malloc(sizeof(char) * RECV_SIZE);
+void recv_worker() {
+    char *data = (char*)malloc(sizeof(char) * RECV_SIZE);
     while (1) {
         int length;
         if ((length = recv(sd, data, RECV_SIZE - 1, 0)) <= 0) {
@@ -196,21 +193,21 @@ int recv_worker(void *arg) {
         data[length] = '\0';
         while (1) {
             int done = 0;
-            mtx_lock(&mutex);
-            if (qsize + length < QUEUE_SIZE) {
-                memcpy(queue + qsize, data, sizeof(char) * (length + 1));
-                qsize += length;
-                done = 1;
-            }
-            mtx_unlock(&mutex);
-            if (done) {
-                break;
+            {
+                std::lock_guard<std::mutex> lock(mutex);
+                if (qsize + length < QUEUE_SIZE) {
+                    memcpy(queue + qsize, data, sizeof(char) * (length + 1));
+                    qsize += length;
+                    done = 1;
+                }
+                if (done) {
+                    break;
+                }
             }
             sleep(0);
         }
     }
     free(data);
-    return 0;
 }
 
 void client_connect(char *hostname, int port) {
@@ -244,11 +241,8 @@ void client_start() {
     running = 1;
     queue = (char *)calloc(QUEUE_SIZE, sizeof(char));
     qsize = 0;
-    mtx_init(&mutex, mtx_plain);
-    if (thrd_create(&recv_thread, recv_worker, NULL) != thrd_success) {
-        perror("thrd_create");
-        exit(1);
-    }
+
+    recv_thread = std::thread(recv_worker);
 }
 
 void client_stop() {

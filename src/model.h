@@ -6,14 +6,12 @@
 #define CRAFT_MODEL_H
 
 #include <GL/glew.h>
-extern "C" {
-    #include "tinycthread.h"
-}
 #include "chunk.h"
 #include "config.h"
 #include "worker.h"
 #include <functional>
 #include <tuple>
+#include <vector>
 
 class Block {
 public:
@@ -74,7 +72,7 @@ private:
     std::unordered_map<ChunkPosition, ChunkPtr, ChunkPositionHash> chunks;
 public:
     GLFWwindow *window;
-    Worker workers[WORKERS];
+    std::vector<WorkerPtr> workers;
     int create_radius;
     int render_radius;
     int delete_radius;
@@ -119,6 +117,8 @@ public:
     ChunkPtr create_chunk(int p, int q);
 
     char get_block(int x, int y, int z);
+
+    Model();
 };
 
 #endif //CRAFT_MODEL_H

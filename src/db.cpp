@@ -2,9 +2,12 @@
 #include "db.h"
 #include "ring.h"
 extern "C" {
-    #include "tinycthread.h"
     #include "sqlite3.h"
 }
+
+#include <thread>
+#include <mutex>
+#include <condition_variable>
 
 static int db_enabled = 0;
 
@@ -21,10 +24,10 @@ static sqlite3_stmt *get_key_stmt;
 static sqlite3_stmt *set_key_stmt;
 
 static Ring ring;
-static thrd_t thrd;
-static mtx_t mtx;
-static cnd_t cnd;
-static mtx_t load_mtx;
+static std::thread thrd;
+static std::mutex mtx;
+static std::condition_variable cnd;
+static std::mutex load_mtx;
 
 void db_enable() {
     db_enabled = 1;
@@ -175,10 +178,9 @@ void db_commit() {
     if (!db_enabled) {
         return;
     }
-    mtx_lock(&mtx);
+    std::lock_guard<std::mutex> lock(mtx);
     ring_put_commit(&ring);
-    cnd_signal(&cnd);
-    mtx_unlock(&mtx);
+    cnd.notify_all();
 }
 
 void _db_commit() {
@@ -318,10 +320,9 @@ void db_insert_block(int p, int q, int x, int y, int z, int w) {
     if (!db_enabled) {
         return;
     }
-    mtx_lock(&mtx);
+    std::lock_guard<std::mutex> lock(mtx);
     ring_put_block(&ring, p, q, x, y, z, w);
-    cnd_signal(&cnd);
-    mtx_unlock(&mtx);
+    cnd.notify_all();
 }
 
 void _db_insert_block(int p, int q, int x, int y, int z, int w) {
@@ -339,10 +340,9 @@ void db_insert_light(int p, int q, int x, int y, int z, int w) {
     if (!db_enabled) {
         return;
     }
-    mtx_lock(&mtx);
+    std::lock_guard<std::mutex> lock(mtx);
     ring_put_light(&ring, p, q, x, y, z, w);
-    cnd_signal(&cnd);
-    mtx_unlock(&mtx);
+    cnd.notify_all();
 }
 
 void _db_insert_light(int p, int q, int x, int y, int z, int w) {
@@ -407,7 +407,7 @@ void db_load_blocks(ChunkPtr chunk, int p, int q) {
     if (!db_enabled) {
         return;
     }
-    mtx_lock(&load_mtx);
+    std::lock_guard<std::mutex> lock(load_mtx);
     sqlite3_reset(load_blocks_stmt);
     sqlite3_bind_int(load_blocks_stmt, 1, p);
     sqlite3_bind_int(load_blocks_stmt, 2, q);
@@ -418,7 +418,6 @@ void db_load_blocks(ChunkPtr chunk, int p, int q) {
         int w = sqlite3_column_int(load_blocks_stmt, 3);
         chunk->set_block(x, y, z, w);
     }
-    mtx_unlock(&load_mtx);
 }
 
 void db_load_signs(SignList *list, int p, int q) {
@@ -456,10 +455,9 @@ void db_set_key(int p, int q, int key) {
     if (!db_enabled) {
         return;
     }
-    mtx_lock(&mtx);
+    std::lock_guard<std::mutex> lock(mtx);
     ring_put_key(&ring, p, q, key);
-    cnd_signal(&cnd);
-    mtx_unlock(&mtx);
+    cnd.notify_all();
 }
 
 void _db_set_key(int p, int q, int key) {
@@ -475,24 +473,19 @@ void db_worker_start(char *path) {
         return;
     }
     ring_alloc(&ring, 1024);
-    mtx_init(&mtx, mtx_plain);
-    mtx_init(&load_mtx, mtx_plain);
-    cnd_init(&cnd);
-    thrd_create(&thrd, db_worker_run, path);
+    thrd = std::thread(db_worker_run, path);
 }
 
 void db_worker_stop() {
     if (!db_enabled) {
         return;
     }
-    mtx_lock(&mtx);
-    ring_put_exit(&ring);
-    cnd_signal(&cnd);
-    mtx_unlock(&mtx);
-    thrd_join(thrd, NULL);
-    cnd_destroy(&cnd);
-    mtx_destroy(&load_mtx);
-    mtx_destroy(&mtx);
+    {
+        std::lock_guard<std::mutex> lock(mtx);
+        ring_put_exit(&ring);
+        cnd.notify_all();
+    }
+    thrd.join();
     ring_free(&ring);
 }
 
@@ -500,11 +493,12 @@ int db_worker_run(void *arg) {
     int running = 1;
     while (running) {
         RingEntry e;
-        mtx_lock(&mtx);
-        while (!ring_get(&ring, &e)) {
-            cnd_wait(&cnd, &mtx);
+        {
+            std::unique_lock<std::mutex> lock(mtx);
+            while (!ring_get(&ring, &e)) {
+                cnd.wait(lock);
+            }
         }
-        mtx_unlock(&mtx);
         switch (e.type) {
             case BLOCK:
                 _db_insert_block(e.p, e.q, e.x, e.y, e.z, e.w);

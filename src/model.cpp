@@ -1,7 +1,11 @@
 #include "model.h"
 #include "util.h"
-#include <string.h>
-#include <vector>
+
+Model::Model(){
+    for(int i = 0; i < WORKERS; i++){
+        this->workers.push_back(std::make_shared<Worker>());
+    }
+}
 
 ChunkPtr Model::get_chunk(int p, int q) {
     if(this->chunks.count(std::make_tuple(p,q)) <= 0){

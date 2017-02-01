@@ -24,7 +24,6 @@
 #include "height_map.h"
 
 extern "C" {
-    #include "tinycthread.h"
     #include "noise.h"
 }
 
@@ -722,8 +721,8 @@ void create_chunk(ChunkPtr chunk, int p, int q) {
 
 void check_workers() {
     for (int i = 0; i < WORKERS; i++) {
-        Worker *worker = g->workers + i;
-        mtx_lock(&worker->mtx);
+        auto worker = g->workers.at(i);
+        std::lock_guard<std::mutex> lock(worker->mtx);
         if (worker->state == WORKER_DONE) {
             auto item = worker->item;
             auto chunk = g->find_chunk(item->p, item->q);
@@ -735,7 +734,6 @@ void check_workers() {
             }
             worker->state = WORKER_IDLE;
         }
-        mtx_unlock(&worker->mtx);
     }
 }
 
@@ -763,7 +761,7 @@ void force_chunks(Player *player) {
     }
 }
 
-void ensure_chunks_worker(Player *player, Worker *worker) {
+void ensure_chunks_worker(Player *player, WorkerPtr worker) {
     State *s = &player->state;
     float matrix[16];
     set_matrix_3d(
@@ -824,39 +822,39 @@ void ensure_chunks_worker(Player *player, Worker *worker) {
     worker->item->load = load;
     chunk->dirty = 0;
     worker->state = WORKER_BUSY;
-    cnd_signal(&worker->cnd);
+    worker->cnd.notify_all();
 }
 
 void ensure_chunks(Player *player) {
     check_workers();
     force_chunks(player);
     for (int i = 0; i < WORKERS; i++) {
-        Worker *worker = g->workers + i;
-        mtx_lock(&worker->mtx);
+        auto worker = g->workers.at(i);
+        std::lock_guard<std::mutex> lock(worker->mtx);
         if (worker->state == WORKER_IDLE) {
             ensure_chunks_worker(player, worker);
         }
-        mtx_unlock(&worker->mtx);
     }
 }
 
-int worker_run(void *arg) {
-    Worker *worker = (Worker *)arg;
+int worker_run(WorkerPtr worker) {
     int running = 1;
     while (running) {
-        mtx_lock(&worker->mtx);
-        while (worker->state != WORKER_BUSY) {
-            cnd_wait(&worker->cnd, &worker->mtx);
+        {
+            std::unique_lock<std::mutex> lock(worker->mtx);
+            while (worker->state != WORKER_BUSY) {
+                worker->cnd.wait(lock);
+            }
         }
-        mtx_unlock(&worker->mtx);
         auto item = worker->item;
         if (item->load) {
             load_chunk(item);
         }
         compute_chunk(item);
-        mtx_lock(&worker->mtx);
-        worker->state = WORKER_DONE;
-        mtx_unlock(&worker->mtx);
+        {
+            std::lock_guard<std::mutex> lock(worker->mtx);
+            worker->state = WORKER_DONE;
+        }
     }
     return 0;
 }
@@ -2007,12 +2005,10 @@ int main(int argc, char **argv) {
 
     // INITIALIZE WORKER THREADS
     for (int i = 0; i < WORKERS; i++) {
-        Worker *worker = g->workers + i;
+        auto worker = g->workers.at(i);
         worker->index = i;
         worker->state = WORKER_IDLE;
-        mtx_init(&worker->mtx, mtx_plain);
-        cnd_init(&worker->cnd);
-        thrd_create(&worker->thrd, worker_run, worker);
+        worker->thrd = std::thread(worker_run, worker);
     }
 
     // OUTER LOOP //

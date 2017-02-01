@@ -7,10 +7,10 @@
 
 #include <GLFW/glfw3.h>
 #include "block_map.h"
-extern "C" {
-    #include "tinycthread.h"
-}
 #include <memory>
+#include <thread>
+#include <mutex>
+#include <condition_variable>
 
 class WorkerItem {
 public:
@@ -30,10 +30,12 @@ class Worker {
 public:
     int index;
     int state;
-    thrd_t thrd;
-    mtx_t mtx;
-    cnd_t cnd;
+    std::thread thrd;
+    std::mutex mtx;
+    std::condition_variable cnd;
     WorkerItemPtr item;
 };
+
+typedef std::shared_ptr<Worker> WorkerPtr;
 
 #endif //CRAFT_WORKER_H
