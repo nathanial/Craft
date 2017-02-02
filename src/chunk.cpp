@@ -34,22 +34,6 @@ Chunk::~Chunk() {
     del_buffer(this->sign_buffer);
 }
 
-std::shared_ptr<WorkerItem> Chunk::create_worker_item(){
-    auto item = std::make_shared<WorkerItem>();
-    item->p = this->p;
-    item->q = this->q;
-    for (int dp = -1; dp <= 1; dp++) {
-        for (int dq = -1; dq <= 1; dq++) {
-            auto other = g->find_chunk(this->p + dp, this->q + dq);
-            if(other == nullptr){
-                continue;
-            }
-            item->neighborhood[dp + 1][dq + 1] = other;
-        }
-    }
-    return item;
-}
-
 int Chunk::get_block(int x, int y, int z) const {
     return this->blocks->get(x - this->p * CHUNK_SIZE, y, z - this->q * CHUNK_SIZE);
 }

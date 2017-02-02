@@ -42,7 +42,6 @@ public:
 
     int distance(int p, int q);
     void set_dirty_flag();
-    std::shared_ptr<WorkerItem> create_worker_item();
 
     void foreach_block(std::function<void (int, int, int, char)> func);
 };

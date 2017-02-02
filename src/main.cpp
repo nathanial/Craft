@@ -529,7 +529,7 @@ void compute_chunk(WorkerItemPtr item) {
     // populate opaque array
     for (int a = 0; a < 3; a++) {
         for (int b = 0; b < 3; b++) {
-            auto chunk = item->neighborhood[a][b];
+            auto chunk = g->find_chunk(item->p + (a-1), item->q + (b-1));
             if(!chunk){
                 continue;
             }
@@ -560,7 +560,7 @@ void compute_chunk(WorkerItemPtr item) {
 
     for (int a = 0; a < 3; a++) {
         for (int b = 0; b < 3; b++) {
-            auto chunk = item->neighborhood[a][b];
+            auto chunk = g->find_chunk(item->p - (a-1), item->q - (b-1));
             if(chunk){
                 chunk->foreach_block([&](int x, int y, int z, char ew){
                     int lx = x - ox;
@@ -578,7 +578,7 @@ void compute_chunk(WorkerItemPtr item) {
     int miny = 256;
     int maxy = 0;
     int faces = 0;
-    item->neighborhood[1][1]->foreach_block([&](int ex, int ey, int ez, int ew) {
+    g->find_chunk(item->p, item->q)->foreach_block([&](int ex, int ey, int ez, int ew) {
         if (ew <= 0) {
             return;
         }
@@ -606,7 +606,7 @@ void compute_chunk(WorkerItemPtr item) {
     // generate geometry
     GLfloat *data = malloc_faces(10, faces);
     int offset = 0;
-    item->neighborhood[1][1]->foreach_block([&](int ex, int ey, int ez, int ew) {
+    g->find_chunk(item->p,item->q)->foreach_block([&](int ex, int ey, int ez, int ew) {
         if (ew <= 0) {
             return;
         }
@@ -692,7 +692,9 @@ void generate_chunk(ChunkPtr chunk, WorkerItemPtr item) {
 }
 
 void gen_chunk_buffer(ChunkPtr chunk) {
-    auto item = chunk->create_worker_item();
+    auto item = std::make_shared<WorkerItem>();
+    item->p = chunk->p;
+    item->q = chunk->q;
     compute_chunk(item);
     generate_chunk(chunk, item);
     chunk->dirty = 0;
@@ -701,7 +703,7 @@ void gen_chunk_buffer(ChunkPtr chunk) {
 void load_chunk(WorkerItemPtr item) {
     int p = item->p;
     int q = item->q;
-    auto chunk = item->neighborhood[1][1];
+    auto chunk = g->find_chunk(p,q);
     create_world(chunk, p, q);
     db_load_blocks(chunk, p, q);
 }
@@ -717,7 +719,9 @@ void create_chunk(int p, int q) {
 
     g->add_chunk(chunk);
 
-    auto item = chunk->create_worker_item();
+    auto item = std::make_shared<WorkerItem>();
+    item->p = chunk->p;
+    item->q = chunk->q;
 
     load_chunk(item);
     request_chunk(p, q);
@@ -823,7 +827,9 @@ void ensure_chunks_worker(Player *player, WorkerPtr worker) {
             return;
         }
     }
-    worker->item = chunk->create_worker_item();
+    worker->item = std::make_shared<WorkerItem>();
+    worker->item->p = chunk->p;
+    worker->item->q = chunk->q;
     worker->item->load = load;
     chunk->dirty = 0;
     worker->state = WORKER_BUSY;

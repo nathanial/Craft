@@ -15,7 +15,6 @@ private:
 public:
 
     GenerateChunkTask(int p, int q);
-
     std::future<ChunkPtr> run() override;
 };
 

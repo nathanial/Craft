@@ -21,7 +21,6 @@ public:
     int maxy;
     int faces;
     GLfloat *data;
-    ChunkPtr neighborhood[3][3];
 };
 
 typedef std::shared_ptr<WorkerItem> WorkerItemPtr;
