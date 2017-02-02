@@ -85,11 +85,9 @@ int Model::chunk_count() const {
     return static_cast<int>(this->chunks.size());
 }
 
-ChunkPtr Model::create_chunk(int p, int q) {
-    auto chunk = std::make_shared<Chunk>(p, q);
+void Model::add_chunk(ChunkPtr chunk) {
     if(chunk == nullptr){
         throw "Couldn't Make Shared Ptr";
     }
-    this->chunks[std::make_tuple(p,q)] = chunk;
-    return chunk;
+    this->chunks[std::make_tuple(chunk->p,chunk->q)] = chunk;
 }

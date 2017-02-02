@@ -114,7 +114,7 @@ public:
     void delete_all_chunks();
 
     int chunk_count() const;
-    ChunkPtr create_chunk(int p, int q);
+    void add_chunk(ChunkPtr chunk);
 
     char get_block(int x, int y, int z);
 

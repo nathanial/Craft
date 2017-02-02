@@ -22,6 +22,7 @@
 #include "draw.h"
 #include "player.h"
 #include "height_map.h"
+#include "workers/tasks/generate_chunk_task.h"
 
 extern "C" {
     #include "noise.h"
@@ -710,14 +711,18 @@ void request_chunk(int p, int q) {
     client_chunk(p, q, key);
 }
 
-void create_chunk(ChunkPtr chunk, int p, int q) {
+void create_chunk(int p, int q) {
+    GenerateChunkTask gen_chunk(p,q);
+    auto chunk = gen_chunk.run().get();
+
+    g->add_chunk(chunk);
+
     auto item = chunk->create_worker_item();
+
     load_chunk(item);
-
     request_chunk(p, q);
+    gen_chunk_buffer(chunk);
 }
-
-
 
 void check_workers() {
     for (int i = 0; i < WORKERS; i++) {
@@ -753,9 +758,7 @@ void force_chunks(Player *player) {
                 }
             }
             else if (g->chunk_count() < MAX_CHUNKS) {
-                ChunkPtr chunk = g->create_chunk(a,b);
-                create_chunk(chunk, a, b);
-                gen_chunk_buffer(chunk);
+                create_chunk(a, b);
             }
         }
     }
@@ -812,7 +815,9 @@ void ensure_chunks_worker(Player *player, WorkerPtr worker) {
     if (!chunk) {
         load = 1;
         if (g->chunk_count() < MAX_CHUNKS) {
-            chunk = g->create_chunk(a,b);
+            GenerateChunkTask gen_chunk(a,b);
+            chunk = gen_chunk.run().get();
+            g->add_chunk(chunk);
         }
         else {
             return;
@@ -1910,7 +1915,7 @@ int main(int argc, char **argv) {
     glBindTexture(GL_TEXTURE_2D, texture);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
-    load_png_texture("textures/texture.png");
+    load_png_texture("../textures/texture.png");
 
     GLuint font;
     glGenTextures(1, &font);
@@ -1918,7 +1923,7 @@ int main(int argc, char **argv) {
     glBindTexture(GL_TEXTURE_2D, font);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-    load_png_texture("textures/font.png");
+    load_png_texture("../textures/font.png");
 
     GLuint sky;
     glGenTextures(1, &sky);
@@ -1928,7 +1933,7 @@ int main(int argc, char **argv) {
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
-    load_png_texture("textures/sky.png");
+    load_png_texture("../textures/sky.png");
 
     GLuint sign;
     glGenTextures(1, &sign);
@@ -1936,7 +1941,7 @@ int main(int argc, char **argv) {
     glBindTexture(GL_TEXTURE_2D, sign);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
-    load_png_texture("textures/sign.png");
+    load_png_texture("../textures/sign.png");
 
     // LOAD SHADERS //
     Attrib block_attrib = {0};
@@ -1946,7 +1951,7 @@ int main(int argc, char **argv) {
     GLuint program;
 
     program = load_program(
-        "shaders/block_vertex.glsl", "shaders/block_fragment.glsl");
+        "../shaders/block_vertex.glsl", "../shaders/block_fragment.glsl");
     block_attrib.program = program;
     block_attrib.position = glGetAttribLocation(program, "position");
     block_attrib.normal = glGetAttribLocation(program, "normal");
@@ -1961,13 +1966,13 @@ int main(int argc, char **argv) {
     block_attrib.timer = glGetUniformLocation(program, "timer");
 
     program = load_program(
-        "shaders/line_vertex.glsl", "shaders/line_fragment.glsl");
+        "../shaders/line_vertex.glsl", "../shaders/line_fragment.glsl");
     line_attrib.program = program;
     line_attrib.position = glGetAttribLocation(program, "position");
     line_attrib.matrix = glGetUniformLocation(program, "matrix");
 
     program = load_program(
-        "shaders/text_vertex.glsl", "shaders/text_fragment.glsl");
+        "../shaders/text_vertex.glsl", "../shaders/text_fragment.glsl");
     text_attrib.program = program;
     text_attrib.position = glGetAttribLocation(program, "position");
     text_attrib.uv = glGetAttribLocation(program, "uv");
@@ -1976,7 +1981,7 @@ int main(int argc, char **argv) {
     text_attrib.extra1 = glGetUniformLocation(program, "is_sign");
 
     program = load_program(
-        "shaders/sky_vertex.glsl", "shaders/sky_fragment.glsl");
+        "../shaders/sky_vertex.glsl", "../shaders/sky_fragment.glsl");
     sky_attrib.program = program;
     sky_attrib.position = glGetAttribLocation(program, "position");
     sky_attrib.normal = glGetAttribLocation(program, "normal");
