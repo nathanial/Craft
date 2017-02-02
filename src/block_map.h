@@ -65,4 +65,6 @@ public:
     };
 };
 
+typedef BlockMap<CHUNK_SIZE * 3, CHUNK_HEIGHT> BigBlockMap;
+
 #endif
