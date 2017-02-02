@@ -20,7 +20,6 @@ public:
     int miny;
     int maxy;
     int faces;
-    GLfloat *data;
 };
 
 typedef std::shared_ptr<WorkerItem> WorkerItemPtr;

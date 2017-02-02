@@ -30,6 +30,7 @@ public:
     int maxy;
     GLuint buffer;
     GLuint sign_buffer;
+    GLfloat *vertices;
 
     Chunk(int p, int q);
 

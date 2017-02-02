@@ -606,7 +606,8 @@ void compute_chunk(WorkerItemPtr item) {
     // generate geometry
     GLfloat *data = malloc_faces(10, faces);
     int offset = 0;
-    g->find_chunk(item->p,item->q)->foreach_block([&](int ex, int ey, int ez, int ew) {
+    auto chunk = g->find_chunk(item->p, item->q);
+    chunk->foreach_block([&](int ex, int ey, int ez, int ew) {
         if (ew <= 0) {
             return;
         }
@@ -679,7 +680,7 @@ void compute_chunk(WorkerItemPtr item) {
     item->miny = miny;
     item->maxy = maxy;
     item->faces = faces;
-    item->data = data;
+    chunk->vertices = data;
 }
 
 void generate_chunk(ChunkPtr chunk, WorkerItemPtr item) {
@@ -687,7 +688,7 @@ void generate_chunk(ChunkPtr chunk, WorkerItemPtr item) {
     chunk->maxy = item->maxy;
     chunk->faces = item->faces;
     del_buffer(chunk->buffer);
-    chunk->buffer = gen_faces(10, item->faces, item->data);
+    chunk->buffer = gen_faces(10, item->faces, chunk->vertices);
     gen_sign_buffer(chunk);
 }
 
