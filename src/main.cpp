@@ -642,15 +642,13 @@ void compute_chunk(WorkerItemPtr item) {
     delete highest;
     delete opaque;
 
-    item->miny = miny;
-    item->maxy = maxy;
+    chunk->set_miny(miny);
+    chunk->set_maxy(maxy);
     chunk->set_faces(faces);
     chunk->set_vertices(data);
 }
 
 void generate_chunk(ChunkPtr chunk, WorkerItemPtr item) {
-    chunk->set_miny(item->miny);
-    chunk->set_maxy(item->maxy);
     del_buffer(chunk->buffer());
     chunk->set_buffer(gen_faces(10, chunk->faces(), chunk->vertices()));
 }

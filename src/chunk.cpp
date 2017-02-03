@@ -3,7 +3,6 @@
 //
 
 #include "chunk.h"
-#include "db.h"
 #include "model.h"
 #include "util.h"
 #include "item.h"

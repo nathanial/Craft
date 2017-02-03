@@ -17,8 +17,6 @@ public:
     int p;
     int q;
     int load;
-    int miny;
-    int maxy;
 };
 
 typedef std::shared_ptr<WorkerItem> WorkerItemPtr;
