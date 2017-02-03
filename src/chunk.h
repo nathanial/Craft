@@ -62,6 +62,8 @@ public:
     void generate_buffer();
 
     bool is_ready_to_draw() const;
+
+    void load();
 };
 
 typedef std::shared_ptr<Chunk> ChunkPtr;
