@@ -20,15 +20,12 @@ private:
     std::unique_ptr<BlockMap<CHUNK_SIZE, CHUNK_HEIGHT>> blocks;
 
 public:
-    SignList signs;
     int p, q; // chunk position
     int faces;
-    int sign_faces;
     bool dirty;
     int miny;
     int maxy;
     GLuint buffer;
-    GLuint sign_buffer;
     GLfloat *vertices;
 
     Chunk(int p, int q);

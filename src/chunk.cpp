@@ -18,19 +18,12 @@ Chunk::Chunk(int p, int q) :
     this->p = p;
     this->q = q;
     this->faces = 0;
-    this->sign_faces = 0;
     this->buffer = 0;
-    this->sign_buffer = 0;
     this->set_dirty_flag();
-    SignList *signs = &this->signs;
-    sign_list_alloc(signs, 16);
-    db_load_signs(signs, p, q);
 }
 
 Chunk::~Chunk() {
-    sign_list_free(&this->signs);
     del_buffer(this->buffer);
-    del_buffer(this->sign_buffer);
 }
 
 int Chunk::get_block(int x, int y, int z) const {
