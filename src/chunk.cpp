@@ -61,8 +61,14 @@ int Chunk::distance(int p, int q) {
     return MAX(dp, dq);
 }
 
-void Chunk::draw(Attrib *attrib) {
-    draw_triangles_3d_ao(attrib, this->buffer(), this->_faces * 6);
+int Chunk::draw(Attrib *attrib) {
+    if(this->buffer()){
+        draw_triangles_3d_ao(attrib, this->buffer(), this->_faces * 6);
+        return this->_faces;
+    } else {
+        return 0;
+    }
+
 }
 
 int Chunk::p() const {

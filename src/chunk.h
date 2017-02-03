@@ -39,7 +39,7 @@ public:
     void set_dirty_flag();
 
     void foreach_block(std::function<void (int, int, int, char)> func);
-    void draw(Attrib *attrib);
+    int draw(Attrib *attrib);
 
     int p() const;
     int q() const;

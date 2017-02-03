@@ -912,10 +912,7 @@ int render_chunks(Attrib *attrib, Player *player) {
         {
             return;
         }
-        if(chunk->buffer()){
-            chunk->draw(attrib);
-            result += chunk->faces();
-        }
+        result += chunk->draw(attrib);
     });
     return result;
 }
