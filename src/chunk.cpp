@@ -17,7 +17,7 @@ Chunk::Chunk(int p, int q) :
 {
     this->_p = p;
     this->_q = q;
-    this->faces = 0;
+    this->_faces = 0;
     this->buffer = 0;
     this->set_dirty_flag();
 }
@@ -63,7 +63,7 @@ int Chunk::distance(int p, int q) {
 }
 
 void Chunk::draw(Attrib *attrib) {
-    draw_triangles_3d_ao(attrib, this->buffer, this->faces * 6);
+    draw_triangles_3d_ao(attrib, this->buffer, this->_faces * 6);
 }
 
 int Chunk::p() const {
@@ -72,6 +72,14 @@ int Chunk::p() const {
 
 int Chunk::q() const {
     return this->_q;
+}
+
+void Chunk::set_faces(int faces) {
+    this->_faces = faces;
+}
+
+int Chunk::faces() const {
+    return this->_faces;
 }
 
 int chunk_visible(float planes[6][4], int p, int q, int miny, int maxy) {

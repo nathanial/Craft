@@ -19,9 +19,9 @@ class Chunk {
 private:
     std::unique_ptr<BlockMap<CHUNK_SIZE, CHUNK_HEIGHT>> blocks;
     int _p, _q; // chunk position
+    int _faces;
 public:
 
-    int faces;
     bool dirty;
     int miny;
     int maxy;
@@ -43,6 +43,10 @@ public:
 
     int p() const;
     int q() const;
+
+    void set_faces(int faces);
+
+    int faces() const;
 };
 
 typedef std::shared_ptr<Chunk> ChunkPtr;
