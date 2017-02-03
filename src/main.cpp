@@ -662,7 +662,7 @@ void gen_chunk_buffer(ChunkPtr chunk) {
     item->q = chunk->q();
     compute_chunk(item);
     generate_chunk(chunk, item);
-    chunk->dirty = 0;
+    chunk->set_dirty(false);
 }
 
 void load_chunk(WorkerItemPtr item) {
@@ -722,7 +722,7 @@ void force_chunks(Player *player) {
             int b = q + dq;
             auto chunk = g->find_chunk(a, b);
             if (chunk) {
-                if (chunk->dirty) {
+                if (chunk->dirty()) {
                     gen_chunk_buffer(chunk);
                 }
             }
@@ -757,14 +757,14 @@ void ensure_chunks_worker(Player *player, WorkerPtr worker) {
                 continue;
             }
             auto chunk = g->find_chunk(a, b);
-            if (chunk && !chunk->dirty) {
+            if (chunk && !chunk->dirty()) {
                 continue;
             }
             int distance = MAX(ABS(dp), ABS(dq));
             int invisible = !chunk_visible(planes, a, b, 0, 256);
             int priority = 0;
             if (chunk) {
-                priority = chunk->buffer && chunk->dirty;
+                priority = chunk->buffer && chunk->dirty();
             }
             int score = (invisible << 24) | (priority << 16) | distance;
             if (score < best_score) {
@@ -796,7 +796,7 @@ void ensure_chunks_worker(Player *player, WorkerPtr worker) {
     worker->item->p = chunk->p();
     worker->item->q = chunk->q();
     worker->item->load = load;
-    chunk->dirty = 0;
+    chunk->set_dirty(false);
     worker->state = WORKER_BUSY;
     worker->cnd.notify_all();
 }

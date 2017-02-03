@@ -20,9 +20,9 @@ private:
     std::unique_ptr<BlockMap<CHUNK_SIZE, CHUNK_HEIGHT>> blocks;
     int _p, _q; // chunk position
     int _faces;
-public:
+    bool _dirty;
 
-    bool dirty;
+public:
     int miny;
     int maxy;
     GLuint buffer;
@@ -45,8 +45,10 @@ public:
     int q() const;
 
     void set_faces(int faces);
-
     int faces() const;
+
+    void set_dirty(bool dirty);
+    bool dirty() const;
 };
 
 typedef std::shared_ptr<Chunk> ChunkPtr;

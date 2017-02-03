@@ -45,12 +45,12 @@ int Chunk::set_block(int x, int y, int z, char w){
 }
 
 void Chunk::set_dirty_flag() {
-    this->dirty = 1;
+    this->set_dirty(true);
     for (int dp = -1; dp <= 1; dp++) {
         for (int dq = -1; dq <= 1; dq++) {
             auto other = g->find_chunk(this->_p + dp, this->_q + dq);
             if (other) {
-                other->dirty = 1;
+                other->set_dirty(true);
             }
         }
     }
@@ -80,6 +80,14 @@ void Chunk::set_faces(int faces) {
 
 int Chunk::faces() const {
     return this->_faces;
+}
+
+void Chunk::set_dirty(bool dirty) {
+    this->_dirty = dirty;
+}
+
+bool Chunk::dirty() const {
+    return this->_dirty;
 }
 
 int chunk_visible(float planes[6][4], int p, int q, int miny, int maxy) {
