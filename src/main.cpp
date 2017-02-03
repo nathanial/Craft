@@ -524,7 +524,7 @@ void compute_chunk(WorkerItemPtr item) {
     int oy = -1;
     int oz = item->q * CHUNK_SIZE - CHUNK_SIZE;
 
-    // printf("Chunk %d,%d,%d\n", ox, oy, oz);
+    printf("Compute Chunk %d,%d\n", item->p, item->q);
 
     // populate opaque array
     for (int a = 0; a < 3; a++) {
@@ -538,16 +538,6 @@ void compute_chunk(WorkerItemPtr item) {
                 int y = ey - oy;
                 int z = ez - oz;
                 int w = ew;
-                // TODO: this should be unnecessary
-                if (x < 0 || y < 0 || z < 0) {
-                    printf("OOPS %d,%d,%d\n", x,y,z);
-                    return;
-                }
-                if (x >= XZ_SIZE || y >= Y_SIZE || z >= XZ_SIZE) {
-                    //printf("OOPS 2 %d,%d,%d\n", x,y,z);
-                    return;
-                }
-                // END TODO
                 opaque->set(x,y,z, !is_transparent(w) && !is_light(w));
                 if (opaque->get(x, y, z)) {
                     highest->set(x, z, MAX(highest->get(x, z), y));
@@ -556,7 +546,6 @@ void compute_chunk(WorkerItemPtr item) {
         }
     }
 
-    printf("Compute Chunk %d,%d\n", item->p, item->q);
 
     for (int a = 0; a < 3; a++) {
         for (int b = 0; b < 3; b++) {

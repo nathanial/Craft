@@ -12,8 +12,7 @@ extern Model *g;
 
 
 Chunk::Chunk(int p, int q) :
-    blocks(new BlockMap<CHUNK_SIZE, CHUNK_HEIGHT>()),
-    light_levels(new BlockMap<CHUNK_SIZE, CHUNK_HEIGHT>())
+    blocks(new BlockMap<CHUNK_SIZE, CHUNK_HEIGHT>())
 {
     this->p = p;
     this->q = q;
@@ -28,7 +27,6 @@ Chunk::Chunk(int p, int q) :
 }
 
 Chunk::~Chunk() {
-    printf("Destruct Chunk %d,%d\n", this->p, this->q);
     sign_list_free(&this->signs);
     del_buffer(this->buffer);
     del_buffer(this->sign_buffer);
@@ -41,7 +39,6 @@ int Chunk::get_block(int x, int y, int z) const {
 int Chunk::get_block_or_zero(int x, int y, int z) const {
     return this->blocks->get_or_default(x - this->p * CHUNK_SIZE, y, z - this->q * CHUNK_SIZE, 0);
 }
-
 
 void Chunk::foreach_block(std::function<void (int, int, int, char)> func) {
     this->blocks->each([&](int x, int y, int z, char w){
@@ -69,14 +66,6 @@ int Chunk::distance(int p, int q) {
     int dp = ABS(this->p - p);
     int dq = ABS(this->q - q);
     return MAX(dp, dq);
-}
-
-int Chunk::set_light_level(int x, int y, int z, char value) {
-    return this->light_levels->set(x - this->p * CHUNK_SIZE, y, z - this->q * CHUNK_SIZE, value);
-}
-
-int Chunk::get_light_level(int x, int y, int z) const {
-    return this->light_levels->get(x - this->p * CHUNK_SIZE, y, z - this->q * CHUNK_SIZE);
 }
 
 int chunk_visible(float planes[6][4], int p, int q, int miny, int maxy) {
