@@ -56,9 +56,6 @@ public:
     int maxy() const;
     int miny() const;
 
-    GLuint buffer() const;
-    void set_buffer(GLuint buffer);
-
     GLfloat* vertices() const;
     void set_vertices(GLfloat *vertices);
 

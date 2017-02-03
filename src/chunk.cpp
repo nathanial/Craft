@@ -22,7 +22,7 @@ Chunk::Chunk(int p, int q) :
 }
 
 Chunk::~Chunk() {
-    del_buffer(this->buffer());
+    del_buffer(this->_buffer);
 }
 
 int Chunk::get_block(int x, int y, int z) const {
@@ -62,8 +62,8 @@ int Chunk::distance(int p, int q) {
 }
 
 int Chunk::draw(Attrib *attrib) {
-    if(this->buffer()){
-        draw_triangles_3d_ao(attrib, this->buffer(), this->_faces * 6);
+    if(this->_buffer){
+        draw_triangles_3d_ao(attrib, this->_buffer, this->_faces * 6);
         return this->_faces;
     } else {
         return 0;
@@ -111,14 +111,6 @@ int Chunk::miny() const {
     return this->_miny;
 }
 
-GLuint Chunk::buffer() const {
-    return this->_buffer;
-}
-
-void Chunk::set_buffer(GLuint buffer) {
-    this->_buffer = buffer;
-}
-
 GLfloat* Chunk::vertices() const {
     return this->_vertices;
 }
@@ -128,14 +120,14 @@ void Chunk::set_vertices(GLfloat *vertices) {
 }
 
 void Chunk::generate_buffer() {
-    if(this->buffer()) {
-        del_buffer(this->buffer());
+    if(this->_buffer) {
+        del_buffer(this->_buffer);
     }
-    this->set_buffer(gen_faces(10, this->faces(), this->vertices()));
+    this->_buffer = gen_faces(10, this->faces(), this->vertices());
 }
 
 bool Chunk::is_ready_to_draw() const {
-    return this->buffer() && this->dirty();
+    return this->_buffer && this->dirty();
 }
 
 int chunk_visible(float planes[6][4], int p, int q, int miny, int maxy) {
