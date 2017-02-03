@@ -21,10 +21,11 @@ private:
     int _p, _q; // chunk position
     int _faces;
     bool _dirty;
+    int _miny;
+    int _maxy;
 
 public:
-    int miny;
-    int maxy;
+
     GLuint buffer;
     GLfloat *vertices;
 
@@ -49,6 +50,12 @@ public:
 
     void set_dirty(bool dirty);
     bool dirty() const;
+
+    void set_maxy(int maxy);
+    void set_miny(int miny);
+
+    int maxy() const;
+    int miny() const;
 };
 
 typedef std::shared_ptr<Chunk> ChunkPtr;

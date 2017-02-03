@@ -90,6 +90,22 @@ bool Chunk::dirty() const {
     return this->_dirty;
 }
 
+void Chunk::set_maxy(int maxy) {
+    this->_maxy = maxy;
+}
+
+void Chunk::set_miny(int miny) {
+    this->_miny = miny;
+}
+
+int Chunk::maxy() const {
+    return this->_maxy;
+}
+
+int Chunk::miny() const {
+    return this->_miny;
+}
+
 int chunk_visible(float planes[6][4], int p, int q, int miny, int maxy) {
     int x = p * CHUNK_SIZE - 1;
     int z = q * CHUNK_SIZE - 1;

@@ -649,8 +649,8 @@ void compute_chunk(WorkerItemPtr item) {
 }
 
 void generate_chunk(ChunkPtr chunk, WorkerItemPtr item) {
-    chunk->miny = item->miny;
-    chunk->maxy = item->maxy;
+    chunk->set_miny(item->miny);
+    chunk->set_maxy(item->maxy);
     chunk->set_faces(item->faces);
     del_buffer(chunk->buffer);
     chunk->buffer = gen_faces(10, item->faces, chunk->vertices);
@@ -916,7 +916,7 @@ int render_chunks(Attrib *attrib, Player *player) {
             return;
         }
         if (!chunk_visible(
-            planes, chunk->p(), chunk->q(), chunk->miny, chunk->maxy))
+            planes, chunk->p(), chunk->q(), chunk->miny(), chunk->maxy()))
         {
             return;
         }
