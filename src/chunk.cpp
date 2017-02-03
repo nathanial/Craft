@@ -128,6 +128,10 @@ void Chunk::generate_buffer() {
     this->set_buffer(gen_faces(10, this->faces(), this->vertices()));
 }
 
+bool Chunk::is_ready_to_draw() const {
+    return this->buffer() && this->dirty();
+}
+
 int chunk_visible(float planes[6][4], int p, int q, int miny, int maxy) {
     int x = p * CHUNK_SIZE - 1;
     int z = q * CHUNK_SIZE - 1;

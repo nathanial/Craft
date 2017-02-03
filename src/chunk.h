@@ -63,6 +63,8 @@ public:
     void set_vertices(GLfloat *vertices);
 
     void generate_buffer();
+
+    bool is_ready_to_draw() const;
 };
 
 typedef std::shared_ptr<Chunk> ChunkPtr;
