@@ -652,8 +652,8 @@ void generate_chunk(ChunkPtr chunk, WorkerItemPtr item) {
     chunk->set_miny(item->miny);
     chunk->set_maxy(item->maxy);
     chunk->set_faces(item->faces);
-    del_buffer(chunk->buffer);
-    chunk->buffer = gen_faces(10, item->faces, chunk->vertices);
+    del_buffer(chunk->buffer());
+    chunk->set_buffer(gen_faces(10, item->faces, chunk->vertices));
 }
 
 void gen_chunk_buffer(ChunkPtr chunk) {
@@ -764,7 +764,7 @@ void ensure_chunks_worker(Player *player, WorkerPtr worker) {
             int invisible = !chunk_visible(planes, a, b, 0, 256);
             int priority = 0;
             if (chunk) {
-                priority = chunk->buffer && chunk->dirty();
+                priority = chunk->buffer() && chunk->dirty();
             }
             int score = (invisible << 24) | (priority << 16) | distance;
             if (score < best_score) {

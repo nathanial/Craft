@@ -18,12 +18,12 @@ Chunk::Chunk(int p, int q) :
     this->_p = p;
     this->_q = q;
     this->_faces = 0;
-    this->buffer = 0;
+    this->_buffer = 0;
     this->set_dirty_flag();
 }
 
 Chunk::~Chunk() {
-    del_buffer(this->buffer);
+    del_buffer(this->buffer());
 }
 
 int Chunk::get_block(int x, int y, int z) const {
@@ -63,7 +63,7 @@ int Chunk::distance(int p, int q) {
 }
 
 void Chunk::draw(Attrib *attrib) {
-    draw_triangles_3d_ao(attrib, this->buffer, this->_faces * 6);
+    draw_triangles_3d_ao(attrib, this->buffer(), this->_faces * 6);
 }
 
 int Chunk::p() const {
@@ -105,6 +105,15 @@ int Chunk::maxy() const {
 int Chunk::miny() const {
     return this->_miny;
 }
+
+GLuint Chunk::buffer() const {
+    return this->_buffer;
+}
+
+void Chunk::set_buffer(GLuint buffer) {
+    this->_buffer = buffer;
+}
+
 
 int chunk_visible(float planes[6][4], int p, int q, int miny, int maxy) {
     int x = p * CHUNK_SIZE - 1;

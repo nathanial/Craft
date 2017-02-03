@@ -23,10 +23,10 @@ private:
     bool _dirty;
     int _miny;
     int _maxy;
+    GLuint _buffer;
 
 public:
 
-    GLuint buffer;
     GLfloat *vertices;
 
     Chunk(int p, int q);
@@ -56,6 +56,9 @@ public:
 
     int maxy() const;
     int miny() const;
+
+    GLuint buffer() const;
+    void set_buffer(GLuint buffer);
 };
 
 typedef std::shared_ptr<Chunk> ChunkPtr;
