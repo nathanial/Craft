@@ -13,6 +13,8 @@
 #include <mutex>
 #include <shared_mutex>
 
+class Attrib;
+
 class Chunk {
 private:
     std::unique_ptr<BlockMap<CHUNK_SIZE, CHUNK_HEIGHT>> blocks;
@@ -40,6 +42,7 @@ public:
     void set_dirty_flag();
 
     void foreach_block(std::function<void (int, int, int, char)> func);
+    void draw(Attrib *attrib);
 };
 
 typedef std::shared_ptr<Chunk> ChunkPtr;

@@ -1005,7 +1005,7 @@ int render_chunks(Attrib *attrib, Player *player) {
         {
             return;
         }
-        draw_chunk(attrib, chunk);
+        chunk->draw(attrib);
         result += chunk->faces;
     });
     return result;

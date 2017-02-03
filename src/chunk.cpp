@@ -7,6 +7,7 @@
 #include "model.h"
 #include "util.h"
 #include "item.h"
+#include "draw.h"
 
 extern Model *g;
 
@@ -66,6 +67,10 @@ int Chunk::distance(int p, int q) {
     int dp = ABS(this->p - p);
     int dq = ABS(this->q - q);
     return MAX(dp, dq);
+}
+
+void Chunk::draw(Attrib *attrib) {
+    draw_triangles_3d_ao(attrib, this->buffer, this->faces * 6);
 }
 
 int chunk_visible(float planes[6][4], int p, int q, int miny, int maxy) {
