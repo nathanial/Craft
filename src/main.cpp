@@ -644,16 +644,15 @@ void compute_chunk(WorkerItemPtr item) {
 
     item->miny = miny;
     item->maxy = maxy;
-    item->faces = faces;
+    chunk->set_faces(faces);
     chunk->set_vertices(data);
 }
 
 void generate_chunk(ChunkPtr chunk, WorkerItemPtr item) {
     chunk->set_miny(item->miny);
     chunk->set_maxy(item->maxy);
-    chunk->set_faces(item->faces);
     del_buffer(chunk->buffer());
-    chunk->set_buffer(gen_faces(10, item->faces, chunk->vertices()));
+    chunk->set_buffer(gen_faces(10, chunk->faces(), chunk->vertices()));
 }
 
 void gen_chunk_buffer(ChunkPtr chunk) {
@@ -920,8 +919,10 @@ int render_chunks(Attrib *attrib, Player *player) {
         {
             return;
         }
-        chunk->draw(attrib);
-        result += chunk->faces();
+        if(chunk->buffer()){
+            chunk->draw(attrib);
+            result += chunk->faces();
+        }
     });
     return result;
 }
