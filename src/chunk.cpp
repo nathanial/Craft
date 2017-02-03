@@ -114,6 +114,13 @@ void Chunk::set_buffer(GLuint buffer) {
     this->_buffer = buffer;
 }
 
+GLfloat* Chunk::vertices() const {
+    return this->_vertices;
+}
+
+void Chunk::set_vertices(GLfloat *vertices) {
+    this->_vertices = vertices;
+}
 
 int chunk_visible(float planes[6][4], int p, int q, int miny, int maxy) {
     int x = p * CHUNK_SIZE - 1;
