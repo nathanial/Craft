@@ -15,8 +15,8 @@ extern Model *g;
 Chunk::Chunk(int p, int q) :
     blocks(new BlockMap<CHUNK_SIZE, CHUNK_HEIGHT>())
 {
-    this->p = p;
-    this->q = q;
+    this->_p = p;
+    this->_q = q;
     this->faces = 0;
     this->buffer = 0;
     this->set_dirty_flag();
@@ -27,28 +27,28 @@ Chunk::~Chunk() {
 }
 
 int Chunk::get_block(int x, int y, int z) const {
-    return this->blocks->get(x - this->p * CHUNK_SIZE, y, z - this->q * CHUNK_SIZE);
+    return this->blocks->get(x - this->_p * CHUNK_SIZE, y, z - this->_q * CHUNK_SIZE);
 }
 
 int Chunk::get_block_or_zero(int x, int y, int z) const {
-    return this->blocks->get_or_default(x - this->p * CHUNK_SIZE, y, z - this->q * CHUNK_SIZE, 0);
+    return this->blocks->get_or_default(x - this->_p * CHUNK_SIZE, y, z - this->_q * CHUNK_SIZE, 0);
 }
 
 void Chunk::foreach_block(std::function<void (int, int, int, char)> func) {
     this->blocks->each([&](int x, int y, int z, char w){
-        func(x + this->p * CHUNK_SIZE, y, z + this->q * CHUNK_SIZE, w);
+        func(x + this->_p * CHUNK_SIZE, y, z + this->_q * CHUNK_SIZE, w);
     });
 }
 
 int Chunk::set_block(int x, int y, int z, char w){
-    return this->blocks->set(x - this->p * CHUNK_SIZE, y, z - this->q * CHUNK_SIZE, w);
+    return this->blocks->set(x - this->_p * CHUNK_SIZE, y, z - this->_q * CHUNK_SIZE, w);
 }
 
 void Chunk::set_dirty_flag() {
     this->dirty = 1;
     for (int dp = -1; dp <= 1; dp++) {
         for (int dq = -1; dq <= 1; dq++) {
-            auto other = g->find_chunk(this->p + dp, this->q + dq);
+            auto other = g->find_chunk(this->_p + dp, this->_q + dq);
             if (other) {
                 other->dirty = 1;
             }
@@ -57,13 +57,21 @@ void Chunk::set_dirty_flag() {
 }
 
 int Chunk::distance(int p, int q) {
-    int dp = ABS(this->p - p);
-    int dq = ABS(this->q - q);
+    int dp = ABS(this->_p - p);
+    int dq = ABS(this->_q - q);
     return MAX(dp, dq);
 }
 
 void Chunk::draw(Attrib *attrib) {
     draw_triangles_3d_ao(attrib, this->buffer, this->faces * 6);
+}
+
+int Chunk::p() const {
+    return this->_p;
+}
+
+int Chunk::q() const {
+    return this->_q;
 }
 
 int chunk_visible(float planes[6][4], int p, int q, int miny, int maxy) {

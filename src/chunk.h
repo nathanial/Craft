@@ -18,9 +18,9 @@ class Attrib;
 class Chunk {
 private:
     std::unique_ptr<BlockMap<CHUNK_SIZE, CHUNK_HEIGHT>> blocks;
-
+    int _p, _q; // chunk position
 public:
-    int p, q; // chunk position
+
     int faces;
     bool dirty;
     int miny;
@@ -40,6 +40,9 @@ public:
 
     void foreach_block(std::function<void (int, int, int, char)> func);
     void draw(Attrib *attrib);
+
+    int p() const;
+    int q() const;
 };
 
 typedef std::shared_ptr<Chunk> ChunkPtr;

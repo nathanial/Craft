@@ -68,7 +68,7 @@ void Model::delete_chunks(){
             }
         }
         if (_delete) {
-            deletion_list.push_back(std::make_tuple(chunk->p, chunk->q));
+            deletion_list.push_back(std::make_tuple(chunk->p(), chunk->q()));
         }
     });
     for(auto & position : deletion_list){
@@ -89,5 +89,5 @@ void Model::add_chunk(ChunkPtr chunk) {
     if(chunk == nullptr){
         throw "Couldn't Make Shared Ptr";
     }
-    this->chunks[std::make_tuple(chunk->p,chunk->q)] = chunk;
+    this->chunks[std::make_tuple(chunk->p(), chunk->q())] = chunk;
 }

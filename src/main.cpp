@@ -658,8 +658,8 @@ void generate_chunk(ChunkPtr chunk, WorkerItemPtr item) {
 
 void gen_chunk_buffer(ChunkPtr chunk) {
     auto item = std::make_shared<WorkerItem>();
-    item->p = chunk->p;
-    item->q = chunk->q;
+    item->p = chunk->p();
+    item->q = chunk->q();
     compute_chunk(item);
     generate_chunk(chunk, item);
     chunk->dirty = 0;
@@ -685,8 +685,8 @@ void create_chunk(int p, int q) {
     g->add_chunk(chunk);
 
     auto item = std::make_shared<WorkerItem>();
-    item->p = chunk->p;
-    item->q = chunk->q;
+    item->p = chunk->p();
+    item->q = chunk->q();
 
     load_chunk(item);
     request_chunk(p, q);
@@ -793,8 +793,8 @@ void ensure_chunks_worker(Player *player, WorkerPtr worker) {
         }
     }
     worker->item = std::make_shared<WorkerItem>();
-    worker->item->p = chunk->p;
-    worker->item->q = chunk->q;
+    worker->item->p = chunk->p();
+    worker->item->q = chunk->q();
     worker->item->load = load;
     chunk->dirty = 0;
     worker->state = WORKER_BUSY;
@@ -916,7 +916,7 @@ int render_chunks(Attrib *attrib, Player *player) {
             return;
         }
         if (!chunk_visible(
-            planes, chunk->p, chunk->q, chunk->miny, chunk->maxy))
+            planes, chunk->p(), chunk->q(), chunk->miny, chunk->maxy))
         {
             return;
         }
