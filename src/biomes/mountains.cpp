@@ -15,9 +15,15 @@ void Mountains::create_chunk(ChunkPtr chunk, int p, int q) {
             int z = q * CHUNK_SIZE + dz;
             float f = simplex2(x * 0.01, z * 0.01, 4, 0.5, 2);
             float g = simplex2(-x * 0.01, -z * 0.01, 2, 0.9, 2);
-            float mountain_factor = (x / 32.0f) / 2.0;
-            if(mountain_factor > 3) {
-                mountain_factor = 3;
+            float mountain_factor;
+            if(x < 0){
+                mountain_factor = (abs(x + CHUNK_SIZE * 3) / 32.0f) / 2.0;
+            } else {
+                mountain_factor = (abs(x) / 32.0f) / 2.0;
+            }
+
+            if(mountain_factor > 3.5) {
+                mountain_factor = 3.5;
             }
             if(mountain_factor < 1){
                 mountain_factor = 1;
@@ -39,7 +45,7 @@ void Mountains::create_chunk(ChunkPtr chunk, int p, int q) {
                 }
             }
 
-            if(simplex2(x, z, 6, 0.5, 2) > 0.80){
+            if(simplex2(x, z, 6, 0.5, 2) > 0.78){
                 chunk->set_block(x,h+10,z, BEACON);
             }
         }

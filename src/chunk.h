@@ -61,6 +61,8 @@ public:
 
     GLfloat* vertices() const;
     void set_vertices(GLfloat *vertices);
+
+    void generate_buffer();
 };
 
 typedef std::shared_ptr<Chunk> ChunkPtr;

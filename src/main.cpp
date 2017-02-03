@@ -648,17 +648,12 @@ void compute_chunk(WorkerItemPtr item) {
     chunk->set_vertices(data);
 }
 
-void generate_chunk(ChunkPtr chunk, WorkerItemPtr item) {
-    del_buffer(chunk->buffer());
-    chunk->set_buffer(gen_faces(10, chunk->faces(), chunk->vertices()));
-}
-
 void gen_chunk_buffer(ChunkPtr chunk) {
     auto item = std::make_shared<WorkerItem>();
     item->p = chunk->p();
     item->q = chunk->q();
     compute_chunk(item);
-    generate_chunk(chunk, item);
+    chunk->generate_buffer();
     chunk->set_dirty(false);
 }
 
@@ -701,7 +696,7 @@ void check_workers() {
                 if (item->load) {
                     request_chunk(item->p, item->q);
                 }
-                generate_chunk(chunk, item);
+                chunk->generate_buffer();
             }
             worker->state = WORKER_IDLE;
         }

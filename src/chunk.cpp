@@ -121,6 +121,13 @@ void Chunk::set_vertices(GLfloat *vertices) {
     this->_vertices = vertices;
 }
 
+void Chunk::generate_buffer() {
+    if(this->buffer()) {
+        del_buffer(this->buffer());
+    }
+    this->set_buffer(gen_faces(10, this->faces(), this->vertices()));
+}
+
 int chunk_visible(float planes[6][4], int p, int q, int miny, int maxy) {
     int x = p * CHUNK_SIZE - 1;
     int z = q * CHUNK_SIZE - 1;
