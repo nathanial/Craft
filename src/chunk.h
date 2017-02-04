@@ -44,6 +44,14 @@ public:
 
 typedef std::shared_ptr<NeighborEdges> NeighborEdgesPtr;
 
+enum LightMapType {
+    NATIVE_LIGHT_LEVEL,
+    EAST_LIGHT_LEVEL,
+    WEST_LIGHT_LEVEL,
+    NORTH_LIGHT_LEVEL,
+    SOUTH_LIGHT_LEVEL
+};
+
 class Chunk {
 private:
 
@@ -56,7 +64,11 @@ private:
     GLfloat *_vertices;
 public:
     std::unique_ptr<ChunkBlockMap> blocks;
-    std::unique_ptr<ChunkBlockMap> light_levels;
+    std::unique_ptr<ChunkBlockMap> native_light_levels;
+    std::unique_ptr<ChunkBlockMap> east_light_levels;
+    std::unique_ptr<ChunkBlockMap> west_light_levels;
+    std::unique_ptr<ChunkBlockMap> north_light_levels;
+    std::unique_ptr<ChunkBlockMap> south_light_levels;
 
     Chunk(int p, int q);
     ~Chunk();
@@ -95,6 +107,11 @@ public:
     void load(NeighborEdgesPtr neighbor_edges);
 
     void redraw(NeighborEdgesPtr edges);
+
+    void record_light_level(BigBlockMap *light, LightMapType light_map_type);
+
+
+    void insert_edge_values(NeighborEdgesPtr edges, BigBlockMap *opaque, BigBlockMap *light);
 };
 
 typedef std::shared_ptr<Chunk> ChunkPtr;

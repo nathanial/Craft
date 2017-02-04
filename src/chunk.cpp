@@ -29,7 +29,11 @@ void make_cube(
 
 Chunk::Chunk(int p, int q) :
     blocks(new ChunkBlockMap()),
-    light_levels(new ChunkBlockMap())
+    native_light_levels(new ChunkBlockMap()),
+    north_light_levels(new ChunkBlockMap()),
+    east_light_levels(new ChunkBlockMap()),
+    south_light_levels(new ChunkBlockMap()),
+    west_light_levels(new ChunkBlockMap())
 {
     this->_p = p;
     this->_q = q;
@@ -174,7 +178,7 @@ void light_fill(
     light_fill(opaque, light, x, y, z + 1, w);
 }
 
-void insert_edge_values(NeighborEdgesPtr edges, BigBlockMap *opaque, BigBlockMap *light) {
+void Chunk::insert_edge_values(NeighborEdgesPtr edges, BigBlockMap *opaque, BigBlockMap *light) {
     if(edges->north_edge_blocks){
         edges->north_edge_blocks->each([&](int x, int y, int z, char w){
             opaque->set(x, y, 0, !is_transparent(w) && !is_light(w));
@@ -203,6 +207,8 @@ void insert_edge_values(NeighborEdgesPtr edges, BigBlockMap *opaque, BigBlockMap
             }
         });
     }
+    this->record_light_level(light, NORTH_LIGHT_LEVEL);
+
     if(edges->south_edge_lights){
         edges->south_edge_lights->each([&](int x, int y, int z, char w){
             if(w > 0){
@@ -210,6 +216,8 @@ void insert_edge_values(NeighborEdgesPtr edges, BigBlockMap *opaque, BigBlockMap
             }
         });
     }
+    this->record_light_level(light, SOUTH_LIGHT_LEVEL);
+
     if(edges->west_edge_lights){
         edges->west_edge_lights->each([&](int x, int y, int z, char w){
             if(w > 0){
@@ -217,6 +225,8 @@ void insert_edge_values(NeighborEdgesPtr edges, BigBlockMap *opaque, BigBlockMap
             }
         });
     }
+    this->record_light_level(light, WEST_LIGHT_LEVEL);
+
     if(edges->east_edge_lights){
         edges->east_edge_lights->each([&](int x, int y, int z, char w){
             if(w > 0){
@@ -224,6 +234,7 @@ void insert_edge_values(NeighborEdgesPtr edges, BigBlockMap *opaque, BigBlockMap
             }
         });
     }
+    this->record_light_level(light, EAST_LIGHT_LEVEL);
 
 }
 
@@ -264,6 +275,36 @@ EdgeChanges check_edge_values(NeighborEdgesPtr edges, BigBlockMap *light){
     return changes;
 }
 
+void Chunk::record_light_level(BigBlockMap *light, LightMapType light_map_type){
+    this->blocks->each([&](int x, int y, int z, char ew){
+        int lx = x + 1;
+        int ly = y;
+        int lz = z + 1;
+        if(light->get(lx,ly,lz) > 0){
+            switch(light_map_type){
+                case NATIVE_LIGHT_LEVEL:
+                    this->native_light_levels->set(x,y,z, light->get(lx,ly,lz));
+                    break;
+                case NORTH_LIGHT_LEVEL:
+                    this->north_light_levels->set(x,y,z, light->get(lx,ly,lz));
+                    break;
+                case SOUTH_LIGHT_LEVEL:
+                    this->south_light_levels->set(x,y,z, light->get(lx,ly,lz));
+                    break;
+                case EAST_LIGHT_LEVEL:
+                    this->east_light_levels->set(x,y,z, light->get(lx,ly,lz));
+                    break;
+                case WEST_LIGHT_LEVEL:
+                    this->west_light_levels->set(x,y,z, light->get(lx,ly,lz));
+                    break;
+                default:
+                    throw std::invalid_argument("Unknown enum");
+            }
+        }
+    });
+    light->clear();
+}
+
 void Chunk::load(NeighborEdgesPtr edges) {
     auto opaque = new BigBlockMap();
     auto light = new BigBlockMap();
@@ -271,7 +312,11 @@ void Chunk::load(NeighborEdgesPtr edges) {
 
     printf("Compute Chunk %d,%d\n", this->_p, this->_q);
 
-    this->light_levels->clear();
+    this->native_light_levels->clear();
+    this->east_light_levels->clear();
+    this->west_light_levels->clear();
+    this->south_light_levels->clear();
+    this->north_light_levels->clear();
 
     this->blocks->each([&](int ex, int ey, int ez, int w) {
         int x = ex + 1;
@@ -283,9 +328,6 @@ void Chunk::load(NeighborEdgesPtr edges) {
         }
     });
 
-
-    insert_edge_values(edges, opaque, light);
-
     this->blocks->each([&](int x, int y, int z, char ew){
         int lx = x + 1;
         int ly = y;
@@ -294,15 +336,20 @@ void Chunk::load(NeighborEdgesPtr edges) {
             light_fill(opaque, light, lx, ly, lz, 15);
         }
     });
+    this->record_light_level(light, NATIVE_LIGHT_LEVEL);
 
+    insert_edge_values(edges, opaque, light);
 
+    light->clear();
     this->blocks->each([&](int x, int y, int z, char ew){
-        int lx = x + 1;
-        int ly = y;
-        int lz = z + 1;
-        if(light->get(lx,ly,lz) > 0){
-            this->light_levels->set(x,y,z, light->get(lx,ly,lz));
-        }
+        auto total_light_level = (
+            this->native_light_levels->get(x,y,z) +
+            this->east_light_levels->get(x,y,z) +
+            this->west_light_levels->get(x,y,z) +
+            this->north_light_levels->get(x,y,z) +
+            this->south_light_levels->get(x,y,z)
+        );
+        light->set(x+1,y,z+1, total_light_level);
     });
 
     auto changes = check_edge_values(edges, light);
