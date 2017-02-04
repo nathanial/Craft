@@ -42,7 +42,9 @@ Chunk::Chunk(int p, int q) :
 }
 
 Chunk::~Chunk() {
-    del_buffer(this->_buffer);
+    if(this->_buffer){
+        del_buffer(this->_buffer);
+    }
 }
 
 int Chunk::get_block(int x, int y, int z) const {

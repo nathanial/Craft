@@ -21,7 +21,7 @@ public:
     BlockMap& operator=(BlockMap&&) = delete;
 
     int set(int x, int y, int z, char w) {
-        if(x < 0 || x >= WIDTH || y < 0 || y >= HEIGHT || z < 0 || z >= WIDTH){
+        if(x < 0 || x >= WIDTH || y < 0 || y >= HEIGHT || z < 0 || z >= DEPTH){
             printf("Bad Index %d,%d,%d\n", x, y, z);
             throw new std::invalid_argument("Bad Index");
         }
@@ -37,14 +37,14 @@ public:
         return overwrite;
     }
     char get(int x, int y, int z) {
-        if(x < 0 || x >= WIDTH || y < 0 || y >= HEIGHT|| z < 0 || z >= WIDTH){
+        if(x < 0 || x >= WIDTH || y < 0 || y >= HEIGHT|| z < 0 || z >= DEPTH){
             printf("Bad Index %d,%d,%d\n", x, y, z);
             throw new std::invalid_argument("Bad Index");
         }
         return this->_data[x][y][z];
     }
     char get_or_default(int x, int y, int z, char _default) {
-        if(x < 0 || x >= WIDTH || y < 0 || y >= HEIGHT|| z < 0 || z >= WIDTH){
+        if(x < 0 || x >= WIDTH || y < 0 || y >= HEIGHT|| z < 0 || z >= DEPTH){
             return _default;
         }
         return this->_data[x][y][z];
@@ -52,7 +52,7 @@ public:
     void each(std::function<void (int, int, int, char)> func) {
         for(int x = 0; x < WIDTH; x++){
             for(int y = 0; y < HEIGHT; y++){
-                for(int z = 0; z < WIDTH; z++){
+                for(int z = 0; z < DEPTH; z++){
                     if(this->_data[x][y][z] != 0){
                         func(x, y, z, this->_data[x][y][z]);
                     }
@@ -61,10 +61,10 @@ public:
         }
     }
     unsigned int size() {
-        return WIDTH * WIDTH * HEIGHT;
+        return WIDTH * DEPTH * HEIGHT;
     };
 };
 
-typedef BlockMap<CHUNK_SIZE * 3, CHUNK_HEIGHT, CHUNK_SIZE> BigBlockMap;
+typedef BlockMap<CHUNK_SIZE * 3, CHUNK_HEIGHT, CHUNK_SIZE * 3> BigBlockMap;
 
 #endif

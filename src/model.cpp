@@ -184,24 +184,23 @@ std::shared_ptr<BlockMap<1, CHUNK_HEIGHT, CHUNK_SIZE>> east_edge_blocks(ChunkPtr
 
 NeighborEdgesPtr Model::find_edges(int p, int q){
     std::lock_guard<std::recursive_mutex> lock_queue(this->chunks_mtx);
-//    auto north_chunk = this->find_chunk(p, q+1);
-//    auto south_chunk = this->find_chunk(p, q-1);
-//    auto west_chunk = this->find_chunk(p-1, q);
-//    auto east_chunk = this->find_chunk(p+1,q);
-//
-//    NeighborEdgesPtr edges = std::make_shared<NeighborEdges>();
-//    if(north_chunk){
-//        edges->north_edge = south_edge_blocks(north_chunk);
-//    }
-//    if(south_chunk){
-//        edges->south_edge = north_edge_blocks(south_chunk);
-//    }
-//    if(west_chunk){
-//        edges->west_edge = east_edge_blocks(west_chunk);
-//    }
-//    if(east_chunk){
-//        edges->east_edge = west_edge_blocks(east_chunk);
-//    }
-//    return edges;
-    return nullptr;
+    auto north_chunk = this->find_chunk(p, q+1);
+    auto south_chunk = this->find_chunk(p, q-1);
+    auto west_chunk = this->find_chunk(p-1, q);
+    auto east_chunk = this->find_chunk(p+1,q);
+
+    NeighborEdgesPtr edges = std::make_shared<NeighborEdges>();
+    if(north_chunk){
+        edges->north_edge = south_edge_blocks(north_chunk);
+    }
+    if(south_chunk){
+        edges->south_edge = north_edge_blocks(south_chunk);
+    }
+    if(west_chunk){
+        edges->west_edge = east_edge_blocks(west_chunk);
+    }
+    if(east_chunk){
+        edges->east_edge = west_edge_blocks(east_chunk);
+    }
+    return edges;
 }
