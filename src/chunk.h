@@ -34,6 +34,14 @@ public:
     EastWestEdgeMap east_edge_lights;
 };
 
+class EdgeChanges {
+public:
+    bool north_edge = false;
+    bool south_edge = false;
+    bool west_edge = false;
+    bool east_edge = false;
+};
+
 typedef std::shared_ptr<NeighborEdges> NeighborEdgesPtr;
 
 class Chunk {

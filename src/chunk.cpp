@@ -239,6 +239,49 @@ void insert_edge_values(NeighborEdgesPtr edges, BigBlockMap *opaque, BigBlockMap
 
 }
 
+EdgeChanges check_edge_values(NeighborEdgesPtr edges, BigBlockMap *light){
+    EdgeChanges changes;
+    if(edges->north_edge_lights) {
+        edges->north_edge_lights->each([&](int x, int y, int z, char w){
+            auto latest_value = light->get(x,y,0);
+            if(latest_value != w){
+                changes.north_edge = true;
+            }
+        });
+    }
+    if(edges->south_edge_lights){
+        edges->south_edge_lights->each([&](int x, int y, int z, char w){
+            auto latest_change = light->get(x,y,CHUNK_SIZE+1);
+            if(latest_change != w){
+                changes.south_edge = true;
+            }
+        });
+    } else {
+        printf("MISSING SOTUH EDGE LIGHTS\n");
+    }
+    if(edges->west_edge_lights){
+        edges->west_edge_lights->each([&](int x, int y, int z, char w){
+            auto latest_change = light->get(0,y,z);
+            if(latest_change != w){
+                changes.west_edge = true;
+            }
+        });
+    } else {
+        printf("MISSING WEST EDGE LIGHTS\n");
+    }
+    if(edges->east_edge_lights){
+        edges->east_edge_lights->each([&](int x, int y, int z, char w){
+            auto latest_change = light->get(CHUNK_SIZE+1, y, z);
+            if(latest_change != w){
+                changes.east_edge = true;
+            }
+        });
+    } else {
+        printf("MISSING EAST EDGE LIGHTS\n");
+    }
+    return changes;
+}
+
 void Chunk::load(NeighborEdgesPtr edges) {
     auto opaque = new BigBlockMap();
     auto light = new BigBlockMap();
@@ -271,12 +314,24 @@ void Chunk::load(NeighborEdgesPtr edges) {
         }
     });
 
+    auto changes = check_edge_values(edges, light);
+    if(changes.north_edge) {
+        g->reload_chunk(this->_p, this->_q - 1);
+    }
+    if(changes.south_edge) {
+        g->reload_chunk(this->_p, this->_q + 1);
+    }
+    if(changes.west_edge) {
+        g->reload_chunk(this->_p - 1, this->_q);
+    }
+    if(changes.east_edge){
+        g->reload_chunk(this->_p + 1, this->_q);
+    }
     this->blocks->each([&](int x, int y, int z, char ew){
         int lx = x + 1;
         int ly = y;
         int lz = z + 1;
         if(light->get(lx,ly,lz) > 0){
-            printf("AFTER BAM %d,%d,%d,%d\n", x,y,z, (int)light->get(lx,ly,lz));
             this->light_levels->set(x,y,z, light->get(lx,ly,lz));
         }
     });

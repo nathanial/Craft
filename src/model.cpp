@@ -208,3 +208,7 @@ NeighborEdgesPtr Model::find_edges(int p, int q){
     }
     return edges;
 }
+
+void Model::reload_chunk(int p, int q){
+    printf("Reload Chunk %d,%d\n", p, q);
+}

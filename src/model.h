@@ -121,6 +121,7 @@ public:
 
     void draw_loaded_chunks();
     void request_chunk(int p, int q, bool force);
+    void reload_chunk(int p, int q);
 
     NeighborEdgesPtr find_edges(int p, int q);
 
