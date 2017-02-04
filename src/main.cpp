@@ -316,9 +316,7 @@ int player_intersects_block(
     return 0;
 }
 
-void load_chunk(WorkerItemPtr item) {
-    int p = item->p;
-    int q = item->q;
+void load_chunk(int p, int q) {
     auto chunk = g->find_chunk(p,q);
     create_world(chunk, p, q);
     db_load_blocks(chunk, p, q);
@@ -331,10 +329,7 @@ void create_chunk(int p, int q) {
     g->add_chunk(chunk);
 
     auto item = std::make_shared<WorkerItem>();
-    item->p = chunk->p();
-    item->q = chunk->q();
-
-    load_chunk(item);
+    load_chunk(chunk->p(), chunk->q());
     chunk->redraw();
 }
 
@@ -468,7 +463,7 @@ int worker_run(WorkerPtr worker) {
         }
         auto item = worker->item;
         if (item->load) {
-            load_chunk(item);
+            load_chunk(item->p, item->q);
         }
         auto chunk = g->find_chunk(item->p, item->q);
         chunk->load();
