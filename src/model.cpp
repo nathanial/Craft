@@ -41,8 +41,8 @@ void Model::each_chunk(std::function<void (ChunkPtr chunk)> func) {
 
 void Model::draw_loaded_chunks() {
     ChunkPtr chunk = nullptr;
+    std::lock_guard<std::recursive_mutex> lock_queue(this->chunks_mtx);
     {
-        std::lock_guard<std::recursive_mutex> lock_queue(this->chunks_mtx);
         if(!this->loading_chunks.empty()){
             std::shared_future<ChunkPtr> &chunk_future = this->loading_chunks.front();
             if(chunk_future.wait_for(std::chrono::seconds(0)) == std::future_status::ready){
@@ -56,6 +56,11 @@ void Model::draw_loaded_chunks() {
     if(chunk){
         chunk->generate_buffer();
     }
+
+    for(auto &c : this->chunks_to_reload){
+        c->redraw(this->find_edges(c->p(), c->q()));
+    }
+    this->chunks_to_reload.clear();
 }
 
 
@@ -210,5 +215,9 @@ NeighborEdgesPtr Model::find_edges(int p, int q){
 }
 
 void Model::reload_chunk(int p, int q){
-    printf("Reload Chunk %d,%d\n", p, q);
+    std::lock_guard<std::recursive_mutex> lock_queue(this->chunks_mtx);
+    auto chunk = this->find_chunk(p,q);
+    if(chunk){
+        this->chunks_to_reload.push_back(chunk);
+    }
 }

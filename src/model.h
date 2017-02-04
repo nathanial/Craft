@@ -74,6 +74,7 @@ private:
     std::recursive_mutex chunks_mtx;
     std::unordered_map<ChunkPosition, ChunkPtr, ChunkPositionHash> chunks;
     std::queue<std::shared_future<ChunkPtr>> loading_chunks;
+    std::vector<ChunkPtr> chunks_to_reload;
     std::unordered_map<ChunkPosition, bool, ChunkPositionHash> chunk_is_loading;
 
 public:
