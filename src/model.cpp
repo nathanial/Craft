@@ -56,11 +56,6 @@ void Model::draw_loaded_chunks() {
     if(chunk){
         chunk->generate_buffer();
     }
-
-    for(auto &c : this->chunks_to_reload){
-        c->redraw(this->find_edges(c->p(), c->q()));
-    }
-    this->chunks_to_reload.clear();
 }
 
 
@@ -218,6 +213,11 @@ void Model::reload_chunk(int p, int q){
     std::lock_guard<std::recursive_mutex> lock_queue(this->chunks_mtx);
     auto chunk = this->find_chunk(p,q);
     if(chunk){
-        this->chunks_to_reload.push_back(chunk);
+        this->chunk_is_loading[std::make_tuple(chunk->p(), chunk->q())] = true;
+        auto edges = this->find_edges(chunk->p(), chunk->q());
+        this->loading_chunks.push(std::async([=](){
+            chunk->load(edges);
+            return chunk;
+        }));
     }
 }

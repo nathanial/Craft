@@ -286,7 +286,6 @@ int hit_test(
         int hw = _hit_test(chunk, 8, previous,
                            x, y, z, vx, vy, vz, &hx, &hy, &hz);
         if (hw > 0) {
-            printf("HIT %d\n", hw);
             float d = sqrtf(
                     powf(hx - x, 2) + powf(hy - y, 2) + powf(hz - z, 2));
             if (best == 0 || d < best) {
@@ -327,6 +326,7 @@ void force_chunks(Player *player) {
             auto chunk = g->find_chunk(a, b);
             if (chunk) {
                 if (chunk->dirty()) {
+                    printf("FORCE DRAW");
                     chunk->redraw(g->find_edges(a,b));
                 }
             }
@@ -400,7 +400,6 @@ void ensure_chunks(Player *player) {
 }
 
 void _set_block(int p, int q, int x, int y, int z, int w, int dirty) {
-    printf("Inner Set Block %d,%d,%d,%d,%d\n", p, q, x, y, z);
     auto chunk = g->find_chunk(p, q);
     if (chunk) {
         if (chunk->set_block(x, y, z, w)) {
@@ -418,7 +417,6 @@ void _set_block(int p, int q, int x, int y, int z, int w, int dirty) {
 void set_block(int x, int y, int z, int w) {
     int p = chunked(x);
     int q = chunked(z);
-    printf("Set Block (p:%d,q:%d) (x:%d,y:%d,z:%d)\n", p, q, x, y, z);
     _set_block(p, q, x, y, z, w, 1);
 }
 
