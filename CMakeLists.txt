@@ -11,7 +11,7 @@ add_executable(
         deps/lodepng/lodepng.cpp
     deps/noise/noise.c
     deps/sqlite/sqlite3.c
-    src/chunk.h src/chunk.cpp src/model.h src/draw.cpp src/draw.h src/biomes/rolling_planes.cpp src/biomes/rolling_planes.h src/biomes/biome.h src/biomes/mountains.h src/biomes/mountains.cpp src/height_map.h)
+    src/chunk.h src/chunk.cpp src/model.h src/draw.cpp src/draw.h src/biomes/rolling_planes.cpp src/biomes/rolling_planes.h src/biomes/biome.h src/biomes/mountains.h src/biomes/mountains.cpp src/height_map.h src/biomes/flatland.h src/biomes/flatland.cpp)
 
 add_definitions(-std=c++17 -fpermissive)
 

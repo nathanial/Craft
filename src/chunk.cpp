@@ -144,10 +144,65 @@ bool Chunk::is_ready_to_draw() const {
     return this->_buffer && this->dirty();
 }
 
+void insert_opaque_edge_values(NeighborEdgesPtr edges, BigBlockMap* opaque) {
+    if(edges->north_edge){
+        edges->north_edge->each([&](int x, int y, int z, char w){
+            opaque->set(x, y, 0, !is_transparent(w) && !is_light(w));
+        });
+    }
+    if(edges->south_edge){
+        edges->south_edge->each([&](int x, int y, int z, char w){
+            opaque->set(x, y, CHUNK_SIZE+1, !is_transparent(w) && !is_light(w));
+        });
+    }
+    if(edges->east_edge){
+        edges->east_edge->each([&](int x, int y, int z, char w){
+            opaque->set(CHUNK_SIZE+1, y, z, !is_transparent(w) && !is_light(w));
+        });
+    }
+    if(edges->west_edge){
+        edges->west_edge->each([&](int x, int y, int z, char w){
+            opaque->set(0, y, z, !is_transparent(w) && !is_light(w));
+        });
+    }
+}
+
+void insert_light_edge_values(NeighborEdgesPtr edges, BigBlockMap *opaque, BigBlockMap* light) {
+    if(edges->north_edge){
+        edges->north_edge->each([&](int x, int y, int z, char w){
+            if(is_light(w)){
+                light_fill(opaque, light, x, y, 0, 15, 0);
+            }
+        });
+    }
+    if(edges->south_edge){
+        edges->south_edge->each([&](int x, int y, int z, char w){
+            if(is_light(w)){
+                light_fill(opaque, light, x, y, CHUNK_SIZE+1, 15, 0);
+            }
+        });
+    }
+    if(edges->east_edge){
+        edges->east_edge->each([&](int x, int y, int z, char w){
+            if(is_light(w)){
+                light_fill(opaque, light, CHUNK_SIZE+1, y, z, 15, 0);
+            }
+        });
+    }
+    if(edges->west_edge){
+        edges->west_edge->each([&](int x, int y, int z, char w){
+            if(is_light(w)){
+                light_fill(opaque, light, 0, y, z, 15, 0);
+            }
+        });
+    }
+}
+
 void Chunk::load(NeighborEdgesPtr edges) {
     auto opaque = new BigBlockMap();
     auto light = new BigBlockMap();
     auto highest = new HeightMap<CHUNK_SIZE + 2>();
+
 
     printf("Compute Chunk %d,%d\n", this->_p, this->_q);
 
@@ -161,6 +216,10 @@ void Chunk::load(NeighborEdgesPtr edges) {
         }
     });
 
+    insert_opaque_edge_values(edges, opaque);
+
+    insert_light_edge_values(edges, opaque, light);
+
     this->blocks->each([&](int x, int y, int z, char ew){
         int lx = x + 1;
         int ly = y + 1;
@@ -169,6 +228,8 @@ void Chunk::load(NeighborEdgesPtr edges) {
             light_fill(opaque, light, lx, ly, lz, 15, 0);
         }
     });
+
+
 
     // count exposed faces
     int miny = 256;
