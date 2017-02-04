@@ -33,6 +33,9 @@ Model *g = &model;
 
 
 
+
+bool find_nearest_visible_chunk(int worker_index, const State *s, int &best_a, int &best_b);
+
 float time_of_day() {
     return 12.0;
 }
@@ -471,6 +474,36 @@ void force_chunks(Player *player) {
 
 void ensure_chunks_worker(Player *player, WorkerPtr worker) {
     State *s = &player->state;
+    int a, b;
+    if(!find_nearest_visible_chunk(worker->index, s, a, b)){
+        return;
+    }
+
+    bool load = false;
+    auto chunk = g->find_chunk(a, b);
+    if (!chunk) {
+        if (g->chunk_count() >= MAX_CHUNKS) {
+            return;
+        }
+        load = true;
+        GenerateChunkTask gen_chunk(a,b);
+        chunk = gen_chunk.run().get();
+        g->add_chunk(chunk);
+    }
+    worker->item = std::make_shared<WorkerItem>();
+    worker->item->p = chunk->p();
+    worker->item->q = chunk->q();
+    worker->item->load = load;
+    chunk->set_dirty(false);
+    worker->state = WORKER_BUSY;
+    worker->cnd.notify_all();
+}
+
+bool find_nearest_visible_chunk(int worker_index, const State *s, int &best_a, int &best_b) {
+    int start= 0x0fffffff;
+    int best_score = start;
+    best_a= 0;
+    best_b= 0;
     float matrix[16];
     set_matrix_3d(
         matrix, g->width, g->height,
@@ -480,16 +513,12 @@ void ensure_chunks_worker(Player *player, WorkerPtr worker) {
     int p = chunked(s->x);
     int q = chunked(s->z);
     int r = g->create_radius;
-    int start = 0x0fffffff;
-    int best_score = start;
-    int best_a = 0;
-    int best_b = 0;
     for (int dp = -r; dp <= r; dp++) {
         for (int dq = -r; dq <= r; dq++) {
             int a = p + dp;
             int b = q + dq;
             int index = (ABS(a) ^ ABS(b)) % WORKERS;
-            if (index != worker->index) {
+            if (index != worker_index) {
                 continue;
             }
             auto chunk = g->find_chunk(a, b);
@@ -510,31 +539,7 @@ void ensure_chunks_worker(Player *player, WorkerPtr worker) {
             }
         }
     }
-    if (best_score == start) {
-        return;
-    }
-    int a = best_a;
-    int b = best_b;
-    int load = 0;
-    auto chunk = g->find_chunk(a, b);
-    if (!chunk) {
-        load = 1;
-        if (g->chunk_count() < MAX_CHUNKS) {
-            GenerateChunkTask gen_chunk(a,b);
-            chunk = gen_chunk.run().get();
-            g->add_chunk(chunk);
-        }
-        else {
-            return;
-        }
-    }
-    worker->item = std::make_shared<WorkerItem>();
-    worker->item->p = chunk->p();
-    worker->item->q = chunk->q();
-    worker->item->load = load;
-    chunk->set_dirty(false);
-    worker->state = WORKER_BUSY;
-    worker->cnd.notify_all();
+    return best_score != start;
 }
 
 void ensure_chunks(Player *player) {
