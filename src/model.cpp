@@ -42,7 +42,7 @@ void Model::each_chunk(std::function<void (ChunkPtr chunk)> func) {
 void Model::draw_loaded_chunks() {
     ChunkPtr chunk = nullptr;
     {
-        std::lock_guard<std::mutex> lock_queue(this->chunks_mtx);
+        std::lock_guard<std::recursive_mutex> lock_queue(this->chunks_mtx);
         if(!this->loading_chunks.empty()){
             std::shared_future<ChunkPtr> &chunk_future = this->loading_chunks.front();
             if(chunk_future.wait_for(std::chrono::seconds(0)) == std::future_status::ready){
@@ -72,7 +72,7 @@ std::future<ChunkPtr> generate_chunk(int p, int q, NeighborEdgesPtr edges) {
 void Model::request_chunk(int p, int q, bool force) {
     NeighborEdgesPtr edges;
     {
-        std::lock_guard<std::mutex> lock_queue(this->chunks_mtx);
+        std::lock_guard<std::recursive_mutex> lock_queue(this->chunks_mtx);
         if(this->chunk_is_loading[std::make_tuple(p,q)]){
             return;
         }
@@ -89,7 +89,7 @@ void Model::request_chunk(int p, int q, bool force) {
         this->chunks[std::make_tuple(chunk->p(), chunk->q())] = chunk;
         chunk->generate_buffer();
     } else {
-        std::lock_guard<std::mutex> lock_queue(this->chunks_mtx);
+        std::lock_guard<std::recursive_mutex> lock_queue(this->chunks_mtx);
         this->chunk_is_loading[std::make_tuple(p,q)] = true;
         this->loading_chunks.push(loading_chunk);
     }
@@ -141,6 +141,67 @@ int Model::chunk_count() const {
     return static_cast<int>(this->chunks.size());
 }
 
+std::shared_ptr<BlockMap<CHUNK_SIZE, CHUNK_HEIGHT, 1>> south_edge_blocks(ChunkPtr chunk) {
+    std::shared_ptr<BlockMap<CHUNK_SIZE, CHUNK_HEIGHT, 1>> blocks(new BlockMap<CHUNK_SIZE, CHUNK_HEIGHT, 1>);
+    for(int x = 0; x < CHUNK_SIZE; x++){
+        for(int y = 0; y < CHUNK_HEIGHT; y++){
+            blocks->set(x,y,0, chunk->blocks->get(x,y,CHUNK_SIZE-1));
+        }
+    }
+    return blocks;
+};
+
+std::shared_ptr<BlockMap<CHUNK_SIZE, CHUNK_HEIGHT, 1>> north_edge_blocks(ChunkPtr chunk) {
+    std::shared_ptr<BlockMap<CHUNK_SIZE, CHUNK_HEIGHT, 1>> blocks(new BlockMap<CHUNK_SIZE, CHUNK_HEIGHT, 1>);
+    for(int x = 0; x < CHUNK_SIZE; x++){
+        for(int y = 0; y < CHUNK_HEIGHT; y++){
+            blocks->set(x,y,0, chunk->blocks->get(x,y,0));
+        }
+    }
+    return blocks;
+};
+
+std::shared_ptr<BlockMap<1, CHUNK_HEIGHT, CHUNK_SIZE>> west_edge_blocks(ChunkPtr chunk) {
+    std::shared_ptr<BlockMap<1, CHUNK_HEIGHT, CHUNK_SIZE>> blocks(new BlockMap<1, CHUNK_HEIGHT, CHUNK_SIZE>);
+    for(int z = 0; z < CHUNK_SIZE; z++){
+        for(int y = 0; y < CHUNK_HEIGHT; y++){
+            blocks->set(0,y,z, chunk->blocks->get(0,y,z));
+        }
+    }
+    return blocks;
+};
+
+std::shared_ptr<BlockMap<1, CHUNK_HEIGHT, CHUNK_SIZE>> east_edge_blocks(ChunkPtr chunk) {
+    std::shared_ptr<BlockMap<1, CHUNK_HEIGHT, CHUNK_SIZE>> blocks(new BlockMap<1, CHUNK_HEIGHT, CHUNK_SIZE>);
+    for(int z = 0; z < CHUNK_SIZE; z++){
+        for(int y = 0; y < CHUNK_HEIGHT; y++){
+            auto block = chunk->blocks->get(CHUNK_SIZE-1,y,z);
+            blocks->set(0,y,z, block);
+        }
+    }
+    return blocks;
+};
+
 NeighborEdgesPtr Model::find_edges(int p, int q){
+    std::lock_guard<std::recursive_mutex> lock_queue(this->chunks_mtx);
+//    auto north_chunk = this->find_chunk(p, q+1);
+//    auto south_chunk = this->find_chunk(p, q-1);
+//    auto west_chunk = this->find_chunk(p-1, q);
+//    auto east_chunk = this->find_chunk(p+1,q);
+//
+//    NeighborEdgesPtr edges = std::make_shared<NeighborEdges>();
+//    if(north_chunk){
+//        edges->north_edge = south_edge_blocks(north_chunk);
+//    }
+//    if(south_chunk){
+//        edges->south_edge = north_edge_blocks(south_chunk);
+//    }
+//    if(west_chunk){
+//        edges->west_edge = east_edge_blocks(west_chunk);
+//    }
+//    if(east_chunk){
+//        edges->east_edge = west_edge_blocks(east_chunk);
+//    }
+//    return edges;
     return nullptr;
 }
