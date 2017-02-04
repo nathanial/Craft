@@ -65,6 +65,6 @@ public:
     };
 };
 
-typedef BlockMap<CHUNK_SIZE * 3, CHUNK_HEIGHT, CHUNK_SIZE * 3> BigBlockMap;
+typedef BlockMap<CHUNK_SIZE + 2, CHUNK_HEIGHT, CHUNK_SIZE + 2> BigBlockMap;
 
 #endif

@@ -147,30 +147,24 @@ bool Chunk::is_ready_to_draw() const {
 void Chunk::load(NeighborEdgesPtr edges) {
     auto opaque = new BigBlockMap();
     auto light = new BigBlockMap();
-    auto highest = new HeightMap<CHUNK_SIZE * 3>();
-
-    int ox = this->_p * CHUNK_SIZE - CHUNK_SIZE;
-    int oy = -1;
-    int oz = this->_q * CHUNK_SIZE - CHUNK_SIZE;
+    auto highest = new HeightMap<CHUNK_SIZE + 2>();
 
     printf("Compute Chunk %d,%d\n", this->_p, this->_q);
 
-    this->foreach_block([&](int ex, int ey, int ez, int ew) {
-        int x = ex - ox;
-        int y = ey - oy;
-        int z = ez - oz;
-        int w = ew;
+    this->blocks->each([&](int ex, int ey, int ez, int w) {
+        int x = ex + 1;
+        int y = ey + 1;
+        int z = ez + 1;
         opaque->set(x,y,z, !is_transparent(w) && !is_light(w));
         if (opaque->get(x, y, z)) {
             highest->set(x, z, MAX(highest->get(x, z), y));
         }
     });
 
-
-    this->foreach_block([&](int x, int y, int z, char ew){
-        int lx = x - ox;
-        int ly = y - oy;
-        int lz = z - oz;
+    this->blocks->each([&](int x, int y, int z, char ew){
+        int lx = x + 1;
+        int ly = y + 1;
+        int lz = z + 1;
         if(is_light(ew)){
             light_fill(opaque, light, lx, ly, lz, 15, 0);
         }
@@ -180,13 +174,13 @@ void Chunk::load(NeighborEdgesPtr edges) {
     int miny = 256;
     int maxy = 0;
     int faces = 0;
-    this->foreach_block([&](int ex, int ey, int ez, int ew) {
+    this->blocks->each([&](int ex, int ey, int ez, int ew) {
         if (ew <= 0) {
             return;
         }
-        int x = ex - ox;
-        int y = ey - oy;
-        int z = ez - oz;
+        int x = ex + 1;
+        int y = ey + 1;
+        int z = ez + 1;
         int f1 = !opaque->get(x - 1, y, z);
         int f2 = !opaque->get(x + 1, y, z);
         int f3 = !opaque->get(x, y + 1, z);
@@ -208,13 +202,13 @@ void Chunk::load(NeighborEdgesPtr edges) {
     // generate geometry
     GLfloat *data = malloc_faces(10, faces);
     int offset = 0;
-    this->foreach_block([&](int ex, int ey, int ez, int ew) {
+    this->blocks->each([&](int ex, int ey, int ez, int ew) {
         if (ew <= 0) {
             return;
         }
-        int x = ex - ox;
-        int y = ey - oy;
-        int z = ez - oz;
+        int x = ex + 1;
+        int y = ey + 1;
+        int z = ez + 1;
         int f1 = !opaque->get(x - 1, y, z);
         int f2 = !opaque->get(x + 1, y, z);
         int f3 = !opaque->get(x, y + 1, z);
@@ -260,16 +254,16 @@ void Chunk::load(NeighborEdgesPtr edges) {
                     max_light = MAX(max_light, light[a][b]);
                 }
             }
-            float rotation = simplex2(ex, ez, 4, 0.5, 2) * 360;
+            float rotation = simplex2(ex + this->_p * CHUNK_SIZE, ez + this->_q * CHUNK_SIZE, 4, 0.5, 2) * 360;
             make_plant(
                     data + offset, min_ao, max_light,
-                    ex, ey, ez, 0.5, ew, rotation);
+                    ex + this->_p * CHUNK_SIZE, ey, ez + this->_q * CHUNK_SIZE, 0.5, ew, rotation);
         }
         else {
             make_cube(
                     data + offset, ao, light,
                     f1, f2, f3, f4, f5, f6,
-                    ex, ey, ez, 0.5, ew);
+                    ex + this->_p * CHUNK_SIZE, ey, ez + this->_q * CHUNK_SIZE, 0.5, ew);
         }
         offset += total * 60;
     });
@@ -358,13 +352,13 @@ void light_fill(
     if(w <= 0) {
         return;
     }
-    if(x < 0 || x >= CHUNK_SIZE * 3) {
+    if(x < 0 || x >= CHUNK_SIZE + 2) {
         return;
     }
     if(y < 0 || y >= CHUNK_HEIGHT){
         return;
     }
-    if(z < 0 || z >= CHUNK_SIZE * 3){
+    if(z < 0 || z >= CHUNK_SIZE + 2){
         return;
     }
     if (light->get(x, y, z) >= w) {
