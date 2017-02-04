@@ -34,7 +34,7 @@ Model *g = &model;
 
 
 
-bool find_nearest_undrawn_chunk(int worker_index, const State *s, int &best_a, int &best_b);
+bool find_nearest_undrawn_chunk(const State *s, int &best_a, int &best_b);
 
 float time_of_day() {
     return 12.0;
@@ -333,16 +333,14 @@ void create_chunk(int p, int q) {
 }
 
 void check_workers() {
-    for (int i = 0; i < WORKERS; i++) {
-        auto worker = g->workers.at(i);
-        std::lock_guard<std::mutex> lock(worker->mtx);
-        if (worker->state == WORKER_DONE) {
-            auto chunk = g->find_chunk(worker->p, worker->q);
-            if (chunk) {
-                chunk->generate_buffer();
-            }
-            worker->state = WORKER_IDLE;
+    auto worker = g->worker;
+    std::lock_guard<std::mutex> lock(worker->mtx);
+    if (worker->state == WORKER_DONE) {
+        auto chunk = g->find_chunk(worker->p, worker->q);
+        if (chunk) {
+            chunk->generate_buffer();
         }
+        worker->state = WORKER_IDLE;
     }
 }
 
@@ -371,7 +369,7 @@ void force_chunks(Player *player) {
 void ensure_chunks_worker(Player *player, WorkerPtr worker) {
     State *s = &player->state;
     int a, b;
-    if(!find_nearest_undrawn_chunk(worker->index, s, a, b)){
+    if(!find_nearest_undrawn_chunk(s, a, b)){
         return;
     }
 
@@ -394,7 +392,7 @@ void ensure_chunks_worker(Player *player, WorkerPtr worker) {
     worker->cnd.notify_all();
 }
 
-bool find_nearest_undrawn_chunk(int worker_index, const State *s, int &best_a, int &best_b) {
+bool find_nearest_undrawn_chunk(const State *s, int &best_a, int &best_b) {
     int start= 0x0fffffff;
     int best_score = start;
     best_a= 0;
@@ -412,10 +410,6 @@ bool find_nearest_undrawn_chunk(int worker_index, const State *s, int &best_a, i
         for (int dq = -r; dq <= r; dq++) {
             int a = p + dp;
             int b = q + dq;
-            int index = (ABS(a) ^ ABS(b)) % WORKERS;
-            if (index != worker_index) {
-                continue;
-            }
             auto chunk = g->find_chunk(a, b);
             if (chunk && !chunk->dirty()) {
                 continue;
@@ -440,12 +434,10 @@ bool find_nearest_undrawn_chunk(int worker_index, const State *s, int &best_a, i
 void ensure_chunks(Player *player) {
     check_workers();
     force_chunks(player);
-    for (int i = 0; i < WORKERS; i++) {
-        auto worker = g->workers.at(i);
-        std::lock_guard<std::mutex> lock(worker->mtx);
-        if (worker->state == WORKER_IDLE) {
-            ensure_chunks_worker(player, worker);
-        }
+    auto worker = g->worker;
+    std::lock_guard<std::mutex> lock(worker->mtx);
+    if (worker->state == WORKER_IDLE) {
+        ensure_chunks_worker(player, worker);
     }
 }
 
@@ -1336,12 +1328,9 @@ int main(int argc, char **argv) {
     g->sign_radius = RENDER_SIGN_RADIUS;
 
     // INITIALIZE WORKER THREADS
-    for (int i = 0; i < WORKERS; i++) {
-        auto worker = g->workers.at(i);
-        worker->index = i;
-        worker->state = WORKER_IDLE;
-        worker->thrd = std::thread(worker_run, worker);
-    }
+    auto worker = g->worker;
+    worker->state = WORKER_IDLE;
+    worker->thrd = std::thread(worker_run, worker);
 
     // OUTER LOOP //
     int running = 1;

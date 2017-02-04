@@ -72,7 +72,7 @@ private:
     std::unordered_map<ChunkPosition, ChunkPtr, ChunkPositionHash> chunks;
 public:
     GLFWwindow *window;
-    std::vector<WorkerPtr> workers;
+    WorkerPtr worker;
     int create_radius;
     int render_radius;
     int delete_radius;

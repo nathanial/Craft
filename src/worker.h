@@ -18,7 +18,6 @@ public:
     int q;
     int load;
 
-    int index;
     int state;
     std::thread thrd;
     std::mutex mtx;

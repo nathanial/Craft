@@ -1,10 +1,7 @@
 #include "model.h"
 #include "util.h"
 
-Model::Model(){
-    for(int i = 0; i < WORKERS; i++){
-        this->workers.push_back(std::make_shared<Worker>());
-    }
+Model::Model() : worker(std::make_shared<Worker>()){
 }
 
 ChunkPtr Model::get_chunk(int p, int q) {
