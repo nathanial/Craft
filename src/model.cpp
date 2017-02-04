@@ -42,7 +42,7 @@ void Model::each_chunk(std::function<void (ChunkPtr chunk)> func) {
 void Model::draw_loaded_chunks() {
     ChunkPtr chunk = nullptr;
     {
-        std::lock_guard<std::mutex> lock_queue(this->queue_mtx);
+        std::lock_guard<std::mutex> lock_queue(this->chunks_mtx);
         if(!this->loading_chunks.empty()){
             std::shared_future<ChunkPtr> &chunk_future = this->loading_chunks.front();
             if(chunk_future.wait_for(std::chrono::seconds(0)) == std::future_status::ready){
@@ -72,8 +72,11 @@ std::future<ChunkPtr> generate_chunk(int p, int q, NeighborEdgesPtr edges) {
 void Model::request_chunk(int p, int q, bool force) {
     NeighborEdgesPtr edges;
     {
-        std::lock_guard<std::mutex> lock_queue(this->queue_mtx);
+        std::lock_guard<std::mutex> lock_queue(this->chunks_mtx);
         if(this->chunk_is_loading[std::make_tuple(p,q)]){
+            return;
+        }
+        if(this->find_chunk(p,q)) {
             return;
         }
         edges = this->find_edges(p,q);
@@ -86,7 +89,7 @@ void Model::request_chunk(int p, int q, bool force) {
         this->chunks[std::make_tuple(chunk->p(), chunk->q())] = chunk;
         chunk->generate_buffer();
     } else {
-        std::lock_guard<std::mutex> lock_queue(this->queue_mtx);
+        std::lock_guard<std::mutex> lock_queue(this->chunks_mtx);
         this->chunk_is_loading[std::make_tuple(p,q)] = true;
         this->loading_chunks.push(loading_chunk);
     }

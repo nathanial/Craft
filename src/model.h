@@ -71,8 +71,8 @@ struct ChunkPositionHash : public std::unary_function<ChunkPosition, std::size_t
 
 class Model {
 private:
+    std::mutex chunks_mtx;
     std::unordered_map<ChunkPosition, ChunkPtr, ChunkPositionHash> chunks;
-    std::mutex queue_mtx;
     std::queue<std::shared_future<ChunkPtr>> loading_chunks;
     std::unordered_map<ChunkPosition, bool, ChunkPositionHash> chunk_is_loading;
 
