@@ -143,7 +143,11 @@ void Chunk::generate_buffer() {
     if(this->_buffer) {
         del_buffer(this->_buffer);
     }
+    if(!this->_vertices){
+        return;
+    }
     this->_buffer = gen_faces(10, this->faces(), this->vertices());
+    this->_vertices = nullptr;
 }
 
 bool Chunk::is_ready_to_draw() const {

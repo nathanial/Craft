@@ -8,13 +8,16 @@ extern "C" {
 #include "mountains.h"
 #include "../item.h"
 
+//float simplex2(
+//        float x, float y,
+//        int octaves, float persistence, float lacunarity)
+
 void Mountains::create_chunk(ChunkPtr chunk, int p, int q) {
     for (int dx = 0; dx < CHUNK_SIZE; dx++) {
         for (int dz = 0; dz < CHUNK_SIZE; dz++) {
             int x = p * CHUNK_SIZE + dx;
             int z = q * CHUNK_SIZE + dz;
-            float f = simplex2(x * 0.01, z * 0.01, 4, 0.5, 2);
-            float g = simplex2(-x * 0.01, -z * 0.01, 2, 0.9, 2);
+
             float mountain_factor;
             if(x < 0){
                 mountain_factor = (abs(x + CHUNK_SIZE * 3) / 32.0f) / 2.0;
@@ -28,6 +31,11 @@ void Mountains::create_chunk(ChunkPtr chunk, int p, int q) {
             if(mountain_factor < 1){
                 mountain_factor = 1;
             }
+
+            float stretch_factor = 0.005;
+            float f = simplex2(x * stretch_factor, z * stretch_factor, 4, 0.5, 2);
+            float g = simplex2(-x * stretch_factor, -z * stretch_factor, 2, 0.9, 2);
+
             int mh = g * (32 * mountain_factor) + 16;
             int h = f * mh;
             int w = GRASS;
