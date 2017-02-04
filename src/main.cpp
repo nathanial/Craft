@@ -328,7 +328,6 @@ void create_chunk(int p, int q) {
 
     g->add_chunk(chunk);
 
-    auto item = std::make_shared<WorkerItem>();
     load_chunk(chunk->p(), chunk->q());
     chunk->redraw();
 }
@@ -338,8 +337,7 @@ void check_workers() {
         auto worker = g->workers.at(i);
         std::lock_guard<std::mutex> lock(worker->mtx);
         if (worker->state == WORKER_DONE) {
-            auto item = worker->item;
-            auto chunk = g->find_chunk(item->p, item->q);
+            auto chunk = g->find_chunk(worker->p, worker->q);
             if (chunk) {
                 chunk->generate_buffer();
             }
@@ -388,10 +386,9 @@ void ensure_chunks_worker(Player *player, WorkerPtr worker) {
         chunk = gen_chunk.run().get();
         g->add_chunk(chunk);
     }
-    worker->item = std::make_shared<WorkerItem>();
-    worker->item->p = chunk->p();
-    worker->item->q = chunk->q();
-    worker->item->load = load;
+    worker->p = chunk->p();
+    worker->q = chunk->q();
+    worker->load = load;
     chunk->set_dirty(false);
     worker->state = WORKER_BUSY;
     worker->cnd.notify_all();
@@ -461,11 +458,10 @@ int worker_run(WorkerPtr worker) {
                 worker->cnd.wait(lock);
             }
         }
-        auto item = worker->item;
-        if (item->load) {
-            load_chunk(item->p, item->q);
+        if (worker->load) {
+            load_chunk(worker->p, worker->q);
         }
-        auto chunk = g->find_chunk(item->p, item->q);
+        auto chunk = g->find_chunk(worker->p, worker->q);
         chunk->load();
         {
             std::lock_guard<std::mutex> lock(worker->mtx);

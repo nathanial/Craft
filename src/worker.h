@@ -12,23 +12,17 @@
 #include <mutex>
 #include <condition_variable>
 
-class WorkerItem {
+class Worker {
 public:
     int p;
     int q;
     int load;
-};
 
-typedef std::shared_ptr<WorkerItem> WorkerItemPtr;
-
-class Worker {
-public:
     int index;
     int state;
     std::thread thrd;
     std::mutex mtx;
     std::condition_variable cnd;
-    WorkerItemPtr item;
 };
 
 typedef std::shared_ptr<Worker> WorkerPtr;
