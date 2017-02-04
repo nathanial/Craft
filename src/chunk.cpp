@@ -145,7 +145,7 @@ bool Chunk::is_ready_to_draw() const {
 
 void light_fill(
         BigBlockMap *opaque, BigBlockMap *light,
-        int x, int y, int z, int w, bool force = false, bool initial_fill=false)
+        int x, int y, int z, int w, bool force = false)
 {
     if(w <= 0) {
         return;
@@ -159,7 +159,7 @@ void light_fill(
     if(z < 0 || z >= CHUNK_SIZE + 2){
         return;
     }
-    if (light->get(x, y, z) >= w && !initial_fill) {
+    if (light->get(x, y, z) >= w) {
         return;
     }
     if (!force && opaque->get(x, y, z)) {
@@ -181,58 +181,55 @@ void insert_edge_values(NeighborEdgesPtr edges, BigBlockMap *opaque, BigBlockMap
             opaque->set(x, y, 0, !is_transparent(w) && !is_light(w));
         });
     }
-    if(edges->north_edge_lights) {
-        edges->north_edge_lights->each([&](int x, int y, int z, char w){
-            light->set(x, y, 0, w);
-        });
-    } else {
-        printf("MISSING SOUTH EDGE LIGHTS\n");
-    }
-
     if(edges->south_edge_blocks){
         edges->south_edge_blocks->each([&](int x, int y, int z, char w){
             opaque->set(x, y, CHUNK_SIZE+1, !is_transparent(w) && !is_light(w));
         });
     }
-    if(edges->south_edge_lights){
-        edges->south_edge_lights->each([&](int x, int y, int z, char w){
-            light->set(x, y, CHUNK_SIZE+1, w);
-        });
-    } else {
-        printf("MISSING SOTUH EDGE LIGHTS\n");
-    }
-
-
     if(edges->east_edge_blocks){
         edges->east_edge_blocks->each([&](int x, int y, int z, char w){
             opaque->set(CHUNK_SIZE+1, y, z, !is_transparent(w) && !is_light(w));
         });
     }
-    if(edges->east_edge_lights){
-        edges->east_edge_lights->each([&](int x, int y, int z, char w){
-            if(w > 0){
-                printf("GOTCHA EAST %d,%d,%d, %d\n", x, y, z, (int)w);
-            }
-            light->set(CHUNK_SIZE+1, y, z, w);
-        });
-    } else {
-        printf("MISSING EAST EDGE LIGHTS\n");
-    }
-
     if(edges->west_edge_blocks){
         edges->west_edge_blocks->each([&](int x, int y, int z, char w){
             opaque->set(0, y, z, !is_transparent(w) && !is_light(w));
         });
+    }
+
+    if(edges->north_edge_lights) {
+        edges->north_edge_lights->each([&](int x, int y, int z, char w){
+            light_fill(opaque, light, x, y, 0, w);
+        });
+    } else {
+        printf("MISSING SOUTH EDGE LIGHTS\n");
+    }
+    if(edges->south_edge_lights){
+        edges->south_edge_lights->each([&](int x, int y, int z, char w){
+            light_fill(opaque, light, x, y, CHUNK_SIZE+1, w);
+        });
+    } else {
+        printf("MISSING SOTUH EDGE LIGHTS\n");
     }
     if(edges->west_edge_lights){
         edges->west_edge_lights->each([&](int x, int y, int z, char w){
             if(w > 0){
                 printf("GOTCHA WEST %d,%d,%d, %d\n", x, y, z, (int)w);
             }
-            light->set(0, y, z, w);
+            light_fill(opaque, light, 0, y, z, w);
         });
     } else {
         printf("MISSING WEST EDGE LIGHTS\n");
+    }
+    if(edges->east_edge_lights){
+        edges->east_edge_lights->each([&](int x, int y, int z, char w){
+            if(w > 0){
+                printf("GOTCHA EAST %d,%d,%d, %d\n", x, y, z, (int)w);
+            }
+            light_fill(opaque, light, CHUNK_SIZE+1, y, z, w);
+        });
+    } else {
+        printf("MISSING EAST EDGE LIGHTS\n");
     }
 
 }
@@ -264,19 +261,13 @@ void Chunk::load(NeighborEdgesPtr edges) {
         int ly = y;
         int lz = z + 1;
         if(is_light(ew)){
-            light->set(lx,ly,lz,15);
-        }
-    });
-
-    light->each([&](int x, int y, int z, char ew){
-        if(ew > 0){
-            light_fill(opaque, light, x, y, z, ew);
+            light_fill(opaque, light, lx, ly, lz, 15);
         }
     });
 
     this->blocks->each([&](int x, int y, int z, char ew){
         int lx = x + 1;
-        int ly = y + 1;
+        int ly = y;
         int lz = z + 1;
         this->light_levels->set(x,y,z, light->get(lx,ly,lz));
     });
@@ -290,12 +281,12 @@ void Chunk::load(NeighborEdgesPtr edges) {
             return;
         }
         int x = ex + 1;
-        int y = ey + 1;
+        int y = ey ;
         int z = ez + 1;
         int f1 = !opaque->get(x - 1, y, z);
         int f2 = !opaque->get(x + 1, y, z);
         int f3 = !opaque->get(x, y + 1, z);
-        int f4 = !opaque->get(x, y - 1, z) && (ey > 0);
+        int f4 = (ey > 0) && !opaque->get(x, y - 1, z);
         int f5 = !opaque->get(x, y, z - 1);
         int f6 = !opaque->get(x, y, z + 1);
         int total = f1 + f2 + f3 + f4 + f5 + f6;
@@ -318,12 +309,12 @@ void Chunk::load(NeighborEdgesPtr edges) {
             return;
         }
         int x = ex + 1;
-        int y = ey + 1;
+        int y = ey;
         int z = ez + 1;
         int f1 = !opaque->get(x - 1, y, z);
         int f2 = !opaque->get(x + 1, y, z);
         int f3 = !opaque->get(x, y + 1, z);
-        int f4 = !opaque->get(x, y - 1, z) && (ey > 0);
+        int f4 = (ey > 0) && !opaque->get(x, y - 1, z);
         int f5 = !opaque->get(x, y, z - 1);
         int f6 = !opaque->get(x, y, z + 1);
         int total = f1 + f2 + f3 + f4 + f5 + f6;
@@ -337,12 +328,12 @@ void Chunk::load(NeighborEdgesPtr edges) {
         for (int dx = -1; dx <= 1; dx++) {
             for (int dy = -1; dy <= 1; dy++) {
                 for (int dz = -1; dz <= 1; dz++) {
-                    neighbors[index] = opaque->get(x + dx, y + dy, z + dz);
-                    lights[index] = light->get(x + dx, y + dy, z + dz);
+                    neighbors[index] = opaque->get_or_default(x + dx, y + dy, z + dz, 0);
+                    lights[index] = light->get_or_default(x + dx, y + dy, z + dz, 0);
                     shades[index] = 0;
                     if (y + dy <= highest->get(x + dx, z + dz)) {
                         for (int oy = 0; oy < 8; oy++) {
-                            if (opaque->get(x + dx, y + dy + oy, z + dz)) {
+                            if (opaque->get_or_default(x + dx, y + dy + oy, z + dz, 0)) {
                                 shades[index] = 1.0 - oy * 0.125;
                                 break;
                             }
