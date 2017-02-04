@@ -165,7 +165,6 @@ void light_fill(
     if (!force && opaque->get(x, y, z)) {
         return;
     }
-    //printf("Light Fill %d,%d,%d | %d,%d\n",x,y,z, w, force);
     light->set(x, y, z, w--);
     light_fill(opaque, light, x - 1, y, z, w);
     light_fill(opaque, light, x + 1, y, z, w);
@@ -199,14 +198,20 @@ void insert_edge_values(NeighborEdgesPtr edges, BigBlockMap *opaque, BigBlockMap
 
     if(edges->north_edge_lights) {
         edges->north_edge_lights->each([&](int x, int y, int z, char w){
-            light_fill(opaque, light, x, y, 0, w);
+            if(w > 0) {
+                printf("GOTCHA NORTH %d,%d,%d, %d\n", x, y, z, (int)w);
+                light_fill(opaque, light, x, y, 0, w);
+            }
         });
     } else {
         printf("MISSING SOUTH EDGE LIGHTS\n");
     }
     if(edges->south_edge_lights){
         edges->south_edge_lights->each([&](int x, int y, int z, char w){
-            light_fill(opaque, light, x, y, CHUNK_SIZE+1, w);
+            if(w > 0){
+                printf("GOTCHA SOUTH %d,%d,%d, %d\n", x, y, z, (int)w);
+                light_fill(opaque, light, x, y, CHUNK_SIZE+1, w);
+            }
         });
     } else {
         printf("MISSING SOTUH EDGE LIGHTS\n");
@@ -215,8 +220,8 @@ void insert_edge_values(NeighborEdgesPtr edges, BigBlockMap *opaque, BigBlockMap
         edges->west_edge_lights->each([&](int x, int y, int z, char w){
             if(w > 0){
                 printf("GOTCHA WEST %d,%d,%d, %d\n", x, y, z, (int)w);
+                light_fill(opaque, light, 0, y, z, w);
             }
-            light_fill(opaque, light, 0, y, z, w);
         });
     } else {
         printf("MISSING WEST EDGE LIGHTS\n");
@@ -225,8 +230,8 @@ void insert_edge_values(NeighborEdgesPtr edges, BigBlockMap *opaque, BigBlockMap
         edges->east_edge_lights->each([&](int x, int y, int z, char w){
             if(w > 0){
                 printf("GOTCHA EAST %d,%d,%d, %d\n", x, y, z, (int)w);
+                light_fill(opaque, light, CHUNK_SIZE+1, y, z, w);
             }
-            light_fill(opaque, light, CHUNK_SIZE+1, y, z, w);
         });
     } else {
         printf("MISSING EAST EDGE LIGHTS\n");
@@ -261,6 +266,7 @@ void Chunk::load(NeighborEdgesPtr edges) {
         int ly = y;
         int lz = z + 1;
         if(is_light(ew)){
+            printf("LIGHT FOUND %d,%d,%d\n", x,y,z);
             light_fill(opaque, light, lx, ly, lz, 15);
         }
     });
@@ -269,7 +275,10 @@ void Chunk::load(NeighborEdgesPtr edges) {
         int lx = x + 1;
         int ly = y;
         int lz = z + 1;
-        this->light_levels->set(x,y,z, light->get(lx,ly,lz));
+        if(light->get(lx,ly,lz) > 0){
+            printf("AFTER BAM %d,%d,%d,%d\n", x,y,z, (int)light->get(lx,ly,lz));
+            this->light_levels->set(x,y,z, light->get(lx,ly,lz));
+        }
     });
 
     // count exposed faces
