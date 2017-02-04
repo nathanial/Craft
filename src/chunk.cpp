@@ -168,7 +168,12 @@ void Chunk::load() {
     // populate opaque array
     for (int a = 0; a < 3; a++) {
         for (int b = 0; b < 3; b++) {
-            auto chunk = g->find_chunk(this->_p + (a-1), this->_q + (b-1));
+            Chunk *chunk;
+            if(a == 1 && b == 1){
+                chunk = this;
+            } else {
+                chunk = g->find_chunk(this->_p - (a-1), this->_q - (b-1)).get();
+            }
             if(!chunk){
                 continue;
             }
@@ -188,7 +193,12 @@ void Chunk::load() {
 
     for (int a = 0; a < 3; a++) {
         for (int b = 0; b < 3; b++) {
-            auto chunk = g->find_chunk(this->_p - (a-1), this->_q - (b-1));
+            Chunk *chunk;
+            if(a == 1 && b == 1){
+                chunk = this;
+            } else {
+                chunk = g->find_chunk(this->_p - (a-1), this->_q - (b-1)).get();
+            }
             if(chunk){
                 chunk->foreach_block([&](int x, int y, int z, char ew){
                     int lx = x - ox;
@@ -206,7 +216,7 @@ void Chunk::load() {
     int miny = 256;
     int maxy = 0;
     int faces = 0;
-    g->find_chunk(this->_p, this->_q)->foreach_block([&](int ex, int ey, int ez, int ew) {
+    this->foreach_block([&](int ex, int ey, int ez, int ew) {
         if (ew <= 0) {
             return;
         }
@@ -234,8 +244,7 @@ void Chunk::load() {
     // generate geometry
     GLfloat *data = malloc_faces(10, faces);
     int offset = 0;
-    auto chunk = g->find_chunk(this->_p, this->_q);
-    chunk->foreach_block([&](int ex, int ey, int ez, int ew) {
+    this->foreach_block([&](int ex, int ey, int ez, int ew) {
         if (ew <= 0) {
             return;
         }
@@ -305,10 +314,10 @@ void Chunk::load() {
     delete highest;
     delete opaque;
 
-    chunk->set_miny(miny);
-    chunk->set_maxy(maxy);
-    chunk->set_faces(faces);
-    chunk->set_vertices(data);
+    this->set_miny(miny);
+    this->set_maxy(maxy);
+    this->set_faces(faces);
+    this->set_vertices(data);
 }
 
 void Chunk::redraw(){

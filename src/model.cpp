@@ -1,7 +1,9 @@
 #include "model.h"
 #include "util.h"
+#include "world.h"
+#include "db.h"
 
-Model::Model() : worker(std::make_shared<Worker>()){
+Model::Model() {
 }
 
 ChunkPtr Model::get_chunk(int p, int q) {
@@ -36,6 +38,48 @@ void Model::each_chunk(std::function<void (ChunkPtr chunk)> func) {
 
     }
 }
+
+void Model::draw_loaded_chunks() {
+    ChunkPtr chunk = nullptr;
+    {
+        std::lock_guard<std::mutex> lock_queue(this->queue_mtx);
+        if(!this->loading_chunks.empty()){
+            std::shared_future<ChunkPtr> &chunk_future = this->loading_chunks.front();
+            if(chunk_future.wait_for(std::chrono::seconds(0)) == std::future_status::ready){
+                chunk = chunk_future.get();
+                this->chunks[std::make_tuple(chunk->p(), chunk->q())] = chunk;
+                this->loading_chunks.pop();
+            }
+        }
+    }
+    if(chunk){
+        chunk->generate_buffer();
+    }
+}
+
+
+std::future<ChunkPtr> generate_chunk(int p, int q) {
+    return std::async(std::launch::async, [=](){
+        ChunkPtr chunk = std::make_shared<Chunk>(p, q);
+        create_world(chunk, p, q);
+        db_load_blocks(chunk, p, q);
+        chunk->load();
+        return chunk;
+    });
+}
+
+void Model::request_chunk(int p, int q, bool force) {
+    std::shared_future<ChunkPtr> loading_chunk = generate_chunk(p, q);
+    if(force){
+        auto chunk = loading_chunk.get();
+        this->chunks[std::make_tuple(chunk->p(), chunk->q())] = chunk;
+        chunk->generate_buffer();
+    } else {
+        std::lock_guard<std::mutex> lock_queue(this->queue_mtx);
+        this->loading_chunks.push(loading_chunk);
+    }
+}
+
 
 char Model::get_block(int x, int y, int z) {
     int p = chunked(x);

@@ -21,7 +21,6 @@
 #include "draw.h"
 #include "player.h"
 #include "height_map.h"
-#include "workers/tasks/generate_chunk_task.h"
 
 extern "C" {
     #include "noise.h"
@@ -316,34 +315,6 @@ int player_intersects_block(
     return 0;
 }
 
-void load_chunk(int p, int q) {
-    auto chunk = g->find_chunk(p,q);
-    create_world(chunk, p, q);
-    db_load_blocks(chunk, p, q);
-}
-
-void create_chunk(int p, int q) {
-    GenerateChunkTask gen_chunk(p,q);
-    auto chunk = gen_chunk.run().get();
-
-    g->add_chunk(chunk);
-
-    load_chunk(chunk->p(), chunk->q());
-    chunk->redraw();
-}
-
-void check_workers() {
-    auto worker = g->worker;
-    std::lock_guard<std::mutex> lock(worker->mtx);
-    if (worker->state == WORKER_DONE) {
-        auto chunk = g->find_chunk(worker->p, worker->q);
-        if (chunk) {
-            chunk->generate_buffer();
-        }
-        worker->state = WORKER_IDLE;
-    }
-}
-
 void force_chunks(Player *player) {
     State *s = &player->state;
     int p = chunked(s->x);
@@ -360,36 +331,27 @@ void force_chunks(Player *player) {
                 }
             }
             else if (g->chunk_count() < MAX_CHUNKS) {
-                create_chunk(a, b);
+                g->request_chunk(a,b,true);
             }
         }
     }
 }
 
-void ensure_chunks_worker(Player *player, WorkerPtr worker) {
+void request_next_chunk(Player *player) {
     State *s = &player->state;
     int a, b;
+
     if(!find_nearest_undrawn_chunk(s, a, b)){
         return;
     }
 
-    bool load = false;
     auto chunk = g->find_chunk(a, b);
     if (!chunk) {
         if (g->chunk_count() >= MAX_CHUNKS) {
             return;
         }
-        load = true;
-        GenerateChunkTask gen_chunk(a,b);
-        chunk = gen_chunk.run().get();
-        g->add_chunk(chunk);
+        g->request_chunk(a, b, false);
     }
-    worker->p = chunk->p();
-    worker->q = chunk->q();
-    worker->load = load;
-    chunk->set_dirty(false);
-    worker->state = WORKER_BUSY;
-    worker->cnd.notify_all();
 }
 
 bool find_nearest_undrawn_chunk(const State *s, int &best_a, int &best_b) {
@@ -432,35 +394,9 @@ bool find_nearest_undrawn_chunk(const State *s, int &best_a, int &best_b) {
 }
 
 void ensure_chunks(Player *player) {
-    check_workers();
     force_chunks(player);
-    auto worker = g->worker;
-    std::lock_guard<std::mutex> lock(worker->mtx);
-    if (worker->state == WORKER_IDLE) {
-        ensure_chunks_worker(player, worker);
-    }
-}
-
-int worker_run(WorkerPtr worker) {
-    int running = 1;
-    while (running) {
-        {
-            std::unique_lock<std::mutex> lock(worker->mtx);
-            while (worker->state != WORKER_BUSY) {
-                worker->cnd.wait(lock);
-            }
-        }
-        if (worker->load) {
-            load_chunk(worker->p, worker->q);
-        }
-        auto chunk = g->find_chunk(worker->p, worker->q);
-        chunk->load();
-        {
-            std::lock_guard<std::mutex> lock(worker->mtx);
-            worker->state = WORKER_DONE;
-        }
-    }
-    return 0;
+    g->draw_loaded_chunks();
+    request_next_chunk(player);
 }
 
 void _set_block(int p, int q, int x, int y, int z, int w, int dirty) {
@@ -1219,7 +1155,7 @@ int main(int argc, char **argv) {
 
     glfwMakeContextCurrent(g->window);
     glfwSwapInterval(VSYNC);
-    glfwSetInputMode(g->window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
+    //glfwSetInputMode(g->window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
     glfwSetKeyCallback(g->window, on_key);
     glfwSetCharCallback(g->window, on_char);
     glfwSetMouseButtonCallback(g->window, on_mouse_button);
@@ -1325,12 +1261,6 @@ int main(int argc, char **argv) {
     g->create_radius = CREATE_CHUNK_RADIUS;
     g->render_radius = RENDER_CHUNK_RADIUS;
     g->delete_radius = DELETE_CHUNK_RADIUS;
-    g->sign_radius = RENDER_SIGN_RADIUS;
-
-    // INITIALIZE WORKER THREADS
-    auto worker = g->worker;
-    worker->state = WORKER_IDLE;
-    worker->thrd = std::thread(worker_run, worker);
 
     // OUTER LOOP //
     int running = 1;

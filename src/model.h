@@ -6,12 +6,14 @@
 #define CRAFT_MODEL_H
 
 #include <GL/glew.h>
+#include <GLFW/glfw3.h>
 #include "chunk.h"
 #include "config.h"
-#include "worker.h"
 #include <functional>
 #include <tuple>
 #include <vector>
+#include <queue>
+#include <future>
 
 class Block {
 public:
@@ -70,13 +72,14 @@ struct ChunkPositionHash : public std::unary_function<ChunkPosition, std::size_t
 class Model {
 private:
     std::unordered_map<ChunkPosition, ChunkPtr, ChunkPositionHash> chunks;
+    std::mutex queue_mtx;
+    std::queue<std::shared_future<ChunkPtr>> loading_chunks;
+
 public:
     GLFWwindow *window;
-    WorkerPtr worker;
     int create_radius;
     int render_radius;
     int delete_radius;
-    int sign_radius;
     Player players[MAX_PLAYERS];
     int player_count;
     int typing;
@@ -96,8 +99,6 @@ public:
     int mode;
     int mode_changed;
     char db_path[MAX_PATH_LENGTH];
-    char server_addr[MAX_ADDR_LENGTH];
-    int server_port;
     int day_length;
     int time_changed;
     Block block0;
@@ -117,6 +118,9 @@ public:
     void add_chunk(ChunkPtr chunk);
 
     char get_block(int x, int y, int z);
+
+    void draw_loaded_chunks();
+    void request_chunk(int p, int q, bool force);
 
     Model();
 };
