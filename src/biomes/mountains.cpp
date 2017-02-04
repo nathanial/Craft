@@ -36,7 +36,7 @@ void Mountains::create_chunk(ChunkPtr chunk, int p, int q) {
             float f = simplex2(x * stretch_factor, z * stretch_factor, 4, 0.5, 2);
             float g = simplex2(-x * stretch_factor, -z * stretch_factor, 2, 0.9, 2);
 
-            int mh = g * (32 * mountain_factor) + 16;
+            int mh = g * (40 * mountain_factor) + 16;
             int h = f * mh;
             int w = GRASS;
             int t = 12;
