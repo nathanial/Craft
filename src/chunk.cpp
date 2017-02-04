@@ -38,7 +38,7 @@ Chunk::Chunk(int p, int q) :
     this->_q = q;
     this->_faces = 0;
     this->_buffer = 0;
-    this->set_dirty_flag();
+    this->set_dirty(true);
 }
 
 Chunk::~Chunk() {
@@ -61,18 +61,6 @@ void Chunk::foreach_block(std::function<void (int, int, int, char)> func) {
 
 int Chunk::set_block(int x, int y, int z, char w){
     return this->blocks->set(x - this->_p * CHUNK_SIZE, y, z - this->_q * CHUNK_SIZE, w);
-}
-
-void Chunk::set_dirty_flag() {
-    this->set_dirty(true);
-    for (int dp = -1; dp <= 1; dp++) {
-        for (int dq = -1; dq <= 1; dq++) {
-            auto other = g->find_chunk(this->_p + dp, this->_q + dq);
-            if (other) {
-                other->set_dirty(true);
-            }
-        }
-    }
 }
 
 int Chunk::distance(int p, int q) {
@@ -165,52 +153,26 @@ void Chunk::load() {
 
     printf("Compute Chunk %d,%d\n", this->_p, this->_q);
 
-    // populate opaque array
-    for (int a = 0; a < 3; a++) {
-        for (int b = 0; b < 3; b++) {
-            Chunk *chunk;
-            if(a == 1 && b == 1){
-                chunk = this;
-            } else {
-                chunk = g->find_chunk(this->_p - (a-1), this->_q - (b-1)).get();
-            }
-            if(!chunk){
-                continue;
-            }
-            chunk->foreach_block([&](int ex, int ey, int ez, int ew) {
-                int x = ex - ox;
-                int y = ey - oy;
-                int z = ez - oz;
-                int w = ew;
-                opaque->set(x,y,z, !is_transparent(w) && !is_light(w));
-                if (opaque->get(x, y, z)) {
-                    highest->set(x, z, MAX(highest->get(x, z), y));
-                }
-            });
+    this->foreach_block([&](int ex, int ey, int ez, int ew) {
+        int x = ex - ox;
+        int y = ey - oy;
+        int z = ez - oz;
+        int w = ew;
+        opaque->set(x,y,z, !is_transparent(w) && !is_light(w));
+        if (opaque->get(x, y, z)) {
+            highest->set(x, z, MAX(highest->get(x, z), y));
         }
-    }
+    });
 
 
-    for (int a = 0; a < 3; a++) {
-        for (int b = 0; b < 3; b++) {
-            Chunk *chunk;
-            if(a == 1 && b == 1){
-                chunk = this;
-            } else {
-                chunk = g->find_chunk(this->_p - (a-1), this->_q - (b-1)).get();
-            }
-            if(chunk){
-                chunk->foreach_block([&](int x, int y, int z, char ew){
-                    int lx = x - ox;
-                    int ly = y - oy;
-                    int lz = z - oz;
-                    if(is_light(ew)){
-                        light_fill(opaque, light, lx, ly, lz, 15, 0);
-                    }
-                });
-            }
+    this->foreach_block([&](int x, int y, int z, char ew){
+        int lx = x - ox;
+        int ly = y - oy;
+        int lz = z - oz;
+        if(is_light(ew)){
+            light_fill(opaque, light, lx, ly, lz, 15, 0);
         }
-    }
+    });
 
     // count exposed faces
     int miny = 256;

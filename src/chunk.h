@@ -36,7 +36,6 @@ public:
     int set_block(int x, int y, int z, char w);
 
     int distance(int p, int q);
-    void set_dirty_flag();
 
     void foreach_block(std::function<void (int, int, int, char)> func);
     int draw(Attrib *attrib);

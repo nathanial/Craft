@@ -405,7 +405,7 @@ void _set_block(int p, int q, int x, int y, int z, int w, int dirty) {
     if (chunk) {
         if (chunk->set_block(x, y, z, w)) {
             if (dirty) {
-                chunk->set_dirty_flag();
+                chunk->set_dirty(true);
             }
             db_insert_block(p, q, x, y, z, w);
         }
@@ -1087,7 +1087,7 @@ void parse_buffer(char *buffer) {
         if (sscanf(line, "R,%d,%d", &kp, &kq) == 2) {
             auto chunk = g->find_chunk(kp, kq);
             if (chunk) {
-                chunk->set_dirty_flag();
+                chunk->set_dirty(true);
             }
         }
         double elapsed;
@@ -1114,8 +1114,6 @@ void parse_buffer(char *buffer) {
         snprintf(
             format, sizeof(format),
             "S,%%d,%%d,%%d,%%d,%%d,%%d,%%%d[^\n]", MAX_SIGN_LENGTH - 1);
-        int face;
-        char text[MAX_SIGN_LENGTH] = {0};
         line = tokenize(NULL, "\n", &key);
     }
 }
