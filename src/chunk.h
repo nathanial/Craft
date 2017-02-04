@@ -112,6 +112,8 @@ public:
 
 
     void insert_edge_values(NeighborEdgesPtr edges, BigBlockMap *opaque, BigBlockMap *light);
+
+    EdgeChanges check_edge_values(ChunkBlockMap *original_light_levels);
 };
 
 typedef std::shared_ptr<Chunk> ChunkPtr;

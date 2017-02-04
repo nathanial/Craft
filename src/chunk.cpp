@@ -145,8 +145,6 @@ bool Chunk::is_ready_to_draw() const {
     return this->_buffer && this->dirty();
 }
 
-
-
 void light_fill(
         BigBlockMap *opaque, BigBlockMap *light,
         int x, int y, int z, int w, bool force = false)
@@ -235,42 +233,69 @@ void Chunk::insert_edge_values(NeighborEdgesPtr edges, BigBlockMap *opaque, BigB
         });
     }
     this->record_light_level(light, EAST_LIGHT_LEVEL);
-
 }
 
-EdgeChanges check_edge_values(NeighborEdgesPtr edges, BigBlockMap *light){
+EdgeChanges Chunk::check_edge_values(ChunkBlockMap *original_light_levels){
     EdgeChanges changes;
-    if(edges->north_edge_lights) {
-        edges->north_edge_lights->each([&](int x, int y, int z, char w){
-            auto latest_value = light->get(x,y,0);
-            if(latest_value != w){
-                changes.north_edge = true;
-            }
-        });
-    }
-    if(edges->south_edge_lights){
-        edges->south_edge_lights->each([&](int x, int y, int z, char w){
-            auto latest_change = light->get(x,y,CHUNK_SIZE+1);
-            if(latest_change != w){
-                changes.south_edge = true;
-            }
-        });
-    }
-    if(edges->west_edge_lights){
-        edges->west_edge_lights->each([&](int x, int y, int z, char w){
-            auto latest_change = light->get(0,y,z);
-            if(latest_change != w){
+
+    for(int y = 0; y < CHUNK_HEIGHT; y++){
+        for(int z = 0; z < CHUNK_SIZE; z++){
+            // omit west light levels
+            auto west_edge_light = this->east_light_levels->get(0,y,z) + this->north_light_levels->get(0,y,z) + this->south_light_levels->get(0,y,z) + this->native_light_levels->get(0,y,z);
+            if(west_edge_light != original_light_levels->get(0,y,z) - this->west_light_levels->get(0,y,z)){
+                // printf("West Edge Changed %d,%d: %d != %d\n", y, z, west_edge_light, original_light_levels->get(0,y,z) - this->west_light_levels->get(0,y,z));
                 changes.west_edge = true;
+                break;
             }
-        });
+        }
+        if(changes.west_edge){
+            break;
+        }
     }
-    if(edges->east_edge_lights){
-        edges->east_edge_lights->each([&](int x, int y, int z, char w){
-            auto latest_change = light->get(CHUNK_SIZE+1, y, z);
-            if(latest_change != w){
+    for(int y = 0; y < CHUNK_HEIGHT; y++) {
+        for (int z = 0; z < CHUNK_SIZE; z++) {
+            // omit east light levels
+            auto east_edge_light = this->west_light_levels->get(CHUNK_SIZE-1,y,z) + this->north_light_levels->get(CHUNK_SIZE-1,y,z) + this->south_light_levels->get(CHUNK_SIZE-1,y,z) + this->native_light_levels->get(CHUNK_SIZE-1,y,z);
+            if(east_edge_light != original_light_levels->get(CHUNK_SIZE-1,y,z) - this->east_light_levels->get(CHUNK_SIZE-1,y,z)){
+                // printf("EAST Edge Changed %d,%d: %d != %d\n", y, z, east_edge_light, original_light_levels->get(CHUNK_SIZE-1,y,z) - this->east_light_levels->get(CHUNK_SIZE-1,y,z));
                 changes.east_edge = true;
+                break;
             }
-        });
+        }
+        if(changes.east_edge){
+            break;
+        }
+    }
+
+    for (int x = 0; x < CHUNK_SIZE; x++) {
+        for (int y = 0; y < CHUNK_HEIGHT; y++) {
+            // omit north light levels
+            auto north_edge_light = this->west_light_levels->get(x,y, 0) + this->south_light_levels->get(x,y,0) + this->east_light_levels->get(x,y,0) + this->native_light_levels->get(x,y,0);
+            if(north_edge_light != original_light_levels->get(x,y,0) - this->north_light_levels->get(x,y,0)){
+                // printf("NORTH EDGE CHANGED\n");
+                changes.north_edge = true;
+                break;
+            }
+        }
+        if(changes.north_edge){
+            break;
+        }
+    }
+
+
+    for (int x = 0; x < CHUNK_SIZE; x++) {
+        for (int y = 0; y < CHUNK_HEIGHT; y++) {
+            // omit south light levels
+            auto south_edge_light = this->west_light_levels->get(x,y, CHUNK_SIZE-1) + this->north_light_levels->get(x,y,CHUNK_SIZE-1) + this->east_light_levels->get(x,y,CHUNK_SIZE-1) + this->native_light_levels->get(x,y,CHUNK_SIZE-1);
+            if(south_edge_light != original_light_levels->get(x,y,CHUNK_SIZE-1) - this->south_light_levels->get(x,y,CHUNK_SIZE-1)){
+                // printf("SOUTH EDGE CHANGED\n");
+                changes.south_edge = true;
+                break;
+            }
+        }
+        if(changes.south_edge){
+            break;
+        }
     }
     return changes;
 }
@@ -280,26 +305,24 @@ void Chunk::record_light_level(BigBlockMap *light, LightMapType light_map_type){
         int lx = x + 1;
         int ly = y;
         int lz = z + 1;
-        if(light->get(lx,ly,lz) > 0){
-            switch(light_map_type){
-                case NATIVE_LIGHT_LEVEL:
-                    this->native_light_levels->set(x,y,z, light->get(lx,ly,lz));
-                    break;
-                case NORTH_LIGHT_LEVEL:
-                    this->north_light_levels->set(x,y,z, light->get(lx,ly,lz));
-                    break;
-                case SOUTH_LIGHT_LEVEL:
-                    this->south_light_levels->set(x,y,z, light->get(lx,ly,lz));
-                    break;
-                case EAST_LIGHT_LEVEL:
-                    this->east_light_levels->set(x,y,z, light->get(lx,ly,lz));
-                    break;
-                case WEST_LIGHT_LEVEL:
-                    this->west_light_levels->set(x,y,z, light->get(lx,ly,lz));
-                    break;
-                default:
-                    throw std::invalid_argument("Unknown enum");
-            }
+        switch(light_map_type){
+            case NATIVE_LIGHT_LEVEL:
+                this->native_light_levels->set(x,y,z, light->get(lx,ly,lz));
+                break;
+            case NORTH_LIGHT_LEVEL:
+                this->north_light_levels->set(x,y,z, light->get(lx,ly,lz));
+                break;
+            case SOUTH_LIGHT_LEVEL:
+                this->south_light_levels->set(x,y,z, light->get(lx,ly,lz));
+                break;
+            case EAST_LIGHT_LEVEL:
+                this->east_light_levels->set(x,y,z, light->get(lx,ly,lz));
+                break;
+            case WEST_LIGHT_LEVEL:
+                this->west_light_levels->set(x,y,z, light->get(lx,ly,lz));
+                break;
+            default:
+                throw std::invalid_argument("Unknown enum");
         }
     });
     light->clear();
@@ -309,14 +332,40 @@ void Chunk::load(NeighborEdgesPtr edges) {
     auto opaque = new BigBlockMap();
     auto light = new BigBlockMap();
     auto highest = new HeightMap<CHUNK_SIZE + 2>();
+    auto original_light_levels = new ChunkBlockMap();
 
-    printf("Compute Chunk %d,%d\n", this->_p, this->_q);
+    int original_sum = 0;
+    int native_light_level_sum = 0;
+    int east_light_level_sum = 0;
+    int west_light_level_sum = 0;
+    int north_light_level_sum = 0;
+    int south_light_level_sum = 0;
+    original_light_levels->each([&](int x, int y, int z, char w){
+        auto total_light_level = (
+                this->native_light_levels->get(x,y,z) +
+                this->east_light_levels->get(x,y,z) +
+                this->west_light_levels->get(x,y,z) +
+                this->north_light_levels->get(x,y,z) +
+                this->south_light_levels->get(x,y,z)
+        );
+        original_light_levels->set(x,y,z,total_light_level);
+        original_sum += total_light_level;
+        native_light_level_sum += this->native_light_levels->get(x,y,z);
+        east_light_level_sum += this->east_light_levels->get(x,y,z);
+        west_light_level_sum += this->west_light_levels->get(x,y,z);
+        north_light_level_sum += this->north_light_levels->get(x,y,z);
+        south_light_level_sum += this->south_light_levels->get(x,y,z);
+
+    });
+    printf("Chunk(%d,%d) = Light Sum %d,%d,%d,%d,%d,%d\n", this->_p, this->_q, original_sum, native_light_level_sum, east_light_level_sum, west_light_level_sum, north_light_level_sum, south_light_level_sum);
 
     this->native_light_levels->clear();
     this->east_light_levels->clear();
     this->west_light_levels->clear();
     this->south_light_levels->clear();
     this->north_light_levels->clear();
+    light->clear();
+
 
     this->blocks->each([&](int ex, int ey, int ez, int w) {
         int x = ex + 1;
@@ -340,7 +389,31 @@ void Chunk::load(NeighborEdgesPtr edges) {
 
     insert_edge_values(edges, opaque, light);
 
-    light->clear();
+    original_sum = 0;
+    native_light_level_sum = 0;
+    east_light_level_sum = 0;
+    west_light_level_sum = 0;
+    north_light_level_sum = 0;
+    south_light_level_sum = 0;
+    original_light_levels->each([&](int x, int y, int z, char w){
+        auto total_light_level = (
+                this->native_light_levels->get(x,y,z) +
+                this->east_light_levels->get(x,y,z) +
+                this->west_light_levels->get(x,y,z) +
+                this->north_light_levels->get(x,y,z) +
+                this->south_light_levels->get(x,y,z)
+        );
+//        original_light_levels->set(x,y,z,total_light_level);
+        original_sum += total_light_level;
+        native_light_level_sum += this->native_light_levels->get(x,y,z);
+        east_light_level_sum += this->east_light_levels->get(x,y,z);
+        west_light_level_sum += this->west_light_levels->get(x,y,z);
+        north_light_level_sum += this->north_light_levels->get(x,y,z);
+        south_light_level_sum += this->south_light_levels->get(x,y,z);
+    });
+    printf("After Clear Chunk(%d,%d) = Light Sum %d,%d,%d,%d,%d,%d\n", this->_p, this->_q, original_sum, native_light_level_sum, east_light_level_sum, west_light_level_sum, north_light_level_sum, south_light_level_sum);
+
+
     this->blocks->each([&](int x, int y, int z, char ew){
         auto total_light_level = (
             this->native_light_levels->get(x,y,z) +
@@ -352,19 +425,19 @@ void Chunk::load(NeighborEdgesPtr edges) {
         light->set(x+1,y,z+1, total_light_level);
     });
 
-    auto changes = check_edge_values(edges, light);
-    if(changes.north_edge) {
-        g->reload_chunk(this->_p, this->_q - 1);
-    }
-    if(changes.south_edge) {
-        g->reload_chunk(this->_p, this->_q + 1);
-    }
-    if(changes.west_edge) {
-        g->reload_chunk(this->_p - 1, this->_q);
-    }
-    if(changes.east_edge){
-        g->reload_chunk(this->_p + 1, this->_q);
-    }
+    auto changes = this->check_edge_values(original_light_levels);
+//    if(changes.north_edge) {
+//        g->reload_chunk(this->_p, this->_q - 1);
+//    }
+//    if(changes.south_edge) {
+//        g->reload_chunk(this->_p, this->_q + 1);
+//    }
+//    if(changes.west_edge) {
+//        g->reload_chunk(this->_p - 1, this->_q);
+//    }
+//    if(changes.east_edge){
+//        g->reload_chunk(this->_p + 1, this->_q);
+//    }
 
     // count exposed faces
     int miny = 256;
@@ -467,6 +540,7 @@ void Chunk::load(NeighborEdgesPtr edges) {
     delete light;
     delete highest;
     delete opaque;
+    delete original_light_levels;
 
     this->set_miny(miny);
     this->set_maxy(maxy);

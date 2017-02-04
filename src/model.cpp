@@ -35,44 +35,26 @@ void Model::each_chunk(std::function<void (ChunkPtr chunk)> func) {
         } else {
             func(chunk);
         }
-
     }
 }
 
 void Model::draw_loaded_chunks() {
-    ChunkPtr chunk = nullptr;
-    std::lock_guard<std::recursive_mutex> lock_queue(this->chunks_mtx);
-    {
-        if(!this->loading_chunks.empty()){
-            std::shared_future<ChunkPtr> &chunk_future = this->loading_chunks.front();
-            if(chunk_future.wait_for(std::chrono::seconds(0)) == std::future_status::ready){
-                chunk = chunk_future.get();
-                this->chunks[std::make_tuple(chunk->p(), chunk->q())] = chunk;
-                this->chunk_is_loading[std::make_tuple(chunk->p(), chunk->q())] = false;
-                this->loading_chunks.pop();
-            }
-        }
-    }
-    if(chunk){
-        chunk->generate_buffer();
-    }
 }
 
 
 std::future<ChunkPtr> generate_chunk(int p, int q, NeighborEdgesPtr edges) {
-    return std::async(std::launch::async, [=](){
-        ChunkPtr chunk = std::make_shared<Chunk>(p, q);
-        create_world(chunk, p, q);
-        db_load_blocks(chunk, p, q);
-        chunk->load(edges);
-        return chunk;
-    });
+    std::promise<ChunkPtr> chunk_promise;
+    ChunkPtr chunk = std::make_shared<Chunk>(p, q);
+    create_world(chunk, p, q);
+    db_load_blocks(chunk, p, q);
+    chunk->load(edges);
+    chunk_promise.set_value(chunk);
+    return chunk_promise.get_future();
 }
 
 void Model::request_chunk(int p, int q, bool force) {
     NeighborEdgesPtr edges;
     {
-        std::lock_guard<std::recursive_mutex> lock_queue(this->chunks_mtx);
         if(this->chunk_is_loading[std::make_tuple(p,q)]){
             return;
         }
@@ -84,15 +66,10 @@ void Model::request_chunk(int p, int q, bool force) {
 
 
     std::shared_future<ChunkPtr> loading_chunk = generate_chunk(p, q, edges);
-    if(force){
-        auto chunk = loading_chunk.get();
-        this->chunks[std::make_tuple(chunk->p(), chunk->q())] = chunk;
-        chunk->generate_buffer();
-    } else {
-        std::lock_guard<std::recursive_mutex> lock_queue(this->chunks_mtx);
-        this->chunk_is_loading[std::make_tuple(p,q)] = true;
-        this->loading_chunks.push(loading_chunk);
-    }
+    auto chunk = loading_chunk.get();
+    this->chunks[std::make_tuple(chunk->p(), chunk->q())] = chunk;
+    chunk->generate_buffer();
+    chunk->set_dirty(false);
 }
 
 
@@ -183,7 +160,6 @@ EastWestEdgeMap east_edge_blocks(std::function<char (int,int,int)> func) {
 };
 
 NeighborEdgesPtr Model::find_edges(int p, int q){
-    std::lock_guard<std::recursive_mutex> lock_queue(this->chunks_mtx);
     auto north_chunk = this->find_chunk(p, q-1);
     auto south_chunk = this->find_chunk(p, q+1);
     auto west_chunk = this->find_chunk(p-1, q);
@@ -250,14 +226,11 @@ NeighborEdgesPtr Model::find_edges(int p, int q){
 }
 
 void Model::reload_chunk(int p, int q){
-    std::lock_guard<std::recursive_mutex> lock_queue(this->chunks_mtx);
     auto chunk = this->find_chunk(p,q);
     if(chunk){
         this->chunk_is_loading[std::make_tuple(chunk->p(), chunk->q())] = true;
         auto edges = this->find_edges(chunk->p(), chunk->q());
-        this->loading_chunks.push(std::async([=](){
-            chunk->load(edges);
-            return chunk;
-        }));
+        chunk->load(edges);
+        chunk->set_dirty(true);
     }
 }
