@@ -64,6 +64,8 @@ public:
     bool is_ready_to_draw() const;
 
     void load();
+
+    void redraw();
 };
 
 typedef std::shared_ptr<Chunk> ChunkPtr;

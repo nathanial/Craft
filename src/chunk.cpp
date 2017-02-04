@@ -311,6 +311,12 @@ void Chunk::load() {
     chunk->set_vertices(data);
 }
 
+void Chunk::redraw(){
+    this->load();
+    this->generate_buffer();
+    this->set_dirty(false);
+}
+
 int chunk_visible(float planes[6][4], int p, int q, int miny, int maxy) {
     int x = p * CHUNK_SIZE - 1;
     int z = q * CHUNK_SIZE - 1;

@@ -410,17 +410,6 @@ int _gen_sign_buffer(
     return count;
 }
 
-
-
-void gen_chunk_buffer(ChunkPtr chunk) {
-    auto item = std::make_shared<WorkerItem>();
-    item->p = chunk->p();
-    item->q = chunk->q();
-    chunk->load();
-    chunk->generate_buffer();
-    chunk->set_dirty(false);
-}
-
 void load_chunk(WorkerItemPtr item) {
     int p = item->p;
     int q = item->q;
@@ -440,7 +429,7 @@ void create_chunk(int p, int q) {
     item->q = chunk->q();
 
     load_chunk(item);
-    gen_chunk_buffer(chunk);
+    chunk->redraw();
 }
 
 void check_workers() {
@@ -470,7 +459,7 @@ void force_chunks(Player *player) {
             auto chunk = g->find_chunk(a, b);
             if (chunk) {
                 if (chunk->dirty()) {
-                    gen_chunk_buffer(chunk);
+                    chunk->redraw();
                 }
             }
             else if (g->chunk_count() < MAX_CHUNKS) {
