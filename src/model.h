@@ -116,12 +116,13 @@ public:
     void delete_all_chunks();
 
     int chunk_count() const;
-    void add_chunk(ChunkPtr chunk);
 
     char get_block(int x, int y, int z);
 
     void draw_loaded_chunks();
     void request_chunk(int p, int q, bool force);
+
+    NeighborEdgesPtr find_edges(int p, int q);
 
     Model();
 };

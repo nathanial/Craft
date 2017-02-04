@@ -59,26 +59,28 @@ void Model::draw_loaded_chunks() {
 }
 
 
-std::future<ChunkPtr> generate_chunk(int p, int q) {
+std::future<ChunkPtr> generate_chunk(int p, int q, NeighborEdgesPtr edges) {
     return std::async(std::launch::async, [=](){
         ChunkPtr chunk = std::make_shared<Chunk>(p, q);
         create_world(chunk, p, q);
         db_load_blocks(chunk, p, q);
-        chunk->load();
+        chunk->load(edges);
         return chunk;
     });
 }
 
 void Model::request_chunk(int p, int q, bool force) {
+    NeighborEdgesPtr edges;
     {
         std::lock_guard<std::mutex> lock_queue(this->queue_mtx);
         if(this->chunk_is_loading[std::make_tuple(p,q)]){
             return;
         }
+        edges = this->find_edges(p,q);
     }
 
 
-    std::shared_future<ChunkPtr> loading_chunk = generate_chunk(p, q);
+    std::shared_future<ChunkPtr> loading_chunk = generate_chunk(p, q, edges);
     if(force){
         auto chunk = loading_chunk.get();
         this->chunks[std::make_tuple(chunk->p(), chunk->q())] = chunk;
@@ -136,9 +138,6 @@ int Model::chunk_count() const {
     return static_cast<int>(this->chunks.size());
 }
 
-void Model::add_chunk(ChunkPtr chunk) {
-    if(chunk == nullptr){
-        throw "Couldn't Make Shared Ptr";
-    }
-    this->chunks[std::make_tuple(chunk->p(), chunk->q())] = chunk;
+NeighborEdgesPtr Model::find_edges(int p, int q){
+    return nullptr;
 }

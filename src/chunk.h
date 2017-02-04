@@ -15,9 +15,18 @@
 
 class Attrib;
 
+class NeighborEdges {
+    std::unique_ptr<BlockMap<CHUNK_SIZE, CHUNK_HEIGHT, 1>> north_edge;
+    std::unique_ptr<BlockMap<CHUNK_SIZE, CHUNK_HEIGHT, 1>> south_edge;
+    std::unique_ptr<BlockMap<CHUNK_SIZE, CHUNK_HEIGHT, 1>> west_edge;
+    std::unique_ptr<BlockMap<CHUNK_SIZE, CHUNK_HEIGHT, 1>> east_edge;
+};
+
+typedef std::shared_ptr<NeighborEdges> NeighborEdgesPtr;
+
 class Chunk {
 private:
-    std::unique_ptr<BlockMap<CHUNK_SIZE, CHUNK_HEIGHT>> blocks;
+    std::unique_ptr<BlockMap<CHUNK_SIZE, CHUNK_HEIGHT, CHUNK_SIZE>> blocks;
     int _p, _q; // chunk position
     int _faces;
     bool _dirty;
@@ -62,9 +71,9 @@ public:
 
     bool is_ready_to_draw() const;
 
-    void load();
+    void load(NeighborEdgesPtr neighbor_edges);
 
-    void redraw();
+    void redraw(NeighborEdgesPtr edges);
 };
 
 typedef std::shared_ptr<Chunk> ChunkPtr;

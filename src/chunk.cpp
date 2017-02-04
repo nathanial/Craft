@@ -32,7 +32,7 @@ void make_cube(
         float x, float y, float z, float n, int w);
 
 Chunk::Chunk(int p, int q) :
-    blocks(new BlockMap<CHUNK_SIZE, CHUNK_HEIGHT>())
+    blocks(new BlockMap<CHUNK_SIZE, CHUNK_HEIGHT, CHUNK_SIZE>())
 {
     this->_p = p;
     this->_q = q;
@@ -142,7 +142,7 @@ bool Chunk::is_ready_to_draw() const {
     return this->_buffer && this->dirty();
 }
 
-void Chunk::load() {
+void Chunk::load(NeighborEdgesPtr edges) {
     auto opaque = new BigBlockMap();
     auto light = new BigBlockMap();
     auto highest = new HeightMap<CHUNK_SIZE * 3>();
@@ -282,8 +282,8 @@ void Chunk::load() {
     this->set_vertices(data);
 }
 
-void Chunk::redraw(){
-    this->load();
+void Chunk::redraw(NeighborEdgesPtr edges){
+    this->load(edges);
     this->generate_buffer();
     this->set_dirty(false);
 }

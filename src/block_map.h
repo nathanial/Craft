@@ -6,10 +6,10 @@
 #include <unordered_map>
 #include "config.h"
 
-template<unsigned int WIDTH, unsigned int HEIGHT>
+template<unsigned int WIDTH, unsigned int HEIGHT, unsigned int DEPTH>
 class BlockMap {
 public:
-    char _data[WIDTH][HEIGHT][WIDTH] = {{{0}}};
+    char _data[WIDTH][HEIGHT][DEPTH] = {{{0}}};
 
     BlockMap() {}
 
@@ -65,6 +65,6 @@ public:
     };
 };
 
-typedef BlockMap<CHUNK_SIZE * 3, CHUNK_HEIGHT> BigBlockMap;
+typedef BlockMap<CHUNK_SIZE * 3, CHUNK_HEIGHT, CHUNK_SIZE> BigBlockMap;
 
 #endif

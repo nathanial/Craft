@@ -327,7 +327,7 @@ void force_chunks(Player *player) {
             auto chunk = g->find_chunk(a, b);
             if (chunk) {
                 if (chunk->dirty()) {
-                    chunk->redraw();
+                    chunk->redraw(g->find_edges(a,b));
                 }
             }
             else if (g->chunk_count() < MAX_CHUNKS) {
