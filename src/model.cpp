@@ -48,6 +48,7 @@ void Model::draw_loaded_chunks() {
             if(chunk_future.wait_for(std::chrono::seconds(0)) == std::future_status::ready){
                 chunk = chunk_future.get();
                 this->chunks[std::make_tuple(chunk->p(), chunk->q())] = chunk;
+                this->chunk_is_loading[std::make_tuple(chunk->p(), chunk->q())] = false;
                 this->loading_chunks.pop();
             }
         }
@@ -69,6 +70,14 @@ std::future<ChunkPtr> generate_chunk(int p, int q) {
 }
 
 void Model::request_chunk(int p, int q, bool force) {
+    {
+        std::lock_guard<std::mutex> lock_queue(this->queue_mtx);
+        if(this->chunk_is_loading[std::make_tuple(p,q)]){
+            return;
+        }
+    }
+
+
     std::shared_future<ChunkPtr> loading_chunk = generate_chunk(p, q);
     if(force){
         auto chunk = loading_chunk.get();
@@ -76,6 +85,7 @@ void Model::request_chunk(int p, int q, bool force) {
         chunk->generate_buffer();
     } else {
         std::lock_guard<std::mutex> lock_queue(this->queue_mtx);
+        this->chunk_is_loading[std::make_tuple(p,q)] = true;
         this->loading_chunks.push(loading_chunk);
     }
 }
