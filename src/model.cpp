@@ -141,41 +141,41 @@ int Model::chunk_count() const {
     return static_cast<int>(this->chunks.size());
 }
 
-std::shared_ptr<BlockMap<CHUNK_SIZE, CHUNK_HEIGHT, 1>> south_edge_blocks(ChunkPtr chunk) {
+NorthSouthEdgeMap south_edge_blocks(const std::unique_ptr<ChunkBlockMap> &chunk_blocks) {
     std::shared_ptr<BlockMap<CHUNK_SIZE, CHUNK_HEIGHT, 1>> blocks(new BlockMap<CHUNK_SIZE, CHUNK_HEIGHT, 1>);
     for(int x = 0; x < CHUNK_SIZE; x++){
         for(int y = 0; y < CHUNK_HEIGHT; y++){
-            blocks->set(x,y,0, chunk->blocks->get(x,y,CHUNK_SIZE-1));
+            blocks->set(x,y,0, chunk_blocks->get(x,y,CHUNK_SIZE-1));
         }
     }
     return blocks;
 };
 
-std::shared_ptr<BlockMap<CHUNK_SIZE, CHUNK_HEIGHT, 1>> north_edge_blocks(ChunkPtr chunk) {
+NorthSouthEdgeMap north_edge_blocks(const std::unique_ptr<ChunkBlockMap> &chunk_blocks) {
     std::shared_ptr<BlockMap<CHUNK_SIZE, CHUNK_HEIGHT, 1>> blocks(new BlockMap<CHUNK_SIZE, CHUNK_HEIGHT, 1>);
     for(int x = 0; x < CHUNK_SIZE; x++){
         for(int y = 0; y < CHUNK_HEIGHT; y++){
-            blocks->set(x,y,0, chunk->blocks->get(x,y,0));
+            blocks->set(x,y,0, chunk_blocks->get(x,y,0));
         }
     }
     return blocks;
 };
 
-std::shared_ptr<BlockMap<1, CHUNK_HEIGHT, CHUNK_SIZE>> west_edge_blocks(ChunkPtr chunk) {
+EastWestEdgeMap west_edge_blocks(const std::unique_ptr<ChunkBlockMap> &chunk_blocks) {
     std::shared_ptr<BlockMap<1, CHUNK_HEIGHT, CHUNK_SIZE>> blocks(new BlockMap<1, CHUNK_HEIGHT, CHUNK_SIZE>);
     for(int z = 0; z < CHUNK_SIZE; z++){
         for(int y = 0; y < CHUNK_HEIGHT; y++){
-            blocks->set(0,y,z, chunk->blocks->get(0,y,z));
+            blocks->set(0,y,z, chunk_blocks->get(0,y,z));
         }
     }
     return blocks;
 };
 
-std::shared_ptr<BlockMap<1, CHUNK_HEIGHT, CHUNK_SIZE>> east_edge_blocks(ChunkPtr chunk) {
+EastWestEdgeMap east_edge_blocks(const std::unique_ptr<ChunkBlockMap> &chunk_blocks) {
     std::shared_ptr<BlockMap<1, CHUNK_HEIGHT, CHUNK_SIZE>> blocks(new BlockMap<1, CHUNK_HEIGHT, CHUNK_SIZE>);
     for(int z = 0; z < CHUNK_SIZE; z++){
         for(int y = 0; y < CHUNK_HEIGHT; y++){
-            auto block = chunk->blocks->get(CHUNK_SIZE-1,y,z);
+            auto block = chunk_blocks->get(CHUNK_SIZE-1,y,z);
             blocks->set(0,y,z, block);
         }
     }
@@ -191,16 +191,20 @@ NeighborEdgesPtr Model::find_edges(int p, int q){
 
     NeighborEdgesPtr edges = std::make_shared<NeighborEdges>();
     if(north_chunk){
-        edges->north_edge = south_edge_blocks(north_chunk);
+        edges->north_edge_blocks = south_edge_blocks(north_chunk->blocks);
+        edges->north_edge_lights = south_edge_blocks(north_chunk->light_levels);
     }
     if(south_chunk){
-        edges->south_edge = north_edge_blocks(south_chunk);
+        edges->south_edge_blocks = north_edge_blocks(south_chunk->blocks);
+        edges->south_edge_lights = north_edge_blocks(south_chunk->light_levels);
     }
     if(west_chunk){
-        edges->west_edge = east_edge_blocks(west_chunk);
+        edges->west_edge_blocks = east_edge_blocks(west_chunk->blocks);
+        edges->west_edge_lights = east_edge_blocks(west_chunk->light_levels);
     }
     if(east_chunk){
-        edges->east_edge = west_edge_blocks(east_chunk);
+        edges->east_edge_blocks = west_edge_blocks(east_chunk->blocks);
+        edges->east_edge_lights = west_edge_blocks(east_chunk->light_levels);
     }
     return edges;
 }

@@ -60,6 +60,15 @@ public:
             }
         }
     }
+    void clear(){
+        for(int x = 0; x < WIDTH; x++) {
+            for (int y = 0; y < HEIGHT; y++) {
+                for (int z = 0; z < DEPTH; z++) {
+                    this->_data[x][y][z] = 0;
+                }
+            }
+        }
+    }
     unsigned int size() {
         return WIDTH * DEPTH * HEIGHT;
     };

@@ -14,10 +14,6 @@ extern "C" {
 
 extern Model *g;
 
-void light_fill(
-        BigBlockMap *opaque, BigBlockMap *light,
-        int x, int y, int z, int w, int force);
-
 void occlusion(
         char neighbors[27], char lights[27], float shades[27],
         float ao[6][4], float light[6][4]);
@@ -145,58 +141,100 @@ bool Chunk::is_ready_to_draw() const {
     return this->_buffer && this->dirty();
 }
 
-void insert_opaque_edge_values(NeighborEdgesPtr edges, BigBlockMap* opaque) {
-    if(edges->north_edge){
-        edges->north_edge->each([&](int x, int y, int z, char w){
+
+
+void light_fill(
+        BigBlockMap *opaque, BigBlockMap *light,
+        int x, int y, int z, int w, bool force = false, bool initial_fill=false)
+{
+    if(w <= 0) {
+        return;
+    }
+    if(x < 0 || x >= CHUNK_SIZE + 2) {
+        return;
+    }
+    if(y < 0 || y >= CHUNK_HEIGHT){
+        return;
+    }
+    if(z < 0 || z >= CHUNK_SIZE + 2){
+        return;
+    }
+    if (light->get(x, y, z) >= w && !initial_fill) {
+        return;
+    }
+    if (!force && opaque->get(x, y, z)) {
+        return;
+    }
+    //printf("Light Fill %d,%d,%d | %d,%d\n",x,y,z, w, force);
+    light->set(x, y, z, w--);
+    light_fill(opaque, light, x - 1, y, z, w);
+    light_fill(opaque, light, x + 1, y, z, w);
+    light_fill(opaque, light, x, y - 1, z, w);
+    light_fill(opaque, light, x, y + 1, z, w);
+    light_fill(opaque, light, x, y, z - 1, w);
+    light_fill(opaque, light, x, y, z + 1, w);
+}
+
+void insert_edge_values(NeighborEdgesPtr edges, BigBlockMap *opaque, BigBlockMap *light) {
+    if(edges->north_edge_blocks){
+        edges->north_edge_blocks->each([&](int x, int y, int z, char w){
             opaque->set(x, y, 0, !is_transparent(w) && !is_light(w));
         });
     }
-    if(edges->south_edge){
-        edges->south_edge->each([&](int x, int y, int z, char w){
+    if(edges->north_edge_lights) {
+        edges->north_edge_lights->each([&](int x, int y, int z, char w){
+            light->set(x, y, 0, w);
+        });
+    } else {
+        printf("MISSING SOUTH EDGE LIGHTS\n");
+    }
+
+    if(edges->south_edge_blocks){
+        edges->south_edge_blocks->each([&](int x, int y, int z, char w){
             opaque->set(x, y, CHUNK_SIZE+1, !is_transparent(w) && !is_light(w));
         });
     }
-    if(edges->east_edge){
-        edges->east_edge->each([&](int x, int y, int z, char w){
+    if(edges->south_edge_lights){
+        edges->south_edge_lights->each([&](int x, int y, int z, char w){
+            light->set(x, y, CHUNK_SIZE+1, w);
+        });
+    } else {
+        printf("MISSING SOTUH EDGE LIGHTS\n");
+    }
+
+
+    if(edges->east_edge_blocks){
+        edges->east_edge_blocks->each([&](int x, int y, int z, char w){
             opaque->set(CHUNK_SIZE+1, y, z, !is_transparent(w) && !is_light(w));
         });
     }
-    if(edges->west_edge){
-        edges->west_edge->each([&](int x, int y, int z, char w){
+    if(edges->east_edge_lights){
+        edges->east_edge_lights->each([&](int x, int y, int z, char w){
+            if(w > 0){
+                printf("GOTCHA EAST %d,%d,%d, %d\n", x, y, z, (int)w);
+            }
+            light->set(CHUNK_SIZE+1, y, z, w);
+        });
+    } else {
+        printf("MISSING EAST EDGE LIGHTS\n");
+    }
+
+    if(edges->west_edge_blocks){
+        edges->west_edge_blocks->each([&](int x, int y, int z, char w){
             opaque->set(0, y, z, !is_transparent(w) && !is_light(w));
         });
     }
-}
+    if(edges->west_edge_lights){
+        edges->west_edge_lights->each([&](int x, int y, int z, char w){
+            if(w > 0){
+                printf("GOTCHA WEST %d,%d,%d, %d\n", x, y, z, (int)w);
+            }
+            light->set(0, y, z, w);
+        });
+    } else {
+        printf("MISSING WEST EDGE LIGHTS\n");
+    }
 
-void insert_light_edge_values(NeighborEdgesPtr edges, BigBlockMap *opaque, BigBlockMap* light) {
-    if(edges->north_edge){
-        edges->north_edge->each([&](int x, int y, int z, char w){
-            if(is_light(w)){
-                light_fill(opaque, light, x, y, 0, 15, 0);
-            }
-        });
-    }
-    if(edges->south_edge){
-        edges->south_edge->each([&](int x, int y, int z, char w){
-            if(is_light(w)){
-                light_fill(opaque, light, x, y, CHUNK_SIZE+1, 15, 0);
-            }
-        });
-    }
-    if(edges->east_edge){
-        edges->east_edge->each([&](int x, int y, int z, char w){
-            if(is_light(w)){
-                light_fill(opaque, light, CHUNK_SIZE+1, y, z, 15, 0);
-            }
-        });
-    }
-    if(edges->west_edge){
-        edges->west_edge->each([&](int x, int y, int z, char w){
-            if(is_light(w)){
-                light_fill(opaque, light, 0, y, z, 15, 0);
-            }
-        });
-    }
 }
 
 void Chunk::load(NeighborEdgesPtr edges) {
@@ -204,12 +242,13 @@ void Chunk::load(NeighborEdgesPtr edges) {
     auto light = new BigBlockMap();
     auto highest = new HeightMap<CHUNK_SIZE + 2>();
 
-
     printf("Compute Chunk %d,%d\n", this->_p, this->_q);
+
+    this->light_levels->clear();
 
     this->blocks->each([&](int ex, int ey, int ez, int w) {
         int x = ex + 1;
-        int y = ey + 1;
+        int y = ey;
         int z = ez + 1;
         opaque->set(x,y,z, !is_transparent(w) && !is_light(w));
         if (opaque->get(x, y, z)) {
@@ -217,16 +256,21 @@ void Chunk::load(NeighborEdgesPtr edges) {
         }
     });
 
-    insert_opaque_edge_values(edges, opaque);
 
-    insert_light_edge_values(edges, opaque, light);
+    insert_edge_values(edges, opaque, light);
 
     this->blocks->each([&](int x, int y, int z, char ew){
         int lx = x + 1;
-        int ly = y + 1;
+        int ly = y;
         int lz = z + 1;
         if(is_light(ew)){
-            light_fill(opaque, light, lx, ly, lz, 15, 0);
+            light->set(lx,ly,lz,15);
+        }
+    });
+
+    light->each([&](int x, int y, int z, char ew){
+        if(ew > 0){
+            light_fill(opaque, light, x, y, z, ew);
         }
     });
 
@@ -408,40 +452,6 @@ int highest_block(float x, float z) {
         });
     }
     return result;
-}
-
-
-
-void light_fill(
-        BigBlockMap *opaque, BigBlockMap *light,
-        int x, int y, int z, int w, int force)
-{
-    if(w <= 0) {
-        return;
-    }
-    if(x < 0 || x >= CHUNK_SIZE + 2) {
-        return;
-    }
-    if(y < 0 || y >= CHUNK_HEIGHT){
-        return;
-    }
-    if(z < 0 || z >= CHUNK_SIZE + 2){
-        return;
-    }
-    if (light->get(x, y, z) >= w) {
-        return;
-    }
-    if (!force && opaque->get(x, y, z)) {
-        return;
-    }
-    //printf("Light Fill %d,%d,%d | %d,%d\n",x,y,z, w, force);
-    light->set(x, y, z, w--);
-    light_fill(opaque, light, x - 1, y, z, w, 0);
-    light_fill(opaque, light, x + 1, y, z, w, 0);
-    light_fill(opaque, light, x, y - 1, z, w, 0);
-    light_fill(opaque, light, x, y + 1, z, w, 0);
-    light_fill(opaque, light, x, y, z - 1, w, 0);
-    light_fill(opaque, light, x, y, z + 1, w, 0);
 }
 
 

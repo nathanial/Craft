@@ -21,10 +21,17 @@ typedef BlockMap<CHUNK_SIZE, CHUNK_HEIGHT, CHUNK_SIZE> ChunkBlockMap;
 
 class NeighborEdges {
 public:
-    NorthSouthEdgeMap north_edge;
-    NorthSouthEdgeMap south_edge;
-    EastWestEdgeMap west_edge;
-    EastWestEdgeMap east_edge;
+    NorthSouthEdgeMap north_edge_blocks;
+    NorthSouthEdgeMap north_edge_lights;
+
+    NorthSouthEdgeMap south_edge_blocks;
+    NorthSouthEdgeMap south_edge_lights;
+
+    EastWestEdgeMap west_edge_blocks;
+    EastWestEdgeMap west_edge_lights;
+
+    EastWestEdgeMap east_edge_blocks;
+    EastWestEdgeMap east_edge_lights;
 };
 
 typedef std::shared_ptr<NeighborEdges> NeighborEdgesPtr;
