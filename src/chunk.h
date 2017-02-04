@@ -15,12 +15,16 @@
 
 class Attrib;
 
+typedef std::shared_ptr<BlockMap<CHUNK_SIZE, CHUNK_HEIGHT, 1>> NorthSouthEdgeMap;
+typedef std::shared_ptr<BlockMap<1, CHUNK_HEIGHT, CHUNK_SIZE>> EastWestEdgeMap;
+typedef BlockMap<CHUNK_SIZE, CHUNK_HEIGHT, CHUNK_SIZE> ChunkBlockMap;
+
 class NeighborEdges {
 public:
-    std::shared_ptr<BlockMap<CHUNK_SIZE, CHUNK_HEIGHT, 1>> north_edge;
-    std::shared_ptr<BlockMap<CHUNK_SIZE, CHUNK_HEIGHT, 1>> south_edge;
-    std::shared_ptr<BlockMap<1, CHUNK_HEIGHT, CHUNK_SIZE>> west_edge;
-    std::shared_ptr<BlockMap<1, CHUNK_HEIGHT, CHUNK_SIZE>> east_edge;
+    NorthSouthEdgeMap north_edge;
+    NorthSouthEdgeMap south_edge;
+    EastWestEdgeMap west_edge;
+    EastWestEdgeMap east_edge;
 };
 
 typedef std::shared_ptr<NeighborEdges> NeighborEdgesPtr;
@@ -36,7 +40,8 @@ private:
     GLuint _buffer;
     GLfloat *_vertices;
 public:
-    std::unique_ptr<BlockMap<CHUNK_SIZE, CHUNK_HEIGHT, CHUNK_SIZE>> blocks;
+    std::unique_ptr<ChunkBlockMap> blocks;
+    std::unique_ptr<ChunkBlockMap> light_levels;
 
     Chunk(int p, int q);
     ~Chunk();

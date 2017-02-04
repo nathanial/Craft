@@ -32,7 +32,8 @@ void make_cube(
         float x, float y, float z, float n, int w);
 
 Chunk::Chunk(int p, int q) :
-    blocks(new BlockMap<CHUNK_SIZE, CHUNK_HEIGHT, CHUNK_SIZE>())
+    blocks(new ChunkBlockMap()),
+    light_levels(new ChunkBlockMap())
 {
     this->_p = p;
     this->_q = q;
@@ -229,7 +230,12 @@ void Chunk::load(NeighborEdgesPtr edges) {
         }
     });
 
-
+    this->blocks->each([&](int x, int y, int z, char ew){
+        int lx = x + 1;
+        int ly = y + 1;
+        int lz = z + 1;
+        this->light_levels->set(x,y,z, light->get(lx,ly,lz));
+    });
 
     // count exposed faces
     int miny = 256;
