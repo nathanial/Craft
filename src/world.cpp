@@ -16,11 +16,11 @@ void create_world(ChunkPtr chunk, int p, int q) {
     Flatland flatland;
     RollingPlanes planes;
     Mountains mountains;
-    flatland.create_chunk(chunk, p, q);
-//    if(p > 0 || p < -3) {
-//        mountains.create_chunk(chunk, p, q);
-//    } else {
-//        planes.create_chunk(chunk, p, q);
-//    }
+    // flatland.create_chunk(chunk, p, q);
+    if(p > 0 || p < -3) {
+        mountains.create_chunk(chunk, p, q);
+    } else {
+        planes.create_chunk(chunk, p, q);
+    }
 }
 
