@@ -11,9 +11,9 @@ add_executable(
         deps/lodepng/lodepng.cpp
     deps/noise/noise.c
     deps/sqlite/sqlite3.c
-    src/chunk.h src/chunk.cpp src/model.h src/draw.cpp src/draw.h src/worker.cpp src/worker.h src/biomes/rolling_planes.cpp src/biomes/rolling_planes.h src/biomes/biome.h src/biomes/mountains.h src/biomes/mountains.cpp src/height_map.h src/workers/tasks/generate_chunk_task.h src/workers/tasks/task.h src/workers/tasks/generate_chunk_task.cpp)
+    src/chunk.h src/chunk.cpp src/model.h src/draw.cpp src/draw.h src/worker.cpp src/worker.h src/biomes/rolling_planes.cpp src/biomes/rolling_planes.h src/biomes/biome.h src/biomes/mountains.h src/biomes/mountains.cpp src/height_map.h src/workers/tasks/generate_chunk_task.h src/workers/tasks/task.h src/workers/tasks/generate_chunk_task.cpp src/biomes/flatland.cpp src/biomes/flatland.h)
 
-add_definitions(-std=c++17 -fpermissive -O2)
+add_definitions(-std=c++17 -fpermissive -O2 -fopenmp)
 
 add_subdirectory(deps/glfw)
 include_directories(deps/glew/include)
@@ -35,15 +35,15 @@ include_directories(${CURL_INCLUDE_DIR})
 
 if(APPLE)
     target_link_libraries(craft glfw
-        ${GLFW_LIBRARIES} ${CURL_LIBRARIES})
+        ${GLFW_LIBRARIES} ${CURL_LIBRARIES} -fopenmp)
 endif()
 
 if(UNIX)
     target_link_libraries(craft dl glfw
-        ${GLFW_LIBRARIES} ${CURL_LIBRARIES})
+        ${GLFW_LIBRARIES} ${CURL_LIBRARIES} -fopenmp)
 endif()
 
 if(MINGW)
     target_link_libraries(craft ws2_32.lib glfw
-        ${GLFW_LIBRARIES} ${CURL_LIBRARIES})
+        ${GLFW_LIBRARIES} ${CURL_LIBRARIES} -fopenmp)
 endif()

@@ -53,9 +53,7 @@ public:
         for(int x = 0; x < WIDTH; x++){
             for(int y = 0; y < HEIGHT; y++){
                 for(int z = 0; z < WIDTH; z++){
-                    if(this->_data[x][y][z] != 0){
-                        func(x, y, z, this->_data[x][y][z]);
-                    }
+                    func(x, y, z, this->_data[x][y][z]);
                 }
             }
         }
