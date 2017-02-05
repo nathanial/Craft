@@ -18,10 +18,6 @@ extern Model *g;
 
 static int no_breaks = 0;
 
-void light_fill(
-        BigBlockMap *opaque, BigBlockMap *light,
-        int x, int y, int z, int w, int force);
-
 void occlusion(
         char neighbors[27], char lights[27], float shades[27],
         float ao[6][4], float light[6][4]);
@@ -449,7 +445,6 @@ void light_fill_scanline(BigBlockMap *opaque, BigBlockMap *light, int ox, int oy
             continue;
         }
 
-//        printf("FILL %d,%d,%d = %d\n", x,y,z, w);
         int cursorX = x;
         int cursorW = w;
         scanline_iterate(light, opaque, frontier, x, y, z, w, cursorX, cursorW, true);
@@ -470,7 +465,6 @@ void scanline_iterate(BigBlockMap *light, BigBlockMap *opaque, std::deque<std::t
     bool spanZMinus = false, spanZPlus = false, spanYMinus = false, spanYPlus = false;
     while(cursorX < CHUNK_SIZE * 3 && cursorX >= 0 && canLight(cursorX, y, z, w - abs(x - cursorX))){
         cursorW = w - abs(x - cursorX);
-//        printf("SET %d,%d,%d = %d\n", cursorX, y, z, cursorW);
         light->set(cursorX, y, z, cursorW);
         if(!spanZMinus && z > 0 && canLight(cursorX, y, z-1, cursorW-1)) {
             frontier.push_back(std::make_tuple(cursorX, y, z - 1, cursorW - 1));
@@ -506,61 +500,6 @@ void scanline_iterate(BigBlockMap *light, BigBlockMap *opaque, std::deque<std::t
     }
 }
 
-
-int extend_west(BigBlockMap *opaque, BigBlockMap *light, int x, int y, int z, int w) {
-
-}
-
-void light_fill(
-        BigBlockMap *opaque, BigBlockMap *light,
-        int ox, int oy, int oz, int ow, int force)
-{
-    no_breaks = 0;
-    std::deque<std::tuple<int,int,int,int>> frontier;
-    frontier.push_back(std::make_tuple(ox,oy,oz,ow));
-    while(!frontier.empty()){
-        auto &next = frontier.front();
-        int x = std::get<0>(next);
-        int y = std::get<1>(next);
-        int z = std::get<2>(next);
-        int w = std::get<3>(next);
-        frontier.pop_front();
-        if(x < 0 || x >= CHUNK_SIZE * 3) {
-           continue;
-        }
-        if(y < 0 || y >= CHUNK_HEIGHT){
-            continue;
-        }
-        if(z < 0 || z >= CHUNK_SIZE * 3){
-           continue;
-        }
-        if (light->_data[x][y][z] >= w) {
-            continue;
-        }
-        if(opaque->_data[x][y][z]){
-            continue;
-        }
-        if(w <= 0 || light->_data[x][y][z] >= w){
-            continue;
-        }
-
-        light->_data[x][y][z] = w;
-        if(w == 1){
-            continue;
-        }
-
-        frontier.push_back(std::make_tuple(x - 1, y, z, w - 1));
-        frontier.push_back(std::make_tuple(x + 1, y, z, w - 1));
-        frontier.push_back(std::make_tuple(x, y - 1, z, w - 1));
-        frontier.push_back(std::make_tuple(x, y + 1, z, w - 1));
-        frontier.push_back(std::make_tuple(x, y, z - 1, w - 1));
-        frontier.push_back(std::make_tuple(x, y, z + 1, w - 1));
-        if(no_breaks > 1000000){
-            throw "Running Too Long";
-        }
-        no_breaks += 1;
-    }
-}
 
 
 void occlusion(
