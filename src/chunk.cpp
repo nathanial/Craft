@@ -35,6 +35,15 @@ void make_cube(
         int left, int right, int top, int bottom, int front, int back,
         float x, float y, float z, float n, int w);
 
+void extend_west(BigBlockMap *opaque, BigBlockMap *light, int x, int y, int z, int w);
+void extend_east(BigBlockMap *opaque, BigBlockMap *light, int x, int y, int z, int w);
+void extend_top(BigBlockMap *opaque, BigBlockMap *light, int x, int y, int z, int w);
+void extend_bottom(BigBlockMap *opaque, BigBlockMap *light, int x, int y, int z, int w);
+void extend_north(BigBlockMap *opaque, BigBlockMap *light, int x, int y, int z, int w);
+void extend_south(BigBlockMap *opaque, BigBlockMap *light, int x, int y, int z, int w);
+
+void light_fill_scanline(BigBlockMap *opaque, BigBlockMap *light, int ox, int oy ,int oz, int ow);
+
 Chunk::Chunk(int p, int q) :
     blocks(new BlockMap<CHUNK_SIZE, CHUNK_HEIGHT>())
 {
@@ -309,7 +318,7 @@ void Chunk::populate_light_array(BigBlockMap *opaque, BigBlockMap *light, int ox
                             int lz = ez - oz;
 
                             if (is_light(ew)) {
-                                light_fill(opaque, light, lx, ly, lz, 15, 0);
+                                light_fill_scanline(opaque, light, lx, ly, lz, 15);
                             }
                         }
                     }
@@ -417,6 +426,60 @@ int highest_block(float x, float z) {
 }
 
 
+void light_fill_scanline(BigBlockMap *opaque, BigBlockMap *light, int ox, int oy ,int oz, int ow)
+{
+    std::deque<std::tuple<int,int,int,int>> frontier;
+    frontier.push_back(std::make_tuple(ox,oy,oz,ow));
+    while(!frontier.empty()){
+        auto &next = frontier.front();
+        int x = std::get<0>(next);
+        int y = std::get<1>(next);
+        int z = std::get<2>(next);
+        int w = std::get<3>(next);
+        frontier.pop_front();
+
+        extend_west(opaque, light, x, y, z, w);
+        extend_east(opaque, light, x, y, z, w);
+//        extend_top(opaque, light, x, y, z, w);
+//        extend_bottom(opaque, light, x, y, z, w);
+        extend_north(opaque, light, x, y, z, w);
+//        extend_south(opaque, light, x, y, z, w);
+    }
+}
+
+void extend_top(BigBlockMap *opaque, BigBlockMap *light, int x, int y, int z, int w){
+
+}
+void extend_bottom(BigBlockMap *opaque, BigBlockMap *light, int x, int y, int z, int w) {
+
+}
+void extend_north(BigBlockMap *opaque, BigBlockMap *light, int x, int y, int z, int w) {
+    printf("EXTEND NORTH %d,%d,%d\n", x, y, z);
+    int minZ = z - 1;
+    while(minZ > 0 && !opaque->get(x, y, minZ) && light->get(x, y, minZ) < (w - abs(z - minZ))) {
+        light->set(x, y, minZ, w - abs(z - minZ));
+        minZ--;
+    }
+}
+void extend_south(BigBlockMap *opaque, BigBlockMap *light, int x, int y, int z, int w) {
+
+}
+
+void extend_east(BigBlockMap *opaque, BigBlockMap *light, int x, int y, int z, int w) {
+    int maxX = x + 1;
+    while(maxX < CHUNK_SIZE * 3 && !opaque->get(maxX, y, z) && light->get(maxX, y, z) < (w - abs(x - maxX))) {
+        light->set(maxX, y, z, w - abs(x - maxX));
+        maxX++;
+    }
+}
+
+void extend_west(BigBlockMap *opaque, BigBlockMap *light, int x, int y, int z, int w) {
+    int minX = x;
+    while(minX > 0 && !opaque->get(minX, y, z) && light->get(minX, y, z) < (w - abs(x - minX))) {
+        light->set(minX, y, z, w - abs(x - minX));
+        minX--;
+    }
+}
 
 void light_fill(
         BigBlockMap *opaque, BigBlockMap *light,
@@ -455,6 +518,7 @@ void light_fill(
         if(w == 1){
             continue;
         }
+
         frontier.push_back(std::make_tuple(x - 1, y, z, w - 1));
         frontier.push_back(std::make_tuple(x + 1, y, z, w - 1));
         frontier.push_back(std::make_tuple(x, y - 1, z, w - 1));
