@@ -287,14 +287,33 @@ void Chunk::populate_light_array(BigBlockMap *opaque, BigBlockMap *light, int ox
         for (int b = 0; b < 3; b++) {
             auto chunk = g->find_chunk(_p - (a - 1), _q - (b - 1));
             if(chunk){
-                chunk->foreach_block([&](int x, int y, int z, char ew){
-                    int lx = x - ox;
-                    int ly = y - oy;
-                    int lz = z - oz;
-                    if(is_light(ew)){
-                        light_fill(opaque, light, lx, ly, lz, 15, 0);
+                int chunk_x_offset = chunk->_p * CHUNK_SIZE;
+                int chunk_z_offset = chunk->_q * CHUNK_SIZE;
+                for(int bx = 0; bx < CHUNK_SIZE; bx++){
+                    for(int by = 0; by < CHUNK_HEIGHT; by++) {
+                        for (int bz = 0; bz < CHUNK_SIZE; bz++) {
+                            int ex = bx + chunk_x_offset;
+                            int ey = by;
+                            int ez = bz + chunk_z_offset;
+                            int ew = chunk->blocks->_data[bx][by][bz];
+                            if(ew == 0){
+                                continue;
+                            }
+
+                            if(ey == CHUNK_HEIGHT){
+                                continue;
+                            }
+
+                            int lx = ex - ox;
+                            int ly = ey - oy;
+                            int lz = ez - oz;
+
+                            if (is_light(ew)) {
+                                light_fill(opaque, light, lx, ly, lz, 15, 0);
+                            }
+                        }
                     }
-                });
+                }
             }
         }
     }
