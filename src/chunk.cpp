@@ -349,12 +349,7 @@ void Chunk::load(NeighborEdgesPtr edges) {
     int north_light_level_sum = 0;
     int south_light_level_sum = 0;
     original_light_levels->each([&](int x, int y, int z, char w){
-        auto total_light_level = std::max(
-                std::max(this->native_light_levels->get(x,y,z), this->east_light_levels->get(x,y,z)),
-                std::max(
-                        std::max(this->west_light_levels->get(x,y,z), this->north_light_levels->get(x,y,z)),
-                        this->south_light_levels->get(x,y,z))
-        );
+        auto total_light_level = this->get_light_level(x,y,z);
         original_light_levels->set(x,y,z,total_light_level);
         original_sum += total_light_level;
         native_light_level_sum += this->native_light_levels->get(x,y,z);
@@ -362,7 +357,6 @@ void Chunk::load(NeighborEdgesPtr edges) {
         west_light_level_sum += this->west_light_levels->get(x,y,z);
         north_light_level_sum += this->north_light_levels->get(x,y,z);
         south_light_level_sum += this->south_light_levels->get(x,y,z);
-
     });
     printf("Chunk(%d,%d) = Light Sum %d,%d,%d,%d,%d,%d\n", this->_p, this->_q, original_sum, native_light_level_sum, east_light_level_sum, west_light_level_sum, north_light_level_sum, south_light_level_sum);
 
@@ -397,18 +391,7 @@ void Chunk::load(NeighborEdgesPtr edges) {
     insert_edge_values(edges, opaque, light);
 
     this->blocks->each([&](int x, int y, int z, char ew){
-        auto total_light_level = std::max(
-                std::max(
-                        this->native_light_levels->get(x,y,z),
-                        this->east_light_levels->get(x,y,z)
-                ),
-                std::max(
-                    std::max(
-                            this->west_light_levels->get(x,y,z),
-                            this->north_light_levels->get(x,y,z)
-                    ),
-                    this->south_light_levels->get(x,y,z))
-        );
+        auto total_light_level = this->get_light_level(x,y,z);
         light->set(x+1,y,z+1, total_light_level);
     });
 

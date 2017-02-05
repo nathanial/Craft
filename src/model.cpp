@@ -171,7 +171,6 @@ NeighborEdgesPtr Model::find_edges(int p, int q){
             return north_chunk->blocks->get(x,y,z);
         });
         edges->north_edge_lights = south_edge_blocks([&](int x, int y, int z){
-            // exclude south light levels, because those are from the central chunk
             return std::max(
                     std::max(north_chunk->native_light_levels->get(x, y, z),
                              north_chunk->north_light_levels->get(x, y, z)),
