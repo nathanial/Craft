@@ -30,4 +30,4 @@ add_executable(
         biomes/flatland.cpp)
 
 target_link_libraries(craft dl glfw
-        ${GLFW_LIBRARIES} ${CURL_LIBRARIES} -fsanitize=address)
+        ${GLFW_LIBRARIES} ${CURL_LIBRARIES})
