@@ -171,23 +171,7 @@ void Chunk::load() {
 
     // populate opaque array
     populate_opaque_array(opaque, highest, ox, oy, oz);
-
-
-    for (int a = 0; a < 3; a++) {
-        for (int b = 0; b < 3; b++) {
-            auto chunk = g->find_chunk(this->_p - (a-1), this->_q - (b-1));
-            if(chunk){
-                chunk->foreach_block([&](int x, int y, int z, char ew){
-                    int lx = x - ox;
-                    int ly = y - oy;
-                    int lz = z - oz;
-                    if(is_light(ew)){
-                        light_fill(opaque, light, lx, ly, lz, 15, 0);
-                    }
-                });
-            }
-        }
-    }
+    populate_light_array(opaque, light, ox, oy, oz);
 
     // count exposed faces
     int miny = 256;
@@ -298,6 +282,24 @@ void Chunk::load() {
     chunk->set_vertices(data);
 }
 
+void Chunk::populate_light_array(BigBlockMap *opaque, BigBlockMap *light, int ox, int oy, int oz) const {
+    for (int a = 0; a < 3; a++) {
+        for (int b = 0; b < 3; b++) {
+            auto chunk = g->find_chunk(_p - (a - 1), _q - (b - 1));
+            if(chunk){
+                chunk->foreach_block([&](int x, int y, int z, char ew){
+                    int lx = x - ox;
+                    int ly = y - oy;
+                    int lz = z - oz;
+                    if(is_light(ew)){
+                        light_fill(opaque, light, lx, ly, lz, 15, 0);
+                    }
+                });
+            }
+        }
+    }
+}
+
 void Chunk::populate_opaque_array(BigBlockMap *opaque, HeightMap<48> *highest, int ox, int oy, int oz) const {
     for (int a = 0; a < 3; a++) {
         for (int b = 0; b < 3; b++) {
@@ -314,15 +316,17 @@ void Chunk::populate_opaque_array(BigBlockMap *opaque, HeightMap<48> *highest, i
                         int ey = by;
                         int ez = bz + chunk_z_offset;
                         int ew = chunk->blocks->_data[bx][by][bz];
+                        if(ew == 0){
+                            continue;
+                        }
 
                         int x = ex - ox;
                         int y = ey - oy;
                         int z = ez - oz;
-                        int w = ew;
-                        if(w == 0 || y == CHUNK_HEIGHT){
+                        if(y == CHUNK_HEIGHT){
                             continue;
                         }
-                        bool is_opaque = !is_transparent(w) && !is_light(w);
+                        bool is_opaque = !is_transparent(ew) && !is_light(ew);
                         opaque->_data[x][y][z] = is_opaque ;
                         if (is_opaque) {
                             highest->_data[x][z] = MAX(highest->_data[x][z], y);
