@@ -441,17 +441,17 @@ void light_fill(
         if(z < 0 || z >= CHUNK_SIZE * 3){
            continue;
         }
-        if (light->get(x, y, z) >= w) {
+        if (light->_data[x][y][z] >= w) {
             continue;
         }
-        if(opaque->get(x,y,z)){
+        if(opaque->_data[x][y][z]){
             continue;
         }
-        if(w <= 0 || light->get(x,y,z) >= w){
+        if(w <= 0 || light->_data[x][y][z] >= w){
             continue;
         }
 
-        light->set(x,y,z,w);
+        light->_data[x][y][z] = w;
         if(w == 1){
             continue;
         }
