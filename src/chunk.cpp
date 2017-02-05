@@ -35,12 +35,10 @@ void make_cube(
         int left, int right, int top, int bottom, int front, int back,
         float x, float y, float z, float n, int w);
 
-void extend_west(BigBlockMap *opaque, BigBlockMap *light, int x, int y, int z, int w);
-void extend_east(BigBlockMap *opaque, BigBlockMap *light, int x, int y, int z, int w);
-void extend_top(BigBlockMap *opaque, BigBlockMap *light, int x, int y, int z, int w);
-void extend_bottom(BigBlockMap *opaque, BigBlockMap *light, int x, int y, int z, int w);
-void extend_north(BigBlockMap *opaque, BigBlockMap *light, int x, int y, int z, int w);
-void extend_south(BigBlockMap *opaque, BigBlockMap *light, int x, int y, int z, int w);
+void scanline_iterate(BigBlockMap *light, BigBlockMap *opaque, std::deque<std::tuple<int, int, int, int>> &frontier,
+                      int x, int y, int z, int w,
+                      int cursorX, int cursorW, bool ascend);
+
 
 void light_fill_scanline(BigBlockMap *opaque, BigBlockMap *light, int ox, int oy ,int oz, int ow);
 
@@ -176,7 +174,7 @@ void Chunk::load() {
     int ox = this->_p * CHUNK_SIZE - CHUNK_SIZE;
     int oy = -1;
     int oz = this->_q * CHUNK_SIZE - CHUNK_SIZE;
-    printf("Compute Chunk %d,%d\n", this->_p, this->_q);
+    // printf("Compute Chunk %d,%d\n", this->_p, this->_q);
 
     // populate opaque array
     populate_opaque_array(opaque, highest, ox, oy, oz);
@@ -438,47 +436,79 @@ void light_fill_scanline(BigBlockMap *opaque, BigBlockMap *light, int ox, int oy
         int w = std::get<3>(next);
         frontier.pop_front();
 
-        extend_west(opaque, light, x, y, z, w);
-        extend_east(opaque, light, x, y, z, w);
-//        extend_top(opaque, light, x, y, z, w);
-//        extend_bottom(opaque, light, x, y, z, w);
-        extend_north(opaque, light, x, y, z, w);
-//        extend_south(opaque, light, x, y, z, w);
+        if(z == 0 || z >= CHUNK_SIZE * 3){
+            continue;
+        }
+        if(w == 0){
+            continue;
+        }
+        if(opaque->get(x,y,z)){
+            continue;
+        }
+        if(light->get(x,y,z) >= w){
+            continue;
+        }
+
+//        printf("FILL %d,%d,%d = %d\n", x,y,z, w);
+        int cursorX = x;
+        int cursorW = w;
+        scanline_iterate(light, opaque, frontier, x, y, z, w, cursorX, cursorW, true);
+        scanline_iterate(light, opaque, frontier, x, y, z, w, cursorX-1, cursorW, false);
     }
 }
 
-void extend_top(BigBlockMap *opaque, BigBlockMap *light, int x, int y, int z, int w){
 
-}
-void extend_bottom(BigBlockMap *opaque, BigBlockMap *light, int x, int y, int z, int w) {
 
-}
-void extend_north(BigBlockMap *opaque, BigBlockMap *light, int x, int y, int z, int w) {
-    printf("EXTEND NORTH %d,%d,%d\n", x, y, z);
-    int minZ = z - 1;
-    while(minZ > 0 && !opaque->get(x, y, minZ) && light->get(x, y, minZ) < (w - abs(z - minZ))) {
-        light->set(x, y, minZ, w - abs(z - minZ));
-        minZ--;
+void scanline_iterate(BigBlockMap *light, BigBlockMap *opaque, std::deque<std::tuple<int, int, int, int>> &frontier,
+                      int x, int y, int z, int w,
+                      int cursorX, int cursorW, bool ascend) {
+
+    auto canLight = [&](int x, int y, int z, int w){
+        return light->get(x, y, z) < w && !opaque->get(x, y, z);
+    };
+
+    bool spanZMinus = false, spanZPlus = false, spanYMinus = false, spanYPlus = false;
+    while(cursorX < CHUNK_SIZE * 3 && cursorX >= 0 && canLight(cursorX, y, z, w - abs(x - cursorX))){
+        cursorW = w - abs(x - cursorX);
+//        printf("SET %d,%d,%d = %d\n", cursorX, y, z, cursorW);
+        light->set(cursorX, y, z, cursorW);
+        if(!spanZMinus && z > 0 && canLight(cursorX, y, z-1, cursorW-1)) {
+            frontier.push_back(std::make_tuple(cursorX, y, z - 1, cursorW - 1));
+            spanZMinus = true;
+        } else if(spanZMinus && z > 0 && !canLight(cursorX, y, z - 1, cursorW-1)){
+            spanZMinus = false;
+        }
+        if(!spanZPlus && z < CHUNK_SIZE * 3 - 1 && canLight(cursorX, y, z+1, cursorW - 1)){
+            frontier.push_back(std::make_tuple(cursorX, y, z + 1, cursorW - 1));
+            spanZPlus = true;
+        } else if(spanZPlus && z < CHUNK_SIZE * 3 - 1 && !canLight(cursorX, y, z + 1, cursorW - 1)){
+            spanZPlus = false;
+        }
+        if(!spanYMinus && y > 0 && canLight(cursorX, y-1,z, cursorW-1)){
+            frontier.push_back(std::make_tuple(cursorX, y-1, z, cursorW-1));
+            spanYMinus = true;
+        } else if(spanYMinus && y > 0 && !canLight(cursorX, y-1,z, cursorW- 1)){
+            spanYMinus = false;
+        }
+        if(!spanYPlus && y < CHUNK_SIZE * 3 - 1 && canLight(cursorX, y+1,z, cursorW-1)){
+            frontier.push_back(std::make_tuple(cursorX, y+1,z, cursorW-1));
+            spanYPlus = true;
+        } else if(spanYPlus && y < CHUNK_SIZE * 3 - 1 && !canLight(cursorX, y+1, z, cursorW-1)){
+            spanYPlus = false;
+        }
+
+        if(ascend){
+            cursorX++;
+        } else {
+            cursorX--;
+        }
+
     }
 }
-void extend_south(BigBlockMap *opaque, BigBlockMap *light, int x, int y, int z, int w) {
 
-}
 
-void extend_east(BigBlockMap *opaque, BigBlockMap *light, int x, int y, int z, int w) {
-    int maxX = x + 1;
-    while(maxX < CHUNK_SIZE * 3 && !opaque->get(maxX, y, z) && light->get(maxX, y, z) < (w - abs(x - maxX))) {
-        light->set(maxX, y, z, w - abs(x - maxX));
-        maxX++;
-    }
-}
+int extend_west(BigBlockMap *opaque, BigBlockMap *light, int x, int y, int z, int w) {
 
-void extend_west(BigBlockMap *opaque, BigBlockMap *light, int x, int y, int z, int w) {
-    int minX = x;
-    while(minX > 0 && !opaque->get(minX, y, z) && light->get(minX, y, z) < (w - abs(x - minX))) {
-        light->set(minX, y, z, w - abs(x - minX));
-        minX--;
-    }
 }
 
 void light_fill(
