@@ -177,26 +177,26 @@ void light_fill(
 }
 
 void Chunk::insert_edge_values(NeighborEdgesPtr edges, BigBlockMap *opaque, BigBlockMap *light) {
-    if(edges->north_edge_blocks){
-        edges->north_edge_blocks->each([&](int x, int y, int z, char w){
-            opaque->set(x, y, 0, !is_transparent(w) && !is_light(w));
-        });
-    }
-    if(edges->south_edge_blocks){
-        edges->south_edge_blocks->each([&](int x, int y, int z, char w){
-            opaque->set(x, y, CHUNK_SIZE+1, !is_transparent(w) && !is_light(w));
-        });
-    }
-    if(edges->east_edge_blocks){
-        edges->east_edge_blocks->each([&](int x, int y, int z, char w){
-            opaque->set(CHUNK_SIZE+1, y, z, !is_transparent(w) && !is_light(w));
-        });
-    }
-    if(edges->west_edge_blocks){
-        edges->west_edge_blocks->each([&](int x, int y, int z, char w){
-            opaque->set(0, y, z, !is_transparent(w) && !is_light(w));
-        });
-    }
+//    if(edges->north_edge_blocks){
+//        edges->north_edge_blocks->each([&](int x, int y, int z, char w){
+//            opaque->set(x + 1, y, 0, !is_transparent(w) && !is_light(w));
+//        });
+//    }
+//    if(edges->south_edge_blocks){
+//        edges->south_edge_blocks->each([&](int x, int y, int z, char w){
+//            opaque->set(x + 1, y, CHUNK_SIZE+1, !is_transparent(w) && !is_light(w));
+//        });
+//    }
+//    if(edges->east_edge_blocks){
+//        edges->east_edge_blocks->each([&](int x, int y, int z, char w){
+//            opaque->set(CHUNK_SIZE+1, y, z, !is_transparent(w) && !is_light(w));
+//        });
+//    }
+//    if(edges->west_edge_blocks){
+//        edges->west_edge_blocks->each([&](int x, int y, int z, char w){
+//            opaque->set(0, y, z, !is_transparent(w) && !is_light(w));
+//        });
+//    }
 
     if(edges->north_edge_lights) {
         edges->north_edge_lights->each([&](int x, int y, int z, char w){
@@ -233,6 +233,35 @@ void Chunk::insert_edge_values(NeighborEdgesPtr edges, BigBlockMap *opaque, BigB
         });
     }
     this->record_light_level(light, EAST_LIGHT_LEVEL);
+
+    if(edges->north_edge_lights) {
+        edges->north_edge_lights->each([&](int x, int y, int z, char w){
+            if(w > 0) {
+                light_fill(opaque, light, x, y, 0, w);
+            }
+        });
+    }
+    if(edges->south_edge_lights){
+        edges->south_edge_lights->each([&](int x, int y, int z, char w){
+            if(w > 0){
+                light_fill(opaque, light, x, y, CHUNK_SIZE+1, w);
+            }
+        });
+    }
+    if(edges->west_edge_lights){
+        edges->west_edge_lights->each([&](int x, int y, int z, char w){
+            if(w > 0){
+                light_fill(opaque, light, 0, y, z, w);
+            }
+        });
+    }
+    if(edges->east_edge_lights){
+        edges->east_edge_lights->each([&](int x, int y, int z, char w){
+            if(w > 0){
+                light_fill(opaque, light, CHUNK_SIZE+1, y, z, w);
+            }
+        });
+    }
 }
 
 EdgeChanges Chunk::check_edge_values(ChunkBlockMap *original_light_levels){
@@ -391,9 +420,11 @@ void Chunk::load(NeighborEdgesPtr edges) {
 
     insert_edge_values(edges, opaque, light);
 
-    this->blocks->each([&](int x, int y, int z, char ew){
-        auto total_light_level = this->get_light_level(x,y,z);
-        light->set(x+1,y,z+1, total_light_level);
+    light->each([&](int x, int y, int z, char ew){
+        if(x == 0 || x > CHUNK_SIZE || z == 0 || z > CHUNK_SIZE){
+            return;
+        }
+        light->set(x,y,z, this->get_light_level(x-1,y,z-1));
     });
 
     int final_sum = 0;
