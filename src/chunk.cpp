@@ -158,6 +158,7 @@ bool Chunk::is_ready_to_draw() const {
     return this->_buffer && this->dirty();
 }
 
+
 void Chunk::load() {
     auto opaque = new BigBlockMap();
     auto light = new BigBlockMap();
@@ -169,24 +170,7 @@ void Chunk::load() {
     printf("Compute Chunk %d,%d\n", this->_p, this->_q);
 
     // populate opaque array
-    for (int a = 0; a < 3; a++) {
-        for (int b = 0; b < 3; b++) {
-            auto chunk = g->find_chunk(this->_p + (a-1), this->_q + (b-1));
-            if(!chunk){
-                continue;
-            }
-            chunk->foreach_block([&](int ex, int ey, int ez, int ew) {
-                int x = ex - ox;
-                int y = ey - oy;
-                int z = ez - oz;
-                int w = ew;
-                opaque->set(x,y,z, !is_transparent(w) && !is_light(w));
-                if (opaque->get(x, y, z)) {
-                    highest->set(x, z, MAX(highest->get(x, z), y));
-                }
-            });
-        }
-    }
+    populate_opaque_array(opaque, highest, ox, oy, oz);
 
 
     for (int a = 0; a < 3; a++) {
@@ -312,6 +296,42 @@ void Chunk::load() {
     chunk->set_maxy(maxy);
     chunk->set_faces(faces);
     chunk->set_vertices(data);
+}
+
+void Chunk::populate_opaque_array(BigBlockMap *opaque, HeightMap<48> *highest, int ox, int oy, int oz) const {
+    for (int a = 0; a < 3; a++) {
+        for (int b = 0; b < 3; b++) {
+            auto chunk = g->find_chunk(this->_p + (a - 1), this->_q + (b - 1));
+            if(!chunk){
+                continue;
+            }
+            int chunk_x_offset = chunk->_p * CHUNK_SIZE;
+            int chunk_z_offset = chunk->_q * CHUNK_SIZE;
+            for(int bx = 0; bx < CHUNK_SIZE; bx++){
+                for(int by = 0; by < CHUNK_HEIGHT; by++){
+                    for(int bz = 0; bz < CHUNK_SIZE; bz++){
+                        int ex = bx + chunk_x_offset;
+                        int ey = by;
+                        int ez = bz + chunk_z_offset;
+                        int ew = chunk->blocks->_data[bx][by][bz];
+
+                        int x = ex - ox;
+                        int y = ey - oy;
+                        int z = ez - oz;
+                        int w = ew;
+                        if(w == 0 || y == CHUNK_HEIGHT){
+                            continue;
+                        }
+                        bool is_opaque = !is_transparent(w) && !is_light(w);
+                        opaque->_data[x][y][z] = is_opaque ;
+                        if (is_opaque) {
+                            highest->_data[x][z] = MAX(highest->_data[x][z], y);
+                        }
+                    }
+                }
+            }
+        }
+    }
 }
 
 int chunk_visible(float planes[6][4], int p, int q, int miny, int maxy) {

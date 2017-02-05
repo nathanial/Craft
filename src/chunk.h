@@ -64,6 +64,8 @@ public:
     bool is_ready_to_draw() const;
 
     void load();
+
+    void populate_opaque_array(BigBlockMap *opaque, HeightMap<48> *highest, int ox, int oy, int oz) const;
 };
 
 typedef std::shared_ptr<Chunk> ChunkPtr;
