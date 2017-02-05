@@ -77,6 +77,8 @@ public:
     int get_block_or_zero(int x, int y, int z) const;
     int set_block(int x, int y, int z, char w);
 
+    int get_light_level(int x, int y, int z) const;
+
     int distance(int p, int q);
 
     void foreach_block(std::function<void (int, int, int, char)> func);

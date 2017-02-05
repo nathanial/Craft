@@ -1,7 +1,7 @@
 FILE(GLOB SOURCE_FILES *.cpp)
 
-add_definitions(-fsanitize=address -fuse-ld=gold -fno-omit-frame-pointer)
-
+#add_definitions(-fsanitize=address -fuse-ld=gold -fno-omit-frame-pointer)
+add_definitions(-O2)
 
 include_directories(../deps/glew/include)
 include_directories(../deps/glfw/include)

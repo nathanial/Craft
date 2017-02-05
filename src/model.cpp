@@ -172,11 +172,13 @@ NeighborEdgesPtr Model::find_edges(int p, int q){
         });
         edges->north_edge_lights = south_edge_blocks([&](int x, int y, int z){
             // exclude south light levels, because those are from the central chunk
-            return (
-                north_chunk->native_light_levels->get(x,y,z) +
-                north_chunk->north_light_levels->get(x,y,z) +
-                north_chunk->east_light_levels->get(x,y,z) +
-                north_chunk->west_light_levels->get(x,y,z)
+            return std::max(
+                    std::max(north_chunk->native_light_levels->get(x, y, z),
+                             north_chunk->north_light_levels->get(x, y, z)),
+
+                    std::max(
+                            north_chunk->east_light_levels->get(x, y, z),
+                            north_chunk->west_light_levels->get(x, y, z))
             );
         });
     }
@@ -186,12 +188,11 @@ NeighborEdgesPtr Model::find_edges(int p, int q){
         });
         edges->south_edge_lights = north_edge_blocks([&](int x, int y, int z) {
             // exclude north light levels, because those are from the central chunk
-            return (
-                south_chunk->native_light_levels->get(x,y,z) +
-                south_chunk->south_light_levels->get(x,y,z) +
-                south_chunk->west_light_levels->get(x,y,z) +
-                south_chunk->east_light_levels->get(x,y,z)
-            );
+            return std::max(
+                    std::max(south_chunk->native_light_levels->get(x, y, z),
+                             south_chunk->south_light_levels->get(x, y, z)),
+                    std::max(south_chunk->west_light_levels->get(x, y, z),
+                             south_chunk->east_light_levels->get(x, y, z)));
         });
     }
     if(west_chunk){
@@ -200,11 +201,11 @@ NeighborEdgesPtr Model::find_edges(int p, int q){
         });
         edges->west_edge_lights = east_edge_blocks([&](int x, int y, int z) {
             // exclude east light levels, because those are from the central chunk
-            return (
-                west_chunk->native_light_levels->get(x,y,z) +
-                west_chunk->north_light_levels->get(x,y,z) +
-                west_chunk->south_light_levels->get(x,y,z) +
-                west_chunk->west_light_levels->get(x,y,z)
+            return std::max(
+                    std::max(west_chunk->native_light_levels->get(x, y, z),
+                             west_chunk->north_light_levels->get(x, y, z)),
+                    std::max(west_chunk->south_light_levels->get(x, y, z),
+                             west_chunk->west_light_levels->get(x, y, z))
             );
         });
     }
@@ -214,11 +215,11 @@ NeighborEdgesPtr Model::find_edges(int p, int q){
         });
         edges->east_edge_lights = west_edge_blocks([&](int x, int y, int z){
             // exclude west light levels, because those are from the central chunk
-            return (
-              east_chunk->native_light_levels->get(x,y,z) +
-                    east_chunk->north_light_levels->get(x,y,z) +
-                    east_chunk->south_light_levels->get(x,y,z) +
-                    east_chunk->east_light_levels->get(x,y,z)
+            return std::max(
+                    std::max(east_chunk->native_light_levels->get(x, y, z),
+                             east_chunk->north_light_levels->get(x, y, z)),
+                    std::max(east_chunk->south_light_levels->get(x, y, z),
+                             east_chunk->east_light_levels->get(x, y, z))
             );
         });
     }
