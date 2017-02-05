@@ -5,6 +5,8 @@
 extern "C" {
     #include <noise.h>
 }
+
+#include <queue>
 #include "chunk.h"
 #include "model.h"
 #include "util.h"
@@ -13,6 +15,8 @@ extern "C" {
 #include "matrix.h"
 
 extern Model *g;
+
+static int no_breaks = 0;
 
 void light_fill(
         BigBlockMap *opaque, BigBlockMap *light,
@@ -162,7 +166,6 @@ void Chunk::load() {
     int ox = this->_p * CHUNK_SIZE - CHUNK_SIZE;
     int oy = -1;
     int oz = this->_q * CHUNK_SIZE - CHUNK_SIZE;
-
     printf("Compute Chunk %d,%d\n", this->_p, this->_q);
 
     // populate opaque array
@@ -206,7 +209,7 @@ void Chunk::load() {
     int miny = 256;
     int maxy = 0;
     int faces = 0;
-    g->find_chunk(this->_p, this->_q)->foreach_block([&](int ex, int ey, int ez, int ew) {
+    this->foreach_block([&](int ex, int ey, int ez, int ew) {
         if (ew <= 0) {
             return;
         }
@@ -374,34 +377,52 @@ int highest_block(float x, float z) {
 
 void light_fill(
         BigBlockMap *opaque, BigBlockMap *light,
-        int x, int y, int z, int w, int force)
+        int ox, int oy, int oz, int ow, int force)
 {
-    if(w <= 0) {
-        return;
+    no_breaks = 0;
+    std::deque<std::tuple<int,int,int,int>> frontier;
+    frontier.push_back(std::make_tuple(ox,oy,oz,ow));
+    while(!frontier.empty()){
+        auto &next = frontier.front();
+        int x = std::get<0>(next);
+        int y = std::get<1>(next);
+        int z = std::get<2>(next);
+        int w = std::get<3>(next);
+        frontier.pop_front();
+        if(x < 0 || x >= CHUNK_SIZE * 3) {
+           continue;
+        }
+        if(y < 0 || y >= CHUNK_HEIGHT){
+            continue;
+        }
+        if(z < 0 || z >= CHUNK_SIZE * 3){
+           continue;
+        }
+        if (light->get(x, y, z) >= w) {
+            continue;
+        }
+        if(opaque->get(x,y,z)){
+            continue;
+        }
+        if(w <= 0 || light->get(x,y,z) >= w){
+            continue;
+        }
+
+        light->set(x,y,z,w);
+        if(w == 1){
+            continue;
+        }
+        frontier.push_back(std::make_tuple(x - 1, y, z, w - 1));
+        frontier.push_back(std::make_tuple(x + 1, y, z, w - 1));
+        frontier.push_back(std::make_tuple(x, y - 1, z, w - 1));
+        frontier.push_back(std::make_tuple(x, y + 1, z, w - 1));
+        frontier.push_back(std::make_tuple(x, y, z - 1, w - 1));
+        frontier.push_back(std::make_tuple(x, y, z + 1, w - 1));
+        if(no_breaks > 1000000){
+            throw "Running Too Long";
+        }
+        no_breaks += 1;
     }
-    if(x < 0 || x >= CHUNK_SIZE * 3) {
-        return;
-    }
-    if(y < 0 || y >= CHUNK_HEIGHT){
-        return;
-    }
-    if(z < 0 || z >= CHUNK_SIZE * 3){
-        return;
-    }
-    if (light->get(x, y, z) >= w) {
-        return;
-    }
-    if (!force && opaque->get(x, y, z)) {
-        return;
-    }
-    //printf("Light Fill %d,%d,%d | %d,%d\n",x,y,z, w, force);
-    light->set(x, y, z, w--);
-    light_fill(opaque, light, x - 1, y, z, w, 0);
-    light_fill(opaque, light, x + 1, y, z, w, 0);
-    light_fill(opaque, light, x, y - 1, z, w, 0);
-    light_fill(opaque, light, x, y + 1, z, w, 0);
-    light_fill(opaque, light, x, y, z - 1, w, 0);
-    light_fill(opaque, light, x, y, z + 1, w, 0);
 }
 
 
