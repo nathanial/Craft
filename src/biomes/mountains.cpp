@@ -20,9 +20,9 @@ void Mountains::create_chunk(ChunkPtr chunk, int p, int q) {
 
             float mountain_factor;
             if(x < 0){
-                mountain_factor = (abs(x + CHUNK_SIZE * 3) / 32.0f) / 2.0;
+                mountain_factor = (ABS(x + CHUNK_SIZE * 3) / 32.0f) / 2.0;
             } else {
-                mountain_factor = (abs(x) / 32.0f) / 2.0;
+                mountain_factor = (ABS(x) / 32.0f) / 2.0;
             }
 
             if(mountain_factor > 3.5) {

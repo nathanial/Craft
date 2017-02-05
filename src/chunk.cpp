@@ -458,8 +458,8 @@ void scanline_iterate(BigBlockMap *light, BigBlockMap *opaque, std::deque<std::t
     };
 
     bool spanZMinus = false, spanZPlus = false, spanYMinus = false, spanYPlus = false;
-    while(cursorX < CHUNK_SIZE * 3 && cursorX >= 0 && canLight(cursorX, y, z, w - abs(x - cursorX))){
-        cursorW = w - abs(x - cursorX);
+    while(cursorX < CHUNK_SIZE * 3 && cursorX >= 0 && canLight(cursorX, y, z, w - ABS(x - cursorX))){
+        cursorW = w - ABS(x - cursorX);
         light->set(cursorX, y, z, cursorW);
         if(!spanZMinus && z > 0 && canLight(cursorX, y, z-1, cursorW-1)) {
             frontier.push_back(std::make_tuple(cursorX, y, z - 1, cursorW - 1));
