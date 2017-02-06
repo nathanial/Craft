@@ -11,7 +11,6 @@
 #include "sign.h"
 #include <memory>
 #include <mutex>
-#include <shared_mutex>
 
 class Attrib;
 
