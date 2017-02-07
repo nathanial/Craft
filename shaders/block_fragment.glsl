@@ -11,9 +11,9 @@ varying float fragment_ao;
 varying float fragment_light;
 varying float fog_factor;
 varying float fog_height;
-varying float diffuse;
 
 const float pi = 3.14159265;
+const vec3 ambient = vec3(0.00);
 
 void main() {
     vec3 color = vec3(texture2D(sampler, fragment_uv));
@@ -24,14 +24,9 @@ void main() {
     if (cloud && bool(ortho)) {
         discard;
     }
-    float df = cloud ? 1.0 - diffuse * 0.2 : diffuse;
-    float ao = cloud ? 1.0 - (1.0 - fragment_ao) * 0.2 : fragment_ao;
-    ao = min(1.0, ao + fragment_light);
-    df = min(1.0, df + fragment_light);
-    float value = min(1.0, daylight + fragment_light);
-    vec3 light_color = vec3(value * 0.3 + 0.2);
-    vec3 ambient = vec3(value * 0.3 + 0.2);
-    vec3 light = ambient + light_color * df;
+    float ao = fragment_ao;
+    float value = min(1.0, fragment_light);
+    vec3 light = vec3(value) + ambient;
     color = clamp(color * light * ao, vec3(0.0), vec3(1.0));
     vec3 sky_color = vec3(texture2D(sky_sampler, vec2(timer, fog_height)));
     color = mix(color, sky_color, fog_factor);

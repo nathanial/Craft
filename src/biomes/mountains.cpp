@@ -54,7 +54,7 @@ void Mountains::create_chunk(ChunkPtr chunk, int p, int q) {
             }
 
             if(simplex2(x, z, 6, 0.5, 2) > 0.78){
-                chunk->set_block(x,h+10,z, BEACON);
+                chunk->set_block(x,h+1,z, BEACON);
             }
         }
     }

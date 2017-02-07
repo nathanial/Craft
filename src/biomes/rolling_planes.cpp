@@ -69,7 +69,7 @@ void RollingPlanes::create_chunk(ChunkPtr chunk, int p, int q) {
                 }
             }
             if(simplex2(x, z, 6, 0.5, 2) > 0.80){
-                chunk->set_block(x,h+10,z, BEACON);
+                chunk->set_block(x,h+1,z, BEACON);
             }
             // clouds
             if (SHOW_CLOUDS) {

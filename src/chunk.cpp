@@ -496,6 +496,19 @@ void scanline_iterate(BigBlockMap *light, BigBlockMap *opaque, std::deque<std::t
 }
 
 
+static float light_levels[] = {
+        0.5629499534213125f, 0.7036874417766406f, 0.8796093022208006f, 1.0995116277760006f, 1.3743895347200008f,
+        1.717986918400001f, 2.147483648000001f, 2.6843545600000014f, 3.3554432000000016f, 4.194304000000002f,
+        5.242880000000002f, 6.553600000000002f, 8.192000000000002f, 10.240000000000002f, 12.8f, 16.0f
+};
+
+
+float get_light_level(int level){
+    if(level < 0 || level > 15) {
+        throw "Bad Light Level";
+    }
+    return light_levels[level];
+}
 
 void occlusion(
         char neighbors[27], char lights[27], float shades[27],
@@ -529,12 +542,12 @@ void occlusion(
             int is_light = lights[13] == 15;
             for (int k = 0; k < 4; k++) {
                 shade_sum += shades[lookup4[i][j][k]];
-                light_sum += lights[lookup4[i][j][k]];
+                light_sum += get_light_level(lights[lookup4[i][j][k]]);
             }
             if (is_light) {
                 light_sum = 15 * 4 * 10;
             }
-            float total = curve[value] + shade_sum / 4.0;
+            float total = (curve[value] + shade_sum / 4.0) * 0.01;
             ao[i][j] = MIN(total, 1.0);
             light[i][j] = light_sum / 15.0 / 4.0;
         }
