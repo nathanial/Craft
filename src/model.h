@@ -12,6 +12,7 @@
 #include <functional>
 #include <tuple>
 #include <vector>
+#include "chunk_map.h"
 
 class Block {
 public:
@@ -57,19 +58,9 @@ public:
     GLuint buffer;
 };
 
-typedef std::tuple<int, int> ChunkPosition;
-
-struct ChunkPositionHash : public std::unary_function<ChunkPosition, std::size_t>
-{
-    std::size_t operator()(const ChunkPosition& k) const
-    {
-        return std::get<0>(k) ^ (std::get<1>(k) << 1);
-    }
-};
-
 class Model {
 private:
-    std::unordered_map<ChunkPosition, ChunkPtr, ChunkPositionHash> chunks;
+    ChunkMap chunks;
 public:
     GLFWwindow *window;
     std::vector<WorkerPtr> workers;

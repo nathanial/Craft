@@ -8,11 +8,7 @@ Model::Model(){
 }
 
 ChunkPtr Model::get_chunk(int p, int q) {
-    if(this->chunks.count(std::make_tuple(p,q)) <= 0){
-        return nullptr;
-    } else {
-        return this->chunks.at(std::make_tuple(p,q));
-    }
+    return this->chunks.get_chunk(std::make_tuple(p,q));
 }
 
 void Model::clear_chunks(){
@@ -27,18 +23,7 @@ ChunkPtr Model::find_chunk(int p, int q) {
     return chunk;
 }
 
-void Model::each_chunk(std::function<void (ChunkPtr chunk)> func) {
-    for(const auto & kv : this->chunks){
-        auto chunk = kv.second;
-        if(chunk == nullptr){
-            printf("Missing Chunk %d,%d\n", std::get<0>(kv.first), std::get<1>(kv.first));
-            throw "Missing Chunk";
-        } else {
-            func(chunk);
-        }
 
-    }
-}
 
 char Model::get_block(int x, int y, int z) {
     int p = chunked(x);
@@ -73,7 +58,7 @@ void Model::delete_chunks(){
     });
     for(auto & position : deletion_list){
         printf("Delete %d,%d\n", std::get<0>(position), std::get<0>(position));
-        this->chunks.erase(position);
+        this->chunks.remove(position);
     }
 }
 
@@ -89,5 +74,9 @@ void Model::add_chunk(ChunkPtr chunk) {
     if(chunk == nullptr){
         throw "Couldn't Make Shared Ptr";
     }
-    this->chunks[std::make_tuple(chunk->p(), chunk->q())] = chunk;
+    this->chunks.set_chunk(std::make_tuple(chunk->p(), chunk->q()), chunk);
+}
+
+void Model::each_chunk(std::function<void (ChunkPtr chunk)> func) {
+    this->chunks.each_chunk(func);
 }
