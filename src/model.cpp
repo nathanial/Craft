@@ -1,5 +1,6 @@
 #include "model.h"
 #include "util.h"
+#include "item.h"
 
 Model::Model(){
     for(int i = 0; i < WORKERS; i++){
@@ -90,4 +91,36 @@ void Model::add_chunk(ChunkPtr chunk) {
         throw "Couldn't Make Shared Ptr";
     }
     this->chunks[std::make_tuple(chunk->p(), chunk->q())] = chunk;
+    this->set_dirty_flag(chunk->p(), chunk->q());
+}
+
+void Model::set_dirty_flag(int p, int q) {
+    auto chunk = this->find_chunk(p, q);
+    chunk->set_dirty(true);
+    for (int dp = -1; dp <= 1; dp++) {
+        for (int dq = -1; dq <= 1; dq++) {
+            auto other = this->find_chunk(p + dp, q + dq);
+            if (other) {
+                other->set_dirty(true);
+            }
+        }
+    }
+}
+
+int Model::highest_block(float x, float z){
+    int result = -1;
+    int nx = roundf(x);
+    int nz = roundf(z);
+    int p = chunked(x);
+    int q = chunked(z);
+    printf("Highest Block %f %f\n", x, z);
+    auto chunk = this->find_chunk(p, q);
+    if (chunk) {
+        chunk->foreach_block([&](int ex, int ey, int ez, int ew){
+            if (is_obstacle(ew) && ex == nx && ez == nz) {
+                result = MAX(result, ey);
+            }
+        });
+    }
+    return result;
 }

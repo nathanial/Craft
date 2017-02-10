@@ -13,6 +13,20 @@
 #include <mutex>
 
 class Attrib;
+class Chunk;
+
+typedef std::shared_ptr<Chunk> ChunkPtr;
+typedef std::tuple<int, int> ChunkPosition;
+
+struct ChunkPositionHash : public std::unary_function<ChunkPosition, std::size_t>
+{
+    std::size_t operator()(const ChunkPosition& k) const
+    {
+        return std::get<0>(k) ^ (std::get<1>(k) << 1);
+    }
+};
+typedef std::unordered_map<ChunkPosition, ChunkPtr, ChunkPositionHash> Neighborhood;
+
 
 class Chunk {
 private:
@@ -24,6 +38,10 @@ private:
     int _maxy;
     GLuint _buffer;
     GLfloat *_vertices;
+
+
+    void populate_opaque_array(const Neighborhood &neighborhood, BigBlockMap *opaque, HeightMap<48> *highest, int ox, int oy, int oz) const;
+    void populate_light_array(const Neighborhood &neighborhood, BigBlockMap *opaque, BigBlockMap *light, int ox, int oy, int oz) const;
 public:
 
 
@@ -35,7 +53,6 @@ public:
     int set_block(int x, int y, int z, char w);
 
     int distance(int p, int q);
-    void set_dirty_flag();
 
     void foreach_block(std::function<void (int, int, int, char)> func);
     int draw(Attrib *attrib);
@@ -62,16 +79,11 @@ public:
 
     bool is_ready_to_draw() const;
 
-    void load();
+    void load(const Neighborhood& neighborhood);
 
-    void populate_opaque_array(BigBlockMap *opaque, HeightMap<48> *highest, int ox, int oy, int oz) const;
-
-    void populate_light_array(BigBlockMap *opaque, BigBlockMap *light, int ox, int oy, int oz) const;
 };
 
-typedef std::shared_ptr<Chunk> ChunkPtr;
 
-int highest_block(float x, float z);
 int chunk_visible(float planes[6][4], int p, int q, int miny, int maxy);
 
 #endif //CRAFT_CHUNK_H

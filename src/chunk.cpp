@@ -8,13 +8,10 @@ extern "C" {
 
 #include <queue>
 #include "chunk.h"
-#include "model.h"
 #include "util.h"
 #include "item.h"
-#include "draw.h"
 #include "matrix.h"
-
-extern Model *g;
+#include "draw.h"
 
 void occlusion(
         char neighbors[27], char lights[27], float shades[27],
@@ -43,7 +40,6 @@ Chunk::Chunk(int p, int q) :
     this->_q = q;
     this->_faces = 0;
     this->_buffer = 0;
-    this->set_dirty_flag();
 }
 
 Chunk::~Chunk() {
@@ -66,18 +62,6 @@ void Chunk::foreach_block(std::function<void (int, int, int, char)> func) {
 
 int Chunk::set_block(int x, int y, int z, char w){
     return this->blocks->set(x - this->_p * CHUNK_SIZE, y, z - this->_q * CHUNK_SIZE, w);
-}
-
-void Chunk::set_dirty_flag() {
-    this->set_dirty(true);
-    for (int dp = -1; dp <= 1; dp++) {
-        for (int dq = -1; dq <= 1; dq++) {
-            auto other = g->find_chunk(this->_p + dp, this->_q + dq);
-            if (other) {
-                other->set_dirty(true);
-            }
-        }
-    }
 }
 
 int Chunk::distance(int p, int q) {
@@ -160,7 +144,7 @@ bool Chunk::is_ready_to_draw() const {
 }
 
 
-void Chunk::load() {
+void Chunk::load(const Neighborhood& neighborhood) {
     auto opaque = new BigBlockMap();
     auto light = new BigBlockMap();
     auto highest = new HeightMap<CHUNK_SIZE * 3>();
@@ -171,8 +155,8 @@ void Chunk::load() {
     // printf("Compute Chunk %d,%d\n", this->_p, this->_q);
 
     // populate opaque array
-    populate_opaque_array(opaque, highest, ox, oy, oz);
-    populate_light_array(opaque, light, ox, oy, oz);
+    populate_opaque_array(neighborhood,  opaque, highest, ox, oy, oz);
+    populate_light_array(neighborhood, opaque, light, ox, oy, oz);
 
     // count exposed faces
     int miny = 256;
@@ -206,8 +190,7 @@ void Chunk::load() {
     // generate geometry
     GLfloat *data = malloc_faces(10, faces);
     int offset = 0;
-    auto chunk = g->find_chunk(this->_p, this->_q);
-    chunk->foreach_block([&](int ex, int ey, int ez, int ew) {
+    this->foreach_block([&](int ex, int ey, int ez, int ew) {
         if (ew <= 0) {
             return;
         }
@@ -277,16 +260,16 @@ void Chunk::load() {
     delete highest;
     delete opaque;
 
-    chunk->set_miny(miny);
-    chunk->set_maxy(maxy);
-    chunk->set_faces(faces);
-    chunk->set_vertices(data);
+    this->set_miny(miny);
+    this->set_maxy(maxy);
+    this->set_faces(faces);
+    this->set_vertices(data);
 }
 
-void Chunk::populate_light_array(BigBlockMap *opaque, BigBlockMap *light, int ox, int oy, int oz) const {
+void Chunk::populate_light_array(const Neighborhood &neighborhood, BigBlockMap *opaque, BigBlockMap *light, int ox, int oy, int oz) const {
     for (int a = 0; a < 3; a++) {
         for (int b = 0; b < 3; b++) {
-            auto chunk = g->find_chunk(_p - (a - 1), _q - (b - 1));
+            auto chunk = neighborhood.at(std::make_tuple(_p - (a - 1), _q - (b - 1)));
             if(chunk){
                 int chunk_x_offset = chunk->_p * CHUNK_SIZE;
                 int chunk_z_offset = chunk->_q * CHUNK_SIZE;
@@ -320,10 +303,10 @@ void Chunk::populate_light_array(BigBlockMap *opaque, BigBlockMap *light, int ox
     }
 }
 
-void Chunk::populate_opaque_array(BigBlockMap *opaque, HeightMap<48> *highest, int ox, int oy, int oz) const {
+void Chunk::populate_opaque_array(const Neighborhood &neighborhood, BigBlockMap *opaque, HeightMap<48> *highest, int ox, int oy, int oz) const {
     for (int a = 0; a < 3; a++) {
         for (int b = 0; b < 3; b++) {
-            auto chunk = g->find_chunk(this->_p + (a - 1), this->_q + (b - 1));
+            auto chunk = neighborhood.at(std::make_tuple(this->_p + (a - 1), this->_q + (b - 1)));
             if(!chunk){
                 continue;
             }
@@ -372,7 +355,7 @@ int chunk_visible(float planes[6][4], int p, int q, int miny, int maxy) {
             {x + 0, maxy, z + d},
             {x + d, maxy, z + d}
     };
-    int n = g->ortho ? 4 : 6;
+    int n = 6;
     for (int i = 0; i < n; i++) {
         int in = 0;
         int out = 0;
@@ -399,23 +382,6 @@ int chunk_visible(float planes[6][4], int p, int q, int miny, int maxy) {
     return 1;
 }
 
-int highest_block(float x, float z) {
-    int result = -1;
-    int nx = roundf(x);
-    int nz = roundf(z);
-    int p = chunked(x);
-    int q = chunked(z);
-    printf("Highest Block %f %f\n", x, z);
-    auto chunk = g->find_chunk(p, q);
-    if (chunk) {
-        chunk->foreach_block([&](int ex, int ey, int ez, int ew){
-            if (is_obstacle(ew) && ex == nx && ez == nz) {
-                result = MAX(result, ey);
-            }
-        });
-    }
-    return result;
-}
 
 
 void light_fill_scanline(BigBlockMap *opaque, BigBlockMap *light, int ox, int oy ,int oz, int ow)

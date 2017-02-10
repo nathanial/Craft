@@ -411,13 +411,18 @@ int _gen_sign_buffer(
     return count;
 }
 
-
+Neighborhood find_neighborhood(int p, int q) {
+    Neighborhood hood;
+    for(int dp = -1; dp <= 1; dp++){
+        for(int dq = -1; dq <= 1; dq++){
+            hood[std::make_tuple(p + dp, q + dq)] = g->find_chunk(p+dp,q+dq);
+        }
+    }
+    return hood;
+}
 
 void gen_chunk_buffer(ChunkPtr chunk) {
-    auto item = std::make_shared<WorkerItem>();
-    item->p = chunk->p();
-    item->q = chunk->q();
-    chunk->load();
+    chunk->load(find_neighborhood(chunk->p(), chunk->q()));
     chunk->generate_buffer();
     chunk->set_dirty(false);
 }
@@ -584,7 +589,7 @@ int worker_run(WorkerPtr worker) {
             load_chunk(item);
         }
         auto chunk = g->find_chunk(item->p, item->q);
-        chunk->load();
+        chunk->load(find_neighborhood(item->p, item->q));
         {
             std::lock_guard<std::mutex> lock(worker->mtx);
             worker->state = WORKER_DONE;
@@ -599,7 +604,7 @@ void _set_block(int p, int q, int x, int y, int z, int w, int dirty) {
     if (chunk) {
         if (chunk->set_block(x, y, z, w)) {
             if (dirty) {
-                chunk->set_dirty_flag();
+                g->set_dirty_flag(p,q);
             }
             db_insert_block(p, q, x, y, z, w);
         }
@@ -1388,7 +1393,7 @@ void parse_buffer(char *buffer) {
             s->x = ux; s->y = uy; s->z = uz; s->rx = urx; s->ry = ury;
             force_chunks(me);
             if (uy == 0) {
-                s->y = highest_block(s->x, s->z) + 2;
+                s->y = g->highest_block(s->x, s->z) + 2;
             }
         }
         int bp, bq, bx, by, bz, bw;
@@ -1397,7 +1402,7 @@ void parse_buffer(char *buffer) {
         {
             _set_block(bp, bq, bx, by, bz, bw, 0);
             if (player_intersects_block(2, s->x, s->y, s->z, bx, by, bz)) {
-                s->y = highest_block(s->x, s->z) + 2;
+                s->y = g->highest_block(s->x, s->z) + 2;
             }
         }
         float px, py, pz, prx, pry;
@@ -1427,7 +1432,7 @@ void parse_buffer(char *buffer) {
         if (sscanf(line, "R,%d,%d", &kp, &kq) == 2) {
             auto chunk = g->find_chunk(kp, kq);
             if (chunk) {
-                chunk->set_dirty_flag();
+                g->set_dirty_flag(kp,kq);
             }
         }
         double elapsed;
@@ -1661,7 +1666,7 @@ int main(int argc, char **argv) {
         int loaded = db_load_state(&s->x, &s->y, &s->z, &s->rx, &s->ry);
         force_chunks(me);
         if (!loaded) {
-            s->y = highest_block(s->x, s->z) + 2;
+            s->y = g->highest_block(s->x, s->z) + 2;
         }
 
         // BEGIN MAIN LOOP //

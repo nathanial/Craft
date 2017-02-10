@@ -102,6 +102,6 @@ void handle_movement(double dt) {
         }
     }
     if (s->y < 0) {
-        s->y = highest_block(s->x, s->z) + 2;
+        s->y = g->highest_block(s->x, s->z) + 2;
     }
 }
