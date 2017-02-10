@@ -5,7 +5,7 @@
 #ifndef CRAFT_BIOME_H
 #define CRAFT_BIOME_H
 
-#include "../chunk.h"
+#include "../chunks/chunk.h"
 
 class Biome {
 public:

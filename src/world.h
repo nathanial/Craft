@@ -1,7 +1,7 @@
 #ifndef _world_h_
 #define _world_h_
 
-#include "chunk.h"
+#include "chunks/chunk.h"
 
 void create_world(ChunkPtr chunk, int p, int q);
 

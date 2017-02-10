@@ -8,10 +8,10 @@ extern "C" {
 
 #include <queue>
 #include "chunk.h"
-#include "util.h"
-#include "item.h"
-#include "matrix.h"
-#include "draw.h"
+#include "../util.h"
+#include "../item.h"
+#include "../matrix.h"
+#include "../draw.h"
 
 void occlusion(
         char neighbors[27], char lights[27], float shades[27],

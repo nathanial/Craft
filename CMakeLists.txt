@@ -11,7 +11,7 @@ add_executable(
         deps/lodepng/lodepng.cpp
     deps/noise/noise.c
     deps/sqlite/sqlite3.c
-    src/chunk.h src/chunk.cpp src/model.h src/draw.cpp src/draw.h src/worker.cpp src/worker.h src/biomes/rolling_planes.cpp src/biomes/rolling_planes.h src/biomes/biome.h src/biomes/mountains.h src/biomes/mountains.cpp src/height_map.h src/biomes/flatland.cpp src/biomes/flatland.h)
+        src/chunks/chunk.h src/chunks/chunk.cpp src/model.h src/draw.cpp src/draw.h src/worker.cpp src/worker.h src/biomes/rolling_planes.cpp src/biomes/rolling_planes.h src/biomes/biome.h src/biomes/mountains.h src/biomes/mountains.cpp src/height_map.h src/biomes/flatland.cpp src/biomes/flatland.h src/chunks/chunk_mesh.h)
 
 set(CMAKE_CXX_FLAGS "-std=c++17 -fpermissive -O2 -Wno-narrowing -fsanitize=thread")
 set(CMAKE_C_FLAGS -O2)

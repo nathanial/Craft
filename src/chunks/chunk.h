@@ -6,9 +6,9 @@
 #define CRAFT_CHUNK_H
 
 #include <GL/glew.h>
-#include "block_map.h"
-#include "height_map.h"
-#include "sign.h"
+#include "../block_map.h"
+#include "../height_map.h"
+#include "../sign.h"
 #include <memory>
 #include <mutex>
 
