@@ -9,6 +9,7 @@
 #include "chunks/chunk.h"
 #include "config.h"
 #include "worker.h"
+#include "chunks/chunk_mesh.h"
 #include <functional>
 #include <tuple>
 #include <vector>
@@ -61,7 +62,11 @@ public:
 class Model {
 private:
     mutable std::shared_mutex chunk_mtx;
+    mutable std::shared_mutex mesh_mtx;
+
     Neighborhood chunks;
+    std::unordered_map<ChunkPosition, ChunkMeshPtr, ChunkPositionHash> meshes;
+
 public:
     GLFWwindow *window;
     std::vector<WorkerPtr> workers;
@@ -99,6 +104,7 @@ public:
     ChunkPtr get_chunk(int p, int q);
     void clear_chunks();
     ChunkPtr find_chunk(int p, int q);
+    void add_mesh(ChunkMeshPtr mesh);
 
     void each_chunk(std::function<void (ChunkPtr chunk)>);
     void delete_chunks();

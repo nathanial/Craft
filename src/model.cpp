@@ -103,6 +103,13 @@ void Model::add_chunk(ChunkPtr chunk) {
     this->set_dirty_flag(chunk->p(), chunk->q());
 }
 
+void Model::add_mesh(ChunkMeshPtr mesh) {
+    {
+        std::unique_lock<std::shared_mutex> lock(this->mesh_mtx);
+        this->meshes[std::make_tuple(mesh->p, mesh->q)] = mesh;
+    }
+}
+
 void Model::set_dirty_flag(int p, int q) {
     auto chunk = this->find_chunk(p, q);
     chunk->set_dirty(true);

@@ -6,6 +6,7 @@
 #define CRAFT_CHUNK_MESH_H
 
 #include <GL/glew.h>
+#include "chunk.h"
 
 class ChunkMesh {
 private:
@@ -14,8 +15,14 @@ private:
     int _maxy;
     GLfloat *_vertices;
 
-public:
+    void populate_opaque_array(const Neighborhood &neighborhood, BigBlockMap *opaque, HeightMap<48> *highest, int ox, int oy, int oz) const;
+    void populate_light_array(const Neighborhood &neighborhood, BigBlockMap *opaque, BigBlockMap *light, int ox, int oy, int oz) const;
 
+public:
+    int p,q;
+    ChunkMesh(const ChunkPtr chunk, const Neighborhood& neighborhood);
 };
+
+typedef std::shared_ptr<ChunkMesh> ChunkMeshPtr;
 
 #endif //CRAFT_CHUNK_MESH_H

@@ -40,8 +40,7 @@ private:
     GLfloat *_vertices;
 
 
-    void populate_opaque_array(const Neighborhood &neighborhood, BigBlockMap *opaque, HeightMap<48> *highest, int ox, int oy, int oz) const;
-    void populate_light_array(const Neighborhood &neighborhood, BigBlockMap *opaque, BigBlockMap *light, int ox, int oy, int oz) const;
+
 public:
 
 
@@ -54,7 +53,7 @@ public:
 
     int distance(int p, int q);
 
-    void foreach_block(std::function<void (int, int, int, char)> func);
+    void foreach_block(std::function<void (int, int, int, char)> func) const;
     int draw(Attrib *attrib);
 
     int p() const;
@@ -78,8 +77,6 @@ public:
     void generate_buffer();
 
     bool is_ready_to_draw() const;
-
-    void load(const Neighborhood& neighborhood);
 
 };
 

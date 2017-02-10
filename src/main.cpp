@@ -22,6 +22,7 @@
 #include "draw.h"
 #include "player.h"
 #include "height_map.h"
+#include "chunks/chunk_mesh.h"
 
 extern "C" {
     #include "noise.h"
@@ -421,7 +422,7 @@ Neighborhood find_neighborhood(int p, int q) {
 }
 
 void gen_chunk_buffer(ChunkPtr chunk) {
-    chunk->load(find_neighborhood(chunk->p(), chunk->q()));
+    ChunkMesh mesh(chunk, find_neighborhood(chunk->p(), chunk->q()));
     chunk->generate_buffer();
     chunk->set_dirty(false);
 }
@@ -586,7 +587,8 @@ int worker_run(WorkerPtr worker) {
             load_chunk(item);
         }
         auto chunk = g->find_chunk(item->p, item->q);
-        chunk->load(find_neighborhood(item->p, item->q));
+        auto mesh = std::make_shared<ChunkMesh>(chunk, find_neighborhood(item->p, item->q));
+        g->add_mesh(mesh);
         {
             std::lock_guard<std::mutex> lock(worker->mtx);
             worker->state = WORKER_DONE;
