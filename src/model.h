@@ -12,6 +12,7 @@
 #include <functional>
 #include <tuple>
 #include <vector>
+#include <shared_mutex>
 
 class Block {
 public:
@@ -59,6 +60,7 @@ public:
 
 class Model {
 private:
+    mutable std::shared_mutex chunk_mtx;
     Neighborhood chunks;
 public:
     GLFWwindow *window;
@@ -66,7 +68,6 @@ public:
     int create_radius;
     int render_radius;
     int delete_radius;
-    int sign_radius;
     Player players[MAX_PLAYERS];
     int player_count;
     int typing;

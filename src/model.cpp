@@ -9,6 +9,7 @@ Model::Model(){
 }
 
 ChunkPtr Model::get_chunk(int p, int q) {
+    std::shared_lock<std::shared_mutex> lock(this->chunk_mtx);
     if(this->chunks.count(std::make_tuple(p,q)) <= 0){
         return nullptr;
     } else {
@@ -17,10 +18,12 @@ ChunkPtr Model::get_chunk(int p, int q) {
 }
 
 void Model::clear_chunks(){
+    std::unique_lock<std::shared_mutex> lock(this->chunk_mtx);
     this->chunks.clear();
 }
 
 ChunkPtr Model::find_chunk(int p, int q) {
+    std::shared_lock<std::shared_mutex> lock(this->chunk_mtx);
     auto chunk = this->get_chunk(p,q);
     if(chunk == nullptr){
         return nullptr;
@@ -29,6 +32,7 @@ ChunkPtr Model::find_chunk(int p, int q) {
 }
 
 void Model::each_chunk(std::function<void (ChunkPtr chunk)> func) {
+    std::shared_lock<std::shared_mutex> lock(this->chunk_mtx);
     for(const auto & kv : this->chunks){
         auto chunk = kv.second;
         if(chunk == nullptr){
@@ -37,7 +41,6 @@ void Model::each_chunk(std::function<void (ChunkPtr chunk)> func) {
         } else {
             func(chunk);
         }
-
     }
 }
 
@@ -72,6 +75,7 @@ void Model::delete_chunks(){
             deletion_list.push_back(std::make_tuple(chunk->p(), chunk->q()));
         }
     });
+    std::unique_lock<std::shared_mutex> lock(this->chunk_mtx);
     for(auto & position : deletion_list){
         printf("Delete %d,%d\n", std::get<0>(position), std::get<0>(position));
         this->chunks.erase(position);
@@ -79,18 +83,23 @@ void Model::delete_chunks(){
 }
 
 void Model::delete_all_chunks() {
+    std::unique_lock<std::shared_mutex> lock(this->chunk_mtx);
     this->chunks.clear();
 }
 
 int Model::chunk_count() const {
+    std::shared_lock<std::shared_mutex> lock(this->chunk_mtx);
     return static_cast<int>(this->chunks.size());
 }
 
 void Model::add_chunk(ChunkPtr chunk) {
-    if(chunk == nullptr){
-        throw "Couldn't Make Shared Ptr";
+    {
+        std::unique_lock<std::shared_mutex> lock(this->chunk_mtx);
+        if(chunk == nullptr){
+            throw "Couldn't Make Shared Ptr";
+        }
+        this->chunks[std::make_tuple(chunk->p(), chunk->q())] = chunk;
     }
-    this->chunks[std::make_tuple(chunk->p(), chunk->q())] = chunk;
     this->set_dirty_flag(chunk->p(), chunk->q());
 }
 

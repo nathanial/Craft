@@ -22,7 +22,6 @@
 #include "draw.h"
 #include "player.h"
 #include "height_map.h"
-#include "workers/tasks/generate_chunk_task.h"
 
 extern "C" {
     #include "noise.h"
@@ -441,8 +440,7 @@ void request_chunk(int p, int q) {
 }
 
 void create_chunk(int p, int q) {
-    GenerateChunkTask gen_chunk(p,q);
-    auto chunk = gen_chunk.run().get();
+    auto chunk = std::make_shared<Chunk>(p,q);
 
     g->add_chunk(chunk);
 
@@ -546,8 +544,7 @@ void ensure_chunks_worker(Player *player, WorkerPtr worker) {
     if (!chunk) {
         load = 1;
         if (g->chunk_count() < MAX_CHUNKS) {
-            GenerateChunkTask gen_chunk(a,b);
-            chunk = gen_chunk.run().get();
+            chunk = std::make_shared<Chunk>(a,b);
             g->add_chunk(chunk);
         }
         else {
@@ -1614,7 +1611,6 @@ int main(int argc, char **argv) {
     g->create_radius = CREATE_CHUNK_RADIUS;
     g->render_radius = RENDER_CHUNK_RADIUS;
     g->delete_radius = DELETE_CHUNK_RADIUS;
-    g->sign_radius = RENDER_SIGN_RADIUS;
 
     // INITIALIZE WORKER THREADS
     for (int i = 0; i < WORKERS; i++) {
