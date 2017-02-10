@@ -31,6 +31,15 @@ ChunkPtr Model::find_chunk(int p, int q) {
     return chunk;
 }
 
+ChunkMeshPtr Model::find_mesh(int p, int q) {
+    std::shared_lock<std::shared_mutex> lock(this->mesh_mtx);
+    if(this->meshes.count(std::make_tuple(p,q)) <= 0) {
+        return nullptr;
+    } else {
+        return this->meshes.at(std::make_tuple(p, q));
+    }
+}
+
 void Model::each_chunk(std::function<void (ChunkPtr chunk)> func) {
     std::shared_lock<std::shared_mutex> lock(this->chunk_mtx);
     for(const auto & kv : this->chunks){
@@ -40,6 +49,19 @@ void Model::each_chunk(std::function<void (ChunkPtr chunk)> func) {
             throw "Missing Chunk";
         } else {
             func(chunk);
+        }
+    }
+}
+
+void Model::each_mesh(std::function<void (ChunkMeshPtr mesh)> func) {
+    std::shared_lock<std::shared_mutex> lock(this->mesh_mtx);
+    for(const auto & kv : this->meshes) {
+        auto mesh = kv.second;
+        if(mesh == nullptr){
+            printf("Missing Mesh %d,%d\n", std::get<0>(kv.first), std::get<1>(kv.first));
+            throw "Missing Mesh";
+        } else {
+            func(mesh);
         }
     }
 }
@@ -111,11 +133,13 @@ void Model::add_mesh(ChunkMeshPtr mesh) {
 }
 
 void Model::set_dirty_flag(int p, int q) {
-    auto chunk = this->find_chunk(p, q);
-    chunk->set_dirty(true);
+    auto mesh = this->find_mesh(p, q);
+    if(mesh){
+        mesh->set_dirty(true);
+    }
     for (int dp = -1; dp <= 1; dp++) {
         for (int dq = -1; dq <= 1; dq++) {
-            auto other = this->find_chunk(p + dp, q + dq);
+            auto other = this->find_mesh(p + dp, q + dq);
             if (other) {
                 other->set_dirty(true);
             }

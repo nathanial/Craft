@@ -38,16 +38,17 @@ Chunk::Chunk(int p, int q) :
 {
     this->_p = p;
     this->_q = q;
-    this->_faces = 0;
-    this->_buffer = 0;
 }
 
 Chunk::~Chunk() {
-    del_buffer(this->_buffer);
 }
 
 int Chunk::get_block(int x, int y, int z) const {
     return this->blocks->get(x - this->_p * CHUNK_SIZE, y, z - this->_q * CHUNK_SIZE);
+}
+
+int Chunk::get_block_raw(int x, int y, int z) const {
+    return this->blocks->get(x, y, z);
 }
 
 int Chunk::get_block_or_zero(int x, int y, int z) const {
@@ -70,15 +71,6 @@ int Chunk::distance(int p, int q) {
     return MAX(dp, dq);
 }
 
-int Chunk::draw(Attrib *attrib) {
-    if(this->_buffer){
-        draw_triangles_3d_ao(attrib, this->_buffer, this->_faces * 6);
-        return this->_faces;
-    } else {
-        return 0;
-    }
-
-}
 
 int Chunk::p() const {
     return this->_p;
@@ -86,61 +78,6 @@ int Chunk::p() const {
 
 int Chunk::q() const {
     return this->_q;
-}
-
-void Chunk::set_faces(int faces) {
-    this->_faces = faces;
-}
-
-int Chunk::faces() const {
-    return this->_faces;
-}
-
-void Chunk::set_dirty(bool dirty) {
-    this->_dirty = dirty;
-}
-
-bool Chunk::dirty() const {
-    return this->_dirty;
-}
-
-void Chunk::set_maxy(int maxy) {
-    this->_maxy = maxy;
-}
-
-void Chunk::set_miny(int miny) {
-    this->_miny = miny;
-}
-
-int Chunk::maxy() const {
-    return this->_maxy;
-}
-
-int Chunk::miny() const {
-    return this->_miny;
-}
-
-GLfloat* Chunk::vertices() const {
-    return this->_vertices;
-}
-
-void Chunk::set_vertices(GLfloat *vertices) {
-    this->_vertices = vertices;
-}
-
-void Chunk::generate_buffer() {
-    if(this->_buffer) {
-        del_buffer(this->_buffer);
-    }
-    if(!this->_vertices){
-        return;
-    }
-    this->_buffer = gen_faces(10, this->faces(), this->vertices());
-    this->_vertices = nullptr;
-}
-
-bool Chunk::is_ready_to_draw() const {
-    return this->_buffer && this->dirty();
 }
 
 int chunk_visible(float planes[6][4], int p, int q, int miny, int maxy) {

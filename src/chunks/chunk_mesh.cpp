@@ -9,6 +9,7 @@ extern "C" {
 #include "chunk_mesh.h"
 #include "../item.h"
 #include "../matrix.h"
+#include "../draw.h"
 
 void occlusion(
         char neighbors[27], char lights[27], float shades[27],
@@ -157,7 +158,61 @@ ChunkMesh::ChunkMesh(const ChunkPtr chunk, const Neighborhood& neighborhood) {
     this->_vertices = data;
 }
 
+ChunkMesh::~ChunkMesh(){
+    del_buffer(this->_buffer);
+}
 
+int ChunkMesh::draw(Attrib *attrib) {
+    if(this->_buffer){
+        draw_triangles_3d_ao(attrib, this->_buffer, this->_faces * 6);
+        return this->_faces;
+    } else {
+        return 0;
+    }
+}
+
+void ChunkMesh::generate_buffer() {
+    if(this->_buffer) {
+        del_buffer(this->_buffer);
+    }
+    if(!this->_vertices){
+        return;
+    }
+    this->_buffer = gen_faces(10, this->_faces, this->_vertices);
+    this->_vertices = nullptr;
+    this->_dirty = false;
+}
+
+int ChunkMesh::miny() const {
+    return this->_miny;
+}
+
+int ChunkMesh::maxy() const {
+    return this->_maxy;
+}
+
+
+int ChunkMesh::distance(int p, int q) {
+    int dp = ABS(this->p - p);
+    int dq = ABS(this->q - q);
+    return MAX(dp, dq);
+}
+
+bool ChunkMesh::is_ready_to_draw() const {
+    return this->_buffer && this->dirty();
+}
+
+bool ChunkMesh::has_buffer() const {
+    return this->_buffer != 0;
+}
+
+void ChunkMesh::set_dirty(bool dirty) {
+    this->_dirty = dirty;
+}
+
+bool ChunkMesh::dirty() const {
+    return this->_dirty;
+}
 
 void ChunkMesh::populate_light_array(const Neighborhood &neighborhood, BigBlockMap *opaque, BigBlockMap *light, int ox, int oy, int oz) const {
     for (int a = 0; a < 3; a++) {
@@ -172,7 +227,7 @@ void ChunkMesh::populate_light_array(const Neighborhood &neighborhood, BigBlockM
                             int ex = bx + chunk_x_offset;
                             int ey = by;
                             int ez = bz + chunk_z_offset;
-                            int ew = chunk->get_block(bx, by, bz);
+                            int ew = chunk->get_block_raw(bx, by, bz);
                             if(ew == 0){
                                 continue;
                             }
@@ -211,7 +266,7 @@ void ChunkMesh::populate_opaque_array(const Neighborhood &neighborhood, BigBlock
                         int ex = bx + chunk_x_offset;
                         int ey = by;
                         int ez = bz + chunk_z_offset;
-                        int ew = chunk->get_block(bx, by, bz);
+                        int ew = chunk->get_block_raw(bx, by, bz);
                         if(ew == 0){
                             continue;
                         }

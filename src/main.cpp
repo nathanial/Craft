@@ -422,9 +422,10 @@ Neighborhood find_neighborhood(int p, int q) {
 }
 
 void gen_chunk_buffer(ChunkPtr chunk) {
-    ChunkMesh mesh(chunk, find_neighborhood(chunk->p(), chunk->q()));
-    chunk->generate_buffer();
-    chunk->set_dirty(false);
+    auto mesh = std::make_shared<ChunkMesh>(chunk, find_neighborhood(chunk->p(), chunk->q()));
+    mesh->generate_buffer();
+    mesh->set_dirty(false);
+    g->add_mesh(mesh);
 }
 
 void load_chunk(WorkerItemPtr item) {
@@ -442,7 +443,9 @@ void request_chunk(int p, int q) {
 
 void create_chunk(int p, int q) {
     auto chunk = std::make_shared<Chunk>(p,q);
+    auto mesh = std::make_shared<ChunkMesh>(chunk, find_neighborhood(p,q));
 
+    g->add_mesh(mesh);
     g->add_chunk(chunk);
 
     auto item = std::make_shared<WorkerItem>();
@@ -465,7 +468,11 @@ void check_workers() {
                 if (item->load) {
                     request_chunk(item->p, item->q);
                 }
-                chunk->generate_buffer();
+                auto mesh = g->find_mesh(item->p, item->q);
+                if(mesh){
+                    mesh->generate_buffer();
+                }
+
             }
             worker->state = WORKER_IDLE;
         }
@@ -481,13 +488,18 @@ void force_chunks(Player *player) {
         for (int dq = -r; dq <= r; dq++) {
             int a = p + dp;
             int b = q + dq;
-            auto chunk = g->find_chunk(a, b);
-            if (chunk) {
-                if (chunk->dirty()) {
-                    gen_chunk_buffer(chunk);
+            auto chunk = g->find_chunk(a,b);
+            auto mesh = g->find_mesh(a,b);
+            if(chunk){
+                if(!mesh){
+                    mesh = std::make_shared<ChunkMesh>(chunk, find_neighborhood(a,b));
+                    g->add_mesh(mesh);
                 }
-            }
-            else if (g->chunk_count() < MAX_CHUNKS) {
+                if (mesh->dirty()) {
+                    mesh->generate_buffer();
+                    mesh->set_dirty(false);
+                }
+            } else if (g->chunk_count() < MAX_CHUNKS) {
                 create_chunk(a, b);
             }
         }
@@ -517,15 +529,15 @@ void ensure_chunks_worker(Player *player, WorkerPtr worker) {
             if (index != worker->index) {
                 continue;
             }
-            auto chunk = g->find_chunk(a, b);
-            if (chunk && !chunk->dirty()) {
+            auto mesh = g->find_mesh(a,b);
+            if (mesh && !mesh->dirty()) {
                 continue;
             }
             int distance = MAX(ABS(dp), ABS(dq));
             int invisible = !chunk_visible(planes, a, b, 0, 256);
             int priority = 0;
-            if (chunk) {
-                priority = chunk->is_ready_to_draw();
+            if (mesh) {
+                priority = mesh->is_ready_to_draw();
             }
             int score = (invisible << 24) | (priority << 16) | distance;
             if (score < best_score) {
@@ -556,7 +568,6 @@ void ensure_chunks_worker(Player *player, WorkerPtr worker) {
     worker->item->p = chunk->p();
     worker->item->q = chunk->q();
     worker->item->load = load;
-    chunk->set_dirty(false);
     worker->state = WORKER_BUSY;
     worker->cnd.notify_all();
 }
@@ -673,16 +684,21 @@ int render_chunks(Attrib *attrib, Player *player) {
     glUniform1f(attrib->extra3, g->render_radius * CHUNK_SIZE);
     glUniform1i(attrib->extra4, g->ortho);
     glUniform1f(attrib->timer, time_of_day());
-    g->each_chunk([&](ChunkPtr chunk) {
-        if (chunk->distance(p, q) > g->render_radius) {
+    g->each_mesh([&](ChunkMeshPtr mesh) {
+        if(!mesh){
+            return;
+        }
+        if (mesh->distance(p, q) > g->render_radius) {
             return;
         }
         if (!chunk_visible(
-            planes, chunk->p(), chunk->q(), chunk->miny(), chunk->maxy()))
+            planes, mesh->p, mesh->q, mesh->miny(), mesh->maxy()))
         {
             return;
         }
-        result += chunk->draw(attrib);
+        if(mesh->has_buffer()){
+            result += mesh->draw(attrib);
+        }
     });
     return result;
 }
@@ -1499,7 +1515,7 @@ int main(int argc, char **argv) {
 
     glfwMakeContextCurrent(g->window);
     glfwSwapInterval(VSYNC);
-    glfwSetInputMode(g->window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
+    // glfwSetInputMode(g->window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
     glfwSetKeyCallback(g->window, on_key);
     glfwSetCharCallback(g->window, on_char);
     glfwSetMouseButtonCallback(g->window, on_mouse_button);

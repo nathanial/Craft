@@ -32,52 +32,21 @@ class Chunk {
 private:
     std::unique_ptr<BlockMap<CHUNK_SIZE, CHUNK_HEIGHT>> blocks;
     int _p, _q; // chunk position
-    int _faces;
-    bool _dirty;
-    int _miny;
-    int _maxy;
-    GLuint _buffer;
-    GLfloat *_vertices;
-
-
-
 public:
-
-
     Chunk(int p, int q);
     ~Chunk();
 
     int get_block(int x, int y, int z) const;
     int get_block_or_zero(int x, int y, int z) const;
     int set_block(int x, int y, int z, char w);
+    int get_block_raw(int x, int y, int z) const;
 
     int distance(int p, int q);
 
     void foreach_block(std::function<void (int, int, int, char)> func) const;
-    int draw(Attrib *attrib);
 
     int p() const;
     int q() const;
-
-    void set_faces(int faces);
-    int faces() const;
-
-    void set_dirty(bool dirty);
-    bool dirty() const;
-
-    void set_maxy(int maxy);
-    void set_miny(int miny);
-
-    int maxy() const;
-    int miny() const;
-
-    GLfloat* vertices() const;
-    void set_vertices(GLfloat *vertices);
-
-    void generate_buffer();
-
-    bool is_ready_to_draw() const;
-
 };
 
 

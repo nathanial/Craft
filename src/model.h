@@ -104,9 +104,11 @@ public:
     ChunkPtr get_chunk(int p, int q);
     void clear_chunks();
     ChunkPtr find_chunk(int p, int q);
+    ChunkMeshPtr find_mesh(int p, int q);
     void add_mesh(ChunkMeshPtr mesh);
 
     void each_chunk(std::function<void (ChunkPtr chunk)>);
+    void each_mesh(std::function<void (ChunkMeshPtr mesh)>);
     void delete_chunks();
     void delete_all_chunks();
 
