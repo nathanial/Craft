@@ -137,11 +137,11 @@ int Chunk::miny() const {
     return this->_miny;
 }
 
-GLfloat* Chunk::vertices() const {
+const std::vector<GLfloat> Chunk::vertices() const {
     return this->_vertices;
 }
 
-void Chunk::set_vertices(GLfloat *vertices) {
+void Chunk::set_vertices(std::vector<GLfloat> vertices) {
     this->_vertices = vertices;
 }
 
@@ -149,11 +149,11 @@ void Chunk::generate_buffer() {
     if(this->_buffer) {
         del_buffer(this->_buffer);
     }
-    if(!this->_vertices){
+    if(this->_vertices.size() == 0){
         return;
     }
-    this->_buffer = gen_faces(10, this->faces(), this->vertices());
-    this->_vertices = nullptr;
+    this->_buffer = gen_buffer(this->vertices());
+    this->_vertices.clear();
 }
 
 bool Chunk::is_ready_to_draw() const {
@@ -205,7 +205,9 @@ void Chunk::load() {
     });
 
     // generate geometry
-    GLfloat *data = malloc_faces(10, faces);
+    std::vector<GLfloat> data;
+    data.resize(6 * 10 * faces);
+    //malloc_faces(10, faces);
     int offset = 0;
     auto chunk = g->find_chunk(this->_p, this->_q);
     chunk->foreach_block([&](int ex, int ey, int ez, int ew) {
@@ -262,12 +264,12 @@ void Chunk::load() {
             }
             float rotation = simplex2(ex, ez, 4, 0.5, 2) * 360;
             make_plant(
-                    data + offset, min_ao, max_light,
+                    data.data() + offset, min_ao, max_light,
                     ex, ey, ez, 0.5, ew, rotation);
         }
         else {
             make_cube(
-                    data + offset, ao, light,
+                    data.data() + offset, ao, light,
                     f1, f2, f3, f4, f5, f6,
                     ex, ey, ez, 0.5, ew);
         }

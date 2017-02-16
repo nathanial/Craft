@@ -31,7 +31,7 @@ double rand_double();
 void update_fps(FPS *fps);
 
 GLuint gen_buffer(GLsizei size, GLfloat *data);
-GLuint gen_buffer(std::vector<GLfloat> &data);
+GLuint gen_buffer(const std::vector<GLfloat> &data);
 void del_buffer(GLuint buffer);
 GLfloat *malloc_faces(int components, int faces);
 GLuint gen_faces(int components, int faces, GLfloat *data);

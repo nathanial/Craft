@@ -46,7 +46,7 @@ GLuint gen_buffer(GLsizei size, GLfloat *data) {
     return buffer;
 }
 
-GLuint gen_buffer(std::vector<GLfloat> &data) {
+GLuint gen_buffer(const std::vector<GLfloat> &data) {
     GLuint buffer;
     glGenBuffers(1, &buffer);
     glBindBuffer(GL_ARRAY_BUFFER, buffer);

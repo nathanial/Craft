@@ -11,6 +11,7 @@
 #include "sign.h"
 #include <memory>
 #include <mutex>
+#include <vector>
 
 class Attrib;
 
@@ -23,7 +24,7 @@ private:
     int _miny;
     int _maxy;
     GLuint _buffer;
-    GLfloat *_vertices;
+    std::vector<GLfloat> _vertices;
 public:
 
 
@@ -55,8 +56,8 @@ public:
     int maxy() const;
     int miny() const;
 
-    GLfloat* vertices() const;
-    void set_vertices(GLfloat *vertices);
+    const std::vector<GLfloat> vertices() const;
+    void set_vertices(std::vector<GLfloat> vertices);
 
     void generate_buffer();
 
