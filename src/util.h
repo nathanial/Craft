@@ -4,6 +4,7 @@
 #include <GL/glew.h>
 #include <GLFW/glfw3.h>
 #include "config.h"
+#include <vector>
 
 #define PI 3.14159265359
 #define DEGREES(radians) ((radians) * 180 / PI)
@@ -30,6 +31,7 @@ double rand_double();
 void update_fps(FPS *fps);
 
 GLuint gen_buffer(GLsizei size, GLfloat *data);
+GLuint gen_buffer(std::vector<GLfloat> &data);
 void del_buffer(GLuint buffer);
 GLfloat *malloc_faces(int components, int faces);
 GLuint gen_faces(int components, int faces, GLfloat *data);

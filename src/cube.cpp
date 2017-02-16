@@ -1,4 +1,5 @@
 #include <math.h>
+#include <vector>
 #include "cube.h"
 #include "item.h"
 #include "matrix.h"
@@ -36,7 +37,7 @@ void make_player(
     mat_apply(data, ma, 36, 0, 10);
 }
 
-void make_cube_wireframe(float *data, float x, float y, float z, float n) {
+void make_cube_wireframe(std::vector<float> &data, float x, float y, float z, float n) {
     static const float positions[8][3] = {
         {-1, -1, -1},
         {-1, -1, +1},
@@ -52,7 +53,7 @@ void make_cube_wireframe(float *data, float x, float y, float z, float n) {
         1, 5, 2, 3, 2, 6, 3, 7,
         4, 5, 4, 6, 5, 7, 6, 7
     };
-    float *d = data;
+    float *d = data.data();
     for (int i = 0; i < 24; i++) {
         int j = indices[i];
         *(d++) = x + n * positions[j][0];

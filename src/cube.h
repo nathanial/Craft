@@ -1,6 +1,8 @@
 #ifndef _cube_h_
 #define _cube_h_
 
+#include <vector>
+
 void make_cube_faces(
     float *data, float ao[6][4], float light[6][4],
     int left, int right, int top, int bottom, int front, int back,
@@ -21,7 +23,7 @@ void make_player(
     float x, float y, float z, float rx, float ry);
 
 void make_cube_wireframe(
-    float *data, float x, float y, float z, float n);
+    std::vector<float> &data, float x, float y, float z, float n);
 
 void make_character(
     float *data,

@@ -67,9 +67,10 @@ GLuint gen_crosshair_buffer() {
 }
 
 GLuint gen_wireframe_buffer(float x, float y, float z, float n) {
-    float data[72];
+    auto data = std::vector<GLfloat>();
+    data.resize(72);
     make_cube_wireframe(data, x, y, z, n);
-    return gen_buffer(sizeof(data), data);
+    return gen_buffer(data);
 }
 
 GLuint gen_sky_buffer() {
