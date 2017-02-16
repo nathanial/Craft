@@ -11,6 +11,8 @@
 #include "sign.h"
 #include <memory>
 #include <mutex>
+#include <vector>
+#include <armadillo>
 
 class Attrib;
 
@@ -23,7 +25,7 @@ private:
     int _miny;
     int _maxy;
     GLuint _buffer;
-    GLfloat *_vertices;
+    std::vector<GLfloat> _vertices;
 public:
 
 
@@ -55,8 +57,8 @@ public:
     int maxy() const;
     int miny() const;
 
-    GLfloat* vertices() const;
-    void set_vertices(GLfloat *vertices);
+    const std::vector<GLfloat> vertices() const;
+    void set_vertices(std::vector<GLfloat> vertices);
 
     void generate_buffer();
 
@@ -64,14 +66,14 @@ public:
 
     void load();
 
-    void populate_opaque_array(BigBlockMap *opaque, HeightMap<48> *highest, int ox, int oy, int oz) const;
+    void populate_opaque_array(BigBlockMap &opaque, HeightMap<48> &highest, int ox, int oy, int oz) const;
 
-    void populate_light_array(BigBlockMap *opaque, BigBlockMap *light, int ox, int oy, int oz) const;
+    void populate_light_array(BigBlockMap &opaque, BigBlockMap &light, int ox, int oy, int oz) const;
 };
 
 typedef std::shared_ptr<Chunk> ChunkPtr;
 
 int highest_block(float x, float z);
-int chunk_visible(float planes[6][4], int p, int q, int miny, int maxy);
+int chunk_visible(arma::mat planes, int p, int q, int miny, int maxy);
 
 #endif //CRAFT_CHUNK_H

@@ -5,14 +5,14 @@
 extern "C" {
     #include <noise.h>
 }
-
+#include <armadillo>
 #include <queue>
 #include "chunk.h"
 #include "model.h"
 #include "util.h"
 #include "item.h"
 #include "draw.h"
-#include "matrix.h"
+#include "cube.h"
 
 extern Model *g;
 
@@ -20,21 +20,11 @@ void occlusion(
         char neighbors[27], char lights[27], float shades[27],
         float ao[6][4], float light[6][4]);
 
-void make_plant(
-        float *data, float ao, float light,
-        float px, float py, float pz, float n, int w, float rotation);
-
-void make_cube(
-        float *data, float ao[6][4], float light[6][4],
-        int left, int right, int top, int bottom, int front, int back,
-        float x, float y, float z, float n, int w);
-
-void scanline_iterate(BigBlockMap *light, BigBlockMap *opaque, std::deque<std::tuple<int, int, int, int>> &frontier,
+void scanline_iterate(BigBlockMap &light, BigBlockMap &opaque, std::deque<std::tuple<int, int, int, int>> &frontier,
                       int x, int y, int z, int w,
                       int cursorX, int cursorW, bool ascend);
 
-
-void light_fill_scanline(BigBlockMap *opaque, BigBlockMap *light, int ox, int oy ,int oz, int ow);
+void light_fill_scanline(BigBlockMap &opaque, BigBlockMap &light, int ox, int oy ,int oz, int ow);
 
 Chunk::Chunk(int p, int q) :
     blocks(new BlockMap<CHUNK_SIZE, CHUNK_HEIGHT>())
@@ -136,11 +126,11 @@ int Chunk::miny() const {
     return this->_miny;
 }
 
-GLfloat* Chunk::vertices() const {
+const std::vector<GLfloat> Chunk::vertices() const {
     return this->_vertices;
 }
 
-void Chunk::set_vertices(GLfloat *vertices) {
+void Chunk::set_vertices(std::vector<GLfloat> vertices) {
     this->_vertices = vertices;
 }
 
@@ -148,11 +138,11 @@ void Chunk::generate_buffer() {
     if(this->_buffer) {
         del_buffer(this->_buffer);
     }
-    if(!this->_vertices){
+    if(this->_vertices.size() == 0){
         return;
     }
-    this->_buffer = gen_faces(10, this->faces(), this->vertices());
-    this->_vertices = nullptr;
+    this->_buffer = gen_buffer(this->vertices());
+    this->_vertices.clear();
 }
 
 bool Chunk::is_ready_to_draw() const {
@@ -161,9 +151,9 @@ bool Chunk::is_ready_to_draw() const {
 
 
 void Chunk::load() {
-    auto opaque = new BigBlockMap();
-    auto light = new BigBlockMap();
-    auto highest = new HeightMap<CHUNK_SIZE * 3>();
+    auto opaque = std::make_unique<BigBlockMap>();
+    auto light = std::make_unique<BigBlockMap>();
+    auto highest = std::make_unique<HeightMap<CHUNK_SIZE * 3>>();
 
     int ox = this->_p * CHUNK_SIZE - CHUNK_SIZE;
     int oy = -1;
@@ -171,8 +161,8 @@ void Chunk::load() {
     // printf("Compute Chunk %d,%d\n", this->_p, this->_q);
 
     // populate opaque array
-    populate_opaque_array(opaque, highest, ox, oy, oz);
-    populate_light_array(opaque, light, ox, oy, oz);
+    populate_opaque_array(*opaque, *highest, ox, oy, oz);
+    populate_light_array(*opaque, *light, ox, oy, oz);
 
     // count exposed faces
     int miny = 256;
@@ -204,7 +194,8 @@ void Chunk::load() {
     });
 
     // generate geometry
-    GLfloat *data = malloc_faces(10, faces);
+    std::vector<GLfloat> data;
+    //malloc_faces(10, faces);
     int offset = 0;
     auto chunk = g->find_chunk(this->_p, this->_q);
     chunk->foreach_block([&](int ex, int ey, int ez, int ew) {
@@ -260,22 +251,13 @@ void Chunk::load() {
                 }
             }
             float rotation = simplex2(ex, ez, 4, 0.5, 2) * 360;
-            make_plant(
-                    data + offset, min_ao, max_light,
-                    ex, ey, ez, 0.5, ew, rotation);
+            add_all(data, make_plant(min_ao, max_light, ex, ey, ez, 0.5, ew, rotation));
         }
         else {
-            make_cube(
-                    data + offset, ao, light,
-                    f1, f2, f3, f4, f5, f6,
-                    ex, ey, ez, 0.5, ew);
+            add_all(data, make_cube(ao, light, f1, f2, f3, f4, f5, f6, ex, ey, ez, 0.5, ew));
         }
         offset += total * 60;
     });
-
-    delete light;
-    delete highest;
-    delete opaque;
 
     chunk->set_miny(miny);
     chunk->set_maxy(maxy);
@@ -283,7 +265,7 @@ void Chunk::load() {
     chunk->set_vertices(data);
 }
 
-void Chunk::populate_light_array(BigBlockMap *opaque, BigBlockMap *light, int ox, int oy, int oz) const {
+void Chunk::populate_light_array(BigBlockMap &opaque, BigBlockMap &light, int ox, int oy, int oz) const {
     for (int a = 0; a < 3; a++) {
         for (int b = 0; b < 3; b++) {
             auto chunk = g->find_chunk(_p - (a - 1), _q - (b - 1));
@@ -320,7 +302,7 @@ void Chunk::populate_light_array(BigBlockMap *opaque, BigBlockMap *light, int ox
     }
 }
 
-void Chunk::populate_opaque_array(BigBlockMap *opaque, HeightMap<48> *highest, int ox, int oy, int oz) const {
+void Chunk::populate_opaque_array(BigBlockMap &opaque, HeightMap<48> &highest, int ox, int oy, int oz) const {
     for (int a = 0; a < 3; a++) {
         for (int b = 0; b < 3; b++) {
             auto chunk = g->find_chunk(this->_p + (a - 1), this->_q + (b - 1));
@@ -347,9 +329,9 @@ void Chunk::populate_opaque_array(BigBlockMap *opaque, HeightMap<48> *highest, i
                             continue;
                         }
                         bool is_opaque = !is_transparent(ew) && !is_light(ew);
-                        opaque->_data[x][y][z] = is_opaque ;
+                        opaque._data[x][y][z] = is_opaque ;
                         if (is_opaque) {
-                            highest->_data[x][z] = MAX(highest->_data[x][z], y);
+                            highest._data[x][z] = MAX(highest._data[x][z], y);
                         }
                     }
                 }
@@ -358,7 +340,7 @@ void Chunk::populate_opaque_array(BigBlockMap *opaque, HeightMap<48> *highest, i
     }
 }
 
-int chunk_visible(float planes[6][4], int p, int q, int miny, int maxy) {
+int chunk_visible(arma::mat planes, int p, int q, int miny, int maxy) {
     int x = p * CHUNK_SIZE - 1;
     int z = q * CHUNK_SIZE - 1;
     int d = CHUNK_SIZE + 1;
@@ -378,10 +360,10 @@ int chunk_visible(float planes[6][4], int p, int q, int miny, int maxy) {
         int out = 0;
         for (int j = 0; j < 8; j++) {
             float d =
-                    planes[i][0] * points[j][0] +
-                    planes[i][1] * points[j][1] +
-                    planes[i][2] * points[j][2] +
-                    planes[i][3];
+                    planes(i,0) * points[j][0] +
+                    planes(i,1) * points[j][1] +
+                    planes(i,2) * points[j][2] +
+                    planes(i,3);
             if (d < 0) {
                 out++;
             }
@@ -418,7 +400,7 @@ int highest_block(float x, float z) {
 }
 
 
-void light_fill_scanline(BigBlockMap *opaque, BigBlockMap *light, int ox, int oy ,int oz, int ow)
+void light_fill_scanline(BigBlockMap &opaque, BigBlockMap &light, int ox, int oy ,int oz, int ow)
 {
     std::deque<std::tuple<int,int,int,int>> frontier;
     frontier.push_back(std::make_tuple(ox,oy,oz,ow));
@@ -433,10 +415,10 @@ void light_fill_scanline(BigBlockMap *opaque, BigBlockMap *light, int ox, int oy
         if(w == 0){
             continue;
         }
-        if(opaque->get(x,y,z)){
+        if(opaque.get(x,y,z)){
             continue;
         }
-        if(light->get(x,y,z) >= w){
+        if(light.get(x,y,z) >= w){
             continue;
         }
 
@@ -449,18 +431,18 @@ void light_fill_scanline(BigBlockMap *opaque, BigBlockMap *light, int ox, int oy
 
 
 
-void scanline_iterate(BigBlockMap *light, BigBlockMap *opaque, std::deque<std::tuple<int, int, int, int>> &frontier,
+void scanline_iterate(BigBlockMap &light, BigBlockMap &opaque, std::deque<std::tuple<int, int, int, int>> &frontier,
                       int x, int y, int z, int w,
                       int cursorX, int cursorW, bool ascend) {
 
     auto canLight = [&](int x, int y, int z, int w){
-        return light->get(x, y, z) < w && !opaque->get(x, y, z);
+        return light.get(x, y, z) < w && !opaque.get(x, y, z);
     };
 
     bool spanZMinus = false, spanZPlus = false, spanYMinus = false, spanYPlus = false;
     while(cursorX < CHUNK_SIZE * 3 && cursorX >= 0 && canLight(cursorX, y, z, w - ABS(x - cursorX))){
         cursorW = w - ABS(x - cursorX);
-        light->set(cursorX, y, z, cursorW);
+        light.set(cursorX, y, z, cursorW);
         if(!spanZMinus && z > 0 && canLight(cursorX, y, z-1, cursorW-1)) {
             frontier.push_back(std::make_tuple(cursorX, y, z - 1, cursorW - 1));
             spanZMinus = true;
@@ -552,160 +534,4 @@ void occlusion(
             light[i][j] = light_sum / 15.0 / 4.0;
         }
     }
-}
-
-
-
-void make_plant(
-        float *data, float ao, float light,
-        float px, float py, float pz, float n, int w, float rotation)
-{
-    static const float positions[4][4][3] = {
-            {{ 0, -1, -1}, { 0, -1, +1}, { 0, +1, -1}, { 0, +1, +1}},
-            {{ 0, -1, -1}, { 0, -1, +1}, { 0, +1, -1}, { 0, +1, +1}},
-            {{-1, -1,  0}, {-1, +1,  0}, {+1, -1,  0}, {+1, +1,  0}},
-            {{-1, -1,  0}, {-1, +1,  0}, {+1, -1,  0}, {+1, +1,  0}}
-    };
-    static const float normals[4][3] = {
-            {-1, 0, 0},
-            {+1, 0, 0},
-            {0, 0, -1},
-            {0, 0, +1}
-    };
-    static const float uvs[4][4][2] = {
-            {{0, 0}, {1, 0}, {0, 1}, {1, 1}},
-            {{1, 0}, {0, 0}, {1, 1}, {0, 1}},
-            {{0, 0}, {0, 1}, {1, 0}, {1, 1}},
-            {{1, 0}, {1, 1}, {0, 0}, {0, 1}}
-    };
-    static const float indices[4][6] = {
-            {0, 3, 2, 0, 1, 3},
-            {0, 3, 1, 0, 2, 3},
-            {0, 3, 2, 0, 1, 3},
-            {0, 3, 1, 0, 2, 3}
-    };
-    float *d = data;
-    float s = 0.0625;
-    float a = 0;
-    float b = s;
-    float du = (plants[w] % 16) * s;
-    float dv = (plants[w] / 16) * s;
-    for (int i = 0; i < 4; i++) {
-        for (int v = 0; v < 6; v++) {
-            int j = indices[i][v];
-            *(d++) = n * positions[i][j][0];
-            *(d++) = n * positions[i][j][1];
-            *(d++) = n * positions[i][j][2];
-            *(d++) = normals[i][0];
-            *(d++) = normals[i][1];
-            *(d++) = normals[i][2];
-            *(d++) = du + (uvs[i][j][0] ? b : a);
-            *(d++) = dv + (uvs[i][j][1] ? b : a);
-            *(d++) = ao;
-            *(d++) = light;
-        }
-    }
-    float ma[16];
-    float mb[16];
-    mat_identity(ma);
-    mat_rotate(mb, 0, 1, 0, RADIANS(rotation));
-    mat_multiply(ma, mb, ma);
-    mat_apply(data, ma, 24, 3, 10);
-    mat_translate(mb, px, py, pz);
-    mat_multiply(ma, mb, ma);
-    mat_apply(data, ma, 24, 0, 10);
-}
-
-
-void make_cube_faces(
-        float *data, float ao[6][4], float light[6][4],
-        int left, int right, int top, int bottom, int front, int back,
-        int wleft, int wright, int wtop, int wbottom, int wfront, int wback,
-        float x, float y, float z, float n)
-{
-    static const float positions[6][4][3] = {
-            {{-1, -1, -1}, {-1, -1, +1}, {-1, +1, -1}, {-1, +1, +1}},
-            {{+1, -1, -1}, {+1, -1, +1}, {+1, +1, -1}, {+1, +1, +1}},
-            {{-1, +1, -1}, {-1, +1, +1}, {+1, +1, -1}, {+1, +1, +1}},
-            {{-1, -1, -1}, {-1, -1, +1}, {+1, -1, -1}, {+1, -1, +1}},
-            {{-1, -1, -1}, {-1, +1, -1}, {+1, -1, -1}, {+1, +1, -1}},
-            {{-1, -1, +1}, {-1, +1, +1}, {+1, -1, +1}, {+1, +1, +1}}
-    };
-    static const float normals[6][3] = {
-            {-1, 0, 0},
-            {+1, 0, 0},
-            {0, +1, 0},
-            {0, -1, 0},
-            {0, 0, -1},
-            {0, 0, +1}
-    };
-    static const float uvs[6][4][2] = {
-            {{0, 0}, {1, 0}, {0, 1}, {1, 1}},
-            {{1, 0}, {0, 0}, {1, 1}, {0, 1}},
-            {{0, 1}, {0, 0}, {1, 1}, {1, 0}},
-            {{0, 0}, {0, 1}, {1, 0}, {1, 1}},
-            {{0, 0}, {0, 1}, {1, 0}, {1, 1}},
-            {{1, 0}, {1, 1}, {0, 0}, {0, 1}}
-    };
-    static const float indices[6][6] = {
-            {0, 3, 2, 0, 1, 3},
-            {0, 3, 1, 0, 2, 3},
-            {0, 3, 2, 0, 1, 3},
-            {0, 3, 1, 0, 2, 3},
-            {0, 3, 2, 0, 1, 3},
-            {0, 3, 1, 0, 2, 3}
-    };
-    static const float flipped[6][6] = {
-            {0, 1, 2, 1, 3, 2},
-            {0, 2, 1, 2, 3, 1},
-            {0, 1, 2, 1, 3, 2},
-            {0, 2, 1, 2, 3, 1},
-            {0, 1, 2, 1, 3, 2},
-            {0, 2, 1, 2, 3, 1}
-    };
-    float *d = data;
-    float s = 0.0625;
-    float a = 0 + 1 / 2048.0;
-    float b = s - 1 / 2048.0;
-    int faces[6] = {left, right, top, bottom, front, back};
-    int tiles[6] = {wleft, wright, wtop, wbottom, wfront, wback};
-    for (int i = 0; i < 6; i++) {
-        if (faces[i] == 0) {
-            continue;
-        }
-        float du = (tiles[i] % 16) * s;
-        float dv = (tiles[i] / 16) * s;
-        int flip = ao[i][0] + ao[i][3] > ao[i][1] + ao[i][2];
-        for (int v = 0; v < 6; v++) {
-            int j = flip ? flipped[i][v] : indices[i][v];
-            *(d++) = x + n * positions[i][j][0];
-            *(d++) = y + n * positions[i][j][1];
-            *(d++) = z + n * positions[i][j][2];
-            *(d++) = normals[i][0];
-            *(d++) = normals[i][1];
-            *(d++) = normals[i][2];
-            *(d++) = du + (uvs[i][j][0] ? b : a);
-            *(d++) = dv + (uvs[i][j][1] ? b : a);
-            *(d++) = ao[i][j];
-            *(d++) = light[i][j];
-        }
-    }
-}
-
-void make_cube(
-        float *data, float ao[6][4], float light[6][4],
-        int left, int right, int top, int bottom, int front, int back,
-        float x, float y, float z, float n, int w)
-{
-    int wleft = blocks[w][0];
-    int wright = blocks[w][1];
-    int wtop = blocks[w][2];
-    int wbottom = blocks[w][3];
-    int wfront = blocks[w][4];
-    int wback = blocks[w][5];
-    make_cube_faces(
-            data, ao, light,
-            left, right, top, bottom, front, back,
-            wleft, wright, wtop, wbottom, wfront, wback,
-            x, y, z, n);
 }

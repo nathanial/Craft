@@ -46,6 +46,15 @@ GLuint gen_buffer(GLsizei size, GLfloat *data) {
     return buffer;
 }
 
+GLuint gen_buffer(const std::vector<GLfloat> &data) {
+    GLuint buffer;
+    glGenBuffers(1, &buffer);
+    glBindBuffer(GL_ARRAY_BUFFER, buffer);
+    glBufferData(GL_ARRAY_BUFFER, sizeof(GLfloat) * data.size(), data.data(), GL_STATIC_DRAW);
+    glBindBuffer(GL_ARRAY_BUFFER, 0);
+    return buffer;
+}
+
 void del_buffer(GLuint buffer) {
     glDeleteBuffers(1, &buffer);
 }
@@ -59,6 +68,12 @@ GLuint gen_faces(int components, int faces, GLfloat *data) {
         sizeof(GLfloat) * 6 * components * faces, data);
     free(data);
     return buffer;
+}
+
+
+GLuint gen_faces(int components, int faces, const std::vector<GLfloat> &data) {
+    return gen_buffer(
+        sizeof(GLfloat) * 6 * components * faces, data.data());
 }
 
 GLuint make_shader(GLenum type, const char *source) {
@@ -257,4 +272,9 @@ void get_motion_vector(int flying, int sz, int sx, float rx, float ry,
 
 int chunked(float x) {
     return floorf(roundf(x) / CHUNK_SIZE);
+}
+
+
+void add_all(std::vector<float> &dst, const std::vector<float> &src){
+    dst.insert(dst.end(), src.begin(), src.end());
 }
