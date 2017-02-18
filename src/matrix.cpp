@@ -2,6 +2,7 @@
 #include "config.h"
 #include "matrix.h"
 #include "util.h"
+#include <armadillo>
 
 void normalize(float *x, float *y, float *z) {
     float d = sqrtf((*x) * (*x) + (*y) * (*y) + (*z) * (*z));
@@ -46,27 +47,22 @@ void mat_translate(float *matrix, float dx, float dy, float dz) {
     matrix[15] = 1;
 }
 
-void mat_rotate(float *matrix, float x, float y, float z, float angle) {
-    normalize(&x, &y, &z);
-    float s = sinf(angle);
-    float c = cosf(angle);
-    float m = 1 - c;
-    matrix[0] = m * x * x + c;
-    matrix[1] = m * x * y - z * s;
-    matrix[2] = m * z * x + y * s;
-    matrix[3] = 0;
-    matrix[4] = m * x * y + z * s;
-    matrix[5] = m * y * y + c;
-    matrix[6] = m * y * z - x * s;
-    matrix[7] = 0;
-    matrix[8] = m * z * x - y * s;
-    matrix[9] = m * y * z + x * s;
-    matrix[10] = m * z * z + c;
-    matrix[11] = 0;
-    matrix[12] = 0;
-    matrix[13] = 0;
-    matrix[14] = 0;
-    matrix[15] = 1;
+void mat_rotate(float *matrix, float x, float y, float z, float t) {
+		float ux = x;
+		float uy = y;
+		float uz = z;
+		normalize(&ux, &uy, &uz);
+		arma::mat R = {
+			{ cos(t)+(ux*ux)*(1-cos(t)), (ux*uy)*(1-cos(t))-uz*sin(t), ux*uz*(1-cos(t)) + uy*sin(t), 0 },
+			{ uy*uz*(1-cos(t))+uz*sin(t), cos(t)+(uy*uy)*(1-cos(t)), uy*uz*(1-cos(t)) - ux*sin(t), 0},
+			{ uz*ux*(1-cos(t))-uy*sin(t), uz*uy*(1-cos(t)) + ux*sin(t), cos(t) + uz*uz*(1 - cos(t)), 0 },
+			{ 0, 0, 0, 1}
+		};
+		for(int i = 0; i < 4; i++){
+			for(int j = 0; j < 4; j++){
+					matrix[i * 4 + j] = R(i,j);
+			}
+		}
 }
 
 void mat_vec_multiply(float *vector, float *a, float *b) {

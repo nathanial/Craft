@@ -5,7 +5,7 @@
 extern "C" {
     #include <noise.h>
 }
-
+#include <armadillo>
 #include <queue>
 #include "chunk.h"
 #include "model.h"
@@ -604,6 +604,7 @@ void make_plant(
             *(d++) = light;
         }
     }
+
     float ma[16];
     float mb[16];
     mat_identity(ma);

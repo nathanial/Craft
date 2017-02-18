@@ -40,7 +40,7 @@ if(APPLE)
 endif()
 
 if(UNIX)
-    target_link_libraries(craft dl glfw
+    target_link_libraries(craft dl glfw -larmadillo
         ${GLFW_LIBRARIES} ${CURL_LIBRARIES})
 endif()
 

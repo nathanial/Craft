@@ -28,11 +28,8 @@ extern "C" {
     #include "noise.h"
 }
 
-
 static Model model;
 Model *g = &model;
-
-
 
 float time_of_day() {
     return 12.0;
