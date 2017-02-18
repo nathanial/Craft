@@ -24,24 +24,12 @@ void mat_identity(float *matrix) {
 }
 
 void mat_translate(float *matrix, float dx, float dy, float dz) {
-
-
-    matrix[0] = 1;
-    matrix[1] = 0;
-    matrix[2] = 0;
-    matrix[3] = 0;
-    matrix[4] = 0;
-    matrix[5] = 1;
-    matrix[6] = 0;
-    matrix[7] = 0;
-    matrix[8] = 0;
-    matrix[9] = 0;
-    matrix[10] = 1;
-    matrix[11] = 0;
-    matrix[12] = dx;
-    matrix[13] = dy;
-    matrix[14] = dz;
-    matrix[15] = 1;
+	arma::mat translate(4,4, arma::fill::zeros);
+	translate.eye();
+	translate(3,0) = dx;
+	translate(3,1) = dy;
+	translate(3,2) = dz;
+	copy_matrix(matrix, translate);
 }
 
 void mat_rotate(float *matrix, float x, float y, float z, float t) {
