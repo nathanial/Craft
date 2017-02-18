@@ -9,26 +9,23 @@ void normalize(float *x, float *y, float *z) {
     *x /= d; *y /= d; *z /= d;
 }
 
+void copy_matrix(float *dst, const arma::mat& src){
+	for(int i = 0; i < 4; i++){
+		for(int j = 0; j < 4; j++){
+				dst[i * 4 + j] = src(i,j);
+		}
+	}
+}
+
 void mat_identity(float *matrix) {
-    matrix[0] = 1;
-    matrix[1] = 0;
-    matrix[2] = 0;
-    matrix[3] = 0;
-    matrix[4] = 0;
-    matrix[5] = 1;
-    matrix[6] = 0;
-    matrix[7] = 0;
-    matrix[8] = 0;
-    matrix[9] = 0;
-    matrix[10] = 1;
-    matrix[11] = 0;
-    matrix[12] = 0;
-    matrix[13] = 0;
-    matrix[14] = 0;
-    matrix[15] = 1;
+	arma::mat identity(4,4, arma::fill::zeros);
+	identity.eye();
+	copy_matrix(matrix, identity);
 }
 
 void mat_translate(float *matrix, float dx, float dy, float dz) {
+
+
     matrix[0] = 1;
     matrix[1] = 0;
     matrix[2] = 0;
@@ -58,11 +55,7 @@ void mat_rotate(float *matrix, float x, float y, float z, float t) {
 			{ uz*ux*(1-cos(t))-uy*sin(t), uz*uy*(1-cos(t)) + ux*sin(t), cos(t) + uz*uz*(1 - cos(t)), 0 },
 			{ 0, 0, 0, 1}
 		};
-		for(int i = 0; i < 4; i++){
-			for(int j = 0; j < 4; j++){
-					matrix[i * 4 + j] = R(i,j);
-			}
-		}
+		copy_matrix(matrix, R);
 }
 
 void mat_vec_multiply(float *vector, float *a, float *b) {
