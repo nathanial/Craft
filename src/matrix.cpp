@@ -17,6 +17,16 @@ void copy_matrix(float *dst, const arma::mat& src){
 	}
 }
 
+arma::mat copy_from_array(float *src){
+	arma::mat dst(4,4);
+	for(int i = 0; i < 4; i++){
+		for(int j = 0; j < 4; j++){
+				dst(i,j) = src[i * 4 + j];
+		}
+	}
+	return dst;
+}
+
 void mat_identity(float *matrix) {
 	arma::mat identity(4,4, arma::fill::zeros);
 	identity.eye();
@@ -63,22 +73,9 @@ void mat_vec_multiply(float *vector, float *a, float *b) {
 }
 
 void mat_multiply(float *matrix, float *a, float *b) {
-    float result[16];
-    for (int c = 0; c < 4; c++) {
-        for (int r = 0; r < 4; r++) {
-            int index = c * 4 + r;
-            float total = 0;
-            for (int i = 0; i < 4; i++) {
-                int p = i * 4 + r;
-                int q = c * 4 + i;
-                total += a[p] * b[q];
-            }
-            result[index] = total;
-        }
-    }
-    for (int i = 0; i < 16; i++) {
-        matrix[i] = result[i];
-    }
+	arma::mat ma = copy_from_array(a);
+	arma::mat mb = copy_from_array(b);
+	copy_matrix(matrix, mb * ma);
 }
 
 void mat_apply(float *data, float *matrix, int count, int offset, int stride) {
