@@ -12,7 +12,7 @@ void normalize(float *x, float *y, float *z) {
 void copy_matrix(float *dst, const arma::mat& src){
 	for(int i = 0; i < 4; i++){
 		for(int j = 0; j < 4; j++){
-				dst[i * 4 + j] = src(i,j);
+			dst[i * 4 + j] = src(i,j);
 		}
 	}
 }
@@ -21,7 +21,7 @@ arma::mat copy_from_array(float *src){
 	arma::mat dst(4,4);
 	for(int i = 0; i < 4; i++){
 		for(int j = 0; j < 4; j++){
-				dst(i,j) = src[i * 4 + j];
+			dst(i,j) = src[i * 4 + j];
 		}
 	}
 	return dst;
@@ -81,14 +81,22 @@ void mat_multiply(float *matrix, float *a, float *b) {
 }
 
 void mat_apply(float *data, float *matrix, int count, int offset, int stride) {
-    float vec[4] = {0, 0, 0, 1};
-    for (int i = 0; i < count; i++) {
-        float *d = data + offset + stride * i;
-        vec[0] = *(d++); vec[1] = *(d++); vec[2] = *(d++);
-        mat_vec_multiply(vec, matrix, vec);
-        d = data + offset + stride * i;
-        *(d++) = vec[0]; *(d++) = vec[1]; *(d++) = vec[2];
-    }
+	arma::mat ma = copy_from_array(matrix);
+	arma::mat vec = {0,0,0,1};
+	for (int i = 0; i < count; i++) {
+
+		float *d = data + offset + stride * i;
+		vec(0,0) = *(d++);
+		vec(0,1) = *(d++);
+		vec(0,2) = *(d++);
+
+		vec = vec * ma;
+
+		d = data + offset + stride * i;
+		*(d++) = vec(0,0);
+		*(d++) = vec(0,1);
+		*(d++) = vec(0,2);
+	}
 }
 
 void frustum_planes(float planes[6][4], int radius, float *matrix) {
