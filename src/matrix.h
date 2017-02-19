@@ -7,6 +7,7 @@
 void normalize(float *x, float *y, float *z);
 void mat_identity(float *matrix);
 void mat_translate(float *matrix, float dx, float dy, float dz);
+
 arma::mat mat_translate(float dx, float dy, float dz);
 void mat_rotate(float *matrix, float x, float y, float z, float angle);
 arma::mat mat_rotate(float x, float y, float z, float t);

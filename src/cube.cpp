@@ -21,16 +21,16 @@ std::vector<float> make_player(float x, float y, float z, float rx, float ry)
         1, 1, 1, 1, 1, 1,
         226, 224, 241, 209, 225, 227,
         0, 0, 0, 0.4);
-    float ma[16];
-    float mb[16];
-    mat_identity(ma);
-    mat_rotate(mb, 0, 1, 0, rx);
-    mat_multiply(ma, mb, ma);
-    mat_rotate(mb, cosf(rx), 0, sinf(rx), -ry);
-    mat_multiply(ma, mb, ma);
+    arma::mat ma(4,4);
+    arma::mat mb(4,4);
+    ma.eye();
+    mb = mat_rotate(0,1,0, RADIANS(rx));
+    ma = ma * mb;
+    mb = mat_rotate(cosf(rx), 0, sinf(rx), -ry);
+    ma = ma * mb;
     mat_apply(result, ma, 36, 3, 10);
-    mat_translate(mb, x, y, z);
-    mat_multiply(ma, mb, ma);
+    mb = mat_translate(x, y, z);
+    ma = ma * mb;
     mat_apply(result, ma, 36, 0, 10);
     return result;
 }
