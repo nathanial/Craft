@@ -28,10 +28,10 @@ std::vector<float> make_player(float x, float y, float z, float rx, float ry)
     mat_multiply(ma, mb, ma);
     mat_rotate(mb, cosf(rx), 0, sinf(rx), -ry);
     mat_multiply(ma, mb, ma);
-    mat_apply(result.data(), ma, 36, 3, 10);
+    mat_apply(result, ma, 36, 3, 10);
     mat_translate(mb, x, y, z);
     mat_multiply(ma, mb, ma);
-    mat_apply(result.data(), ma, 36, 0, 10);
+    mat_apply(result, ma, 36, 0, 10);
     return result;
 }
 
@@ -242,10 +242,10 @@ std::vector<float> make_plant(float ao, float light,
     mat_identity(ma);
     mat_rotate(mb, 0, 1, 0, RADIANS(rotation));
     mat_multiply(ma, mb, ma);
-    mat_apply(d.data(), ma, 24, 3, 10);
+    mat_apply(d, ma, 24, 3, 10);
     mat_translate(mb, px, py, pz);
     mat_multiply(ma, mb, ma);
-    mat_apply(d.data(), ma, 24, 0, 10);
+    mat_apply(d, ma, 24, 0, 10);
     return d;
 }
 

@@ -1,13 +1,14 @@
 #ifndef _matrix_h_
 #define _matrix_h_
 
+#include <vector>
+
 void normalize(float *x, float *y, float *z);
 void mat_identity(float *matrix);
 void mat_translate(float *matrix, float dx, float dy, float dz);
 void mat_rotate(float *matrix, float x, float y, float z, float angle);
-void mat_vec_multiply(float *vector, float *a, float *b);
 void mat_multiply(float *matrix, float *a, float *b);
-void mat_apply(float *data, float *matrix, int count, int offset, int stride);
+void mat_apply(std::vector<float> &data, float *matrix, int count, int offset, int stride);
 void frustum_planes(float planes[6][4], int radius, float *matrix);
 void mat_frustum(
     float *matrix, float left, float right, float bottom,

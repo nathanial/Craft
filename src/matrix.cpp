@@ -64,38 +64,27 @@ void mat_rotate(float *matrix, float x, float y, float z, float t) {
 		copy_matrix(matrix, R);
 }
 
-void mat_vec_multiply(float *vector, float *a, float *b) {
-		arma::mat ma = copy_from_array(a);
-		arma::mat vb = copy_vector_from_array(b);
-
-		arma::mat result = vb * ma;
-		for(int i = 0; i < 4; i++){
-			vector[i] = result(0,i);
-		}
-}
-
 void mat_multiply(float *matrix, float *a, float *b) {
 	arma::mat ma = copy_from_array(a);
 	arma::mat mb = copy_from_array(b);
 	copy_matrix(matrix, mb * ma);
 }
 
-void mat_apply(float *data, float *matrix, int count, int offset, int stride) {
+void mat_apply(std::vector<float>& d, float *matrix, int count, int offset, int stride) {
 	arma::mat ma = copy_from_array(matrix);
 	arma::mat vec = {0,0,0,1};
 	for (int i = 0; i < count; i++) {
-
-		float *d = data + offset + stride * i;
-		vec(0,0) = *(d++);
-		vec(0,1) = *(d++);
-		vec(0,2) = *(d++);
+        int cursor = offset + stride * i;
+		vec(0,0) = d.at(cursor++);
+		vec(0,1) = d.at(cursor++);
+		vec(0,2) = d.at(cursor++);
 
 		vec = vec * ma;
 
-		d = data + offset + stride * i;
-		*(d++) = vec(0,0);
-		*(d++) = vec(0,1);
-		*(d++) = vec(0,2);
+		cursor = offset + stride * i;
+		d.at(cursor++) = vec(0,0);
+		d.at(cursor++) = vec(0,1);
+		d.at(cursor++) = vec(0,2);
 	}
 }
 
