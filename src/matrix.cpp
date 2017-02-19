@@ -27,29 +27,6 @@ arma::mat copy_from_array(float *src){
 	return dst;
 }
 
-arma::mat copy_vector_from_array(float *src){
-	arma::mat v(1,4);
-	for(int i = 0; i < 4; i++){
-		v(0, i) = src[i];
-	}
-	return v;
-}
-
-void mat_identity(float *matrix) {
-	arma::mat identity(4,4, arma::fill::zeros);
-	identity.eye();
-	copy_matrix(matrix, identity);
-}
-
-void mat_translate(float *matrix, float dx, float dy, float dz) {
-	arma::mat translate(4,4, arma::fill::zeros);
-	translate.eye();
-	translate(3,0) = dx;
-	translate(3,1) = dy;
-	translate(3,2) = dz;
-	copy_matrix(matrix, translate);
-}
-
 arma::mat mat_translate(float dx, float dy, float dz) {
     arma::mat translate(4,4, arma::fill::zeros);
     translate.eye();
@@ -58,21 +35,6 @@ arma::mat mat_translate(float dx, float dy, float dz) {
     translate(3,2) = dz;
     return translate;
 }
-
-void mat_rotate(float *matrix, float x, float y, float z, float t) {
-		float ux = x;
-		float uy = y;
-		float uz = z;
-		normalize(&ux, &uy, &uz);
-		arma::mat R = {
-			{ cos(t)+(ux*ux)*(1-cos(t)), (ux*uy)*(1-cos(t))-uz*sin(t), ux*uz*(1-cos(t)) + uy*sin(t), 0 },
-			{ uy*uz*(1-cos(t))+uz*sin(t), cos(t)+(uy*uy)*(1-cos(t)), uy*uz*(1-cos(t)) - ux*sin(t), 0},
-			{ uz*ux*(1-cos(t))-uy*sin(t), uz*uy*(1-cos(t)) + ux*sin(t), cos(t) + uz*uz*(1 - cos(t)), 0 },
-			{ 0, 0, 0, 1}
-		};
-		copy_matrix(matrix, R);
-}
-
 
 arma::mat mat_rotate(float x, float y, float z, float t) {
     float ux = x;
@@ -85,18 +47,6 @@ arma::mat mat_rotate(float x, float y, float z, float t) {
             { uz*ux*(1-cos(t))-uy*sin(t), uz*uy*(1-cos(t)) + ux*sin(t), cos(t) + uz*uz*(1 - cos(t)), 0 },
             { 0, 0, 0, 1}
     };
-}
-
-
-void mat_multiply(float *matrix, float *a, float *b) {
-	arma::mat ma = copy_from_array(a);
-	arma::mat mb = copy_from_array(b);
-	copy_matrix(matrix, mb * ma);
-}
-
-void mat_apply(std::vector<float>& d, float *matrix, int count, int offset, int stride) {
-    arma::mat ma = copy_from_array(matrix);
-    mat_apply(d, ma, count, offset, stride);
 }
 
 void mat_apply(std::vector<float>& d, arma::mat &ma, int count, int offset, int stride) {
@@ -182,15 +132,6 @@ arma::mat mat_ortho(float left, float right, float bottom, float top, float near
 
 void set_matrix_2d(float *matrix, int width, int height) {
     auto m = mat_ortho(0, width, 0, height, -1, 1);
-    copy_matrix(matrix, m);
-}
-
-void set_matrix_3d(
-    float *matrix, int width, int height,
-    float x, float y, float z, float rx, float ry,
-    float fov, int ortho, int radius)
-{
-    auto m = set_matrix_3d(width, height, x, y, z, rx, ry, fov, ortho, radius);
     copy_matrix(matrix, m);
 }
 
