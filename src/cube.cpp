@@ -98,21 +98,23 @@ std::vector<float> make_character(float x, float y, float n, float m, char c)
 }
 
 int _make_sphere(
-    float *data, float r, int detail,
+    std::vector<float> &data, float r, int detail,
     float *a, float *b, float *c,
     float *ta, float *tb, float *tc)
 {
     if (detail == 0) {
-        float *d = data;
-        *(d++) = a[0] * r; *(d++) = a[1] * r; *(d++) = a[2] * r;
-        *(d++) = a[0]; *(d++) = a[1]; *(d++) = a[2];
-        *(d++) = ta[0]; *(d++) = ta[1];
-        *(d++) = b[0] * r; *(d++) = b[1] * r; *(d++) = b[2] * r;
-        *(d++) = b[0]; *(d++) = b[1]; *(d++) = b[2];
-        *(d++) = tb[0]; *(d++) = tb[1];
-        *(d++) = c[0] * r; *(d++) = c[1] * r; *(d++) = c[2] * r;
-        *(d++) = c[0]; *(d++) = c[1]; *(d++) = c[2];
-        *(d++) = tc[0]; *(d++) = tc[1];
+        std::vector<float> sphere = {
+            a[0] * r, a[1] * r, a[2] * r,
+            a[0], a[1], a[2],
+            ta[0], ta[1],
+            b[0] * r, b[1] * r, b[2] * r,
+            b[0], b[1], b[2],
+            tb[0], tb[1],
+            c[0] * r, c[1] * r, c[2] * r,
+            c[0], c[1], c[2],
+            tc[0], tc[1]
+        };
+        add_all(data, sphere);
         return 1;
     }
     else {
@@ -132,18 +134,18 @@ int _make_sphere(
         int total = 0;
         int n;
         n = _make_sphere(data, r, detail - 1, a, ab, ac, ta, tab, tac);
-        total += n; data += n * 24;
+        total += n;
         n = _make_sphere(data, r, detail - 1, b, bc, ab, tb, tbc, tab);
-        total += n; data += n * 24;
+        total += n;
         n = _make_sphere(data, r, detail - 1, c, ac, bc, tc, tac, tbc);
-        total += n; data += n * 24;
+        total += n;
         n = _make_sphere(data, r, detail - 1, ab, bc, ac, tab, tbc, tac);
-        total += n; data += n * 24;
+        total += n;
         return total;
     }
 }
 
-void make_sphere(float *data, float r, int detail) {
+std::vector<float> make_sphere(float r, int detail) {
     // detail, triangles, floats
     // 0, 8, 192
     // 1, 32, 768
@@ -170,6 +172,7 @@ void make_sphere(float *data, float r, int detail) {
         {0, 1}, {0, 0.5}
     };
     int total = 0;
+    std::vector<float> data;
     for (int i = 0; i < 8; i++) {
         int n = _make_sphere(
             data, r, detail,
@@ -179,8 +182,9 @@ void make_sphere(float *data, float r, int detail) {
             uvs[indices[i][0]],
             uvs[indices[i][1]],
             uvs[indices[i][2]]);
-        total += n; data += n * 24;
+        total += n;
     }
+    return data;
 }
 
 

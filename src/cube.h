@@ -21,6 +21,6 @@ std::vector<float> make_cube_wireframe(float x, float y, float z, float n);
 
 std::vector<float> make_character(float x, float y, float n, float m, char c);
 
-void make_sphere(float *data, float r, int detail);
+std::vector<float> make_sphere(float r, int detail);
 
 #endif

@@ -68,9 +68,7 @@ GLuint gen_wireframe_buffer(float x, float y, float z, float n) {
 }
 
 GLuint gen_sky_buffer() {
-    float data[12288];
-    make_sphere(data, 1, 3);
-    return gen_buffer(sizeof(data), data);
+    return gen_buffer(make_sphere(1, 3));
 }
 
 GLuint gen_cube_buffer(float x, float y, float z, float n, int w) {
