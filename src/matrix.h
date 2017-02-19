@@ -7,8 +7,12 @@
 void normalize(float *x, float *y, float *z);
 void mat_identity(float *matrix);
 void mat_translate(float *matrix, float dx, float dy, float dz);
+arma::mat mat_translate(float dx, float dy, float dz);
 void mat_rotate(float *matrix, float x, float y, float z, float angle);
+arma::mat mat_rotate(float x, float y, float z, float t);
+
 void mat_multiply(float *matrix, float *a, float *b);
+
 void mat_apply(std::vector<float> &data, float *matrix, int count, int offset, int stride);
 void mat_apply(std::vector<float>& d, arma::mat &ma, int count, int offset, int stride);
 

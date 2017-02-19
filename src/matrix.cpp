@@ -50,6 +50,15 @@ void mat_translate(float *matrix, float dx, float dy, float dz) {
 	copy_matrix(matrix, translate);
 }
 
+arma::mat mat_translate(float dx, float dy, float dz) {
+    arma::mat translate(4,4, arma::fill::zeros);
+    translate.eye();
+    translate(3,0) = dx;
+    translate(3,1) = dy;
+    translate(3,2) = dz;
+    return translate;
+}
+
 void mat_rotate(float *matrix, float x, float y, float z, float t) {
 		float ux = x;
 		float uy = y;
@@ -63,6 +72,21 @@ void mat_rotate(float *matrix, float x, float y, float z, float t) {
 		};
 		copy_matrix(matrix, R);
 }
+
+
+arma::mat mat_rotate(float x, float y, float z, float t) {
+    float ux = x;
+    float uy = y;
+    float uz = z;
+    normalize(&ux, &uy, &uz);
+    return arma::mat {
+            { cos(t)+(ux*ux)*(1-cos(t)), (ux*uy)*(1-cos(t))-uz*sin(t), ux*uz*(1-cos(t)) + uy*sin(t), 0 },
+            { uy*uz*(1-cos(t))+uz*sin(t), cos(t)+(uy*uy)*(1-cos(t)), uy*uz*(1-cos(t)) - ux*sin(t), 0},
+            { uz*ux*(1-cos(t))-uy*sin(t), uz*uy*(1-cos(t)) + ux*sin(t), cos(t) + uz*uz*(1 - cos(t)), 0 },
+            { 0, 0, 0, 1}
+    };
+}
+
 
 void mat_multiply(float *matrix, float *a, float *b) {
 	arma::mat ma = copy_from_array(a);

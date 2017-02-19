@@ -237,14 +237,14 @@ std::vector<float> make_plant(float ao, float light,
         }
     }
 
-    float ma[16];
-    float mb[16];
-    mat_identity(ma);
-    mat_rotate(mb, 0, 1, 0, RADIANS(rotation));
-    mat_multiply(ma, mb, ma);
+    arma::mat ma(4,4);
+    arma::mat mb(4,4);
+    ma.eye();
+    mb = mat_rotate(0,1,0, RADIANS(rotation));
+    ma = ma * mb;
     mat_apply(d, ma, 24, 3, 10);
-    mat_translate(mb, px, py, pz);
-    mat_multiply(ma, mb, ma);
+    mb = mat_translate(px,py,pz);
+    ma = ma * mb;
     mat_apply(d, ma, 24, 0, 10);
     return d;
 }
