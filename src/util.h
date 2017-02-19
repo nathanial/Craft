@@ -48,4 +48,5 @@ int wrap(const char *input, int max_width, char *output, int max_length);
 void get_sight_vector(float rx, float ry, float *vx, float *vy, float *vz);
 void get_motion_vector(int flying, int sz, int sx, float rx, float ry, float *vx, float *vy, float *vz);
 int chunked(float x);
+void add_all(std::vector<float> &dst, const std::vector<float> &src);
 #endif

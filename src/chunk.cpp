@@ -12,9 +12,7 @@ extern "C" {
 #include "util.h"
 #include "item.h"
 #include "draw.h"
-#include "matrix.h"
 #include "cube.h"
-#include <memory>
 
 extern Model *g;
 
@@ -26,9 +24,7 @@ void scanline_iterate(BigBlockMap &light, BigBlockMap &opaque, std::deque<std::t
                       int x, int y, int z, int w,
                       int cursorX, int cursorW, bool ascend);
 
-void add_all(std::vector<float> &dst, const std::vector<float> &src){
-  dst.insert(dst.end(), src.begin(), src.end());
-}
+
 
 
 void light_fill_scanline(BigBlockMap &opaque, BigBlockMap &light, int ox, int oy ,int oz, int ow);

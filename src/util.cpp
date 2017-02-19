@@ -273,3 +273,8 @@ void get_motion_vector(int flying, int sz, int sx, float rx, float ry,
 int chunked(float x) {
     return floorf(roundf(x) / CHUNK_SIZE);
 }
+
+
+void add_all(std::vector<float> &dst, const std::vector<float> &src){
+    dst.insert(dst.end(), src.begin(), src.end());
+}

@@ -13,7 +13,7 @@ add_executable(
     deps/sqlite/sqlite3.c
     src/chunk.h src/chunk.cpp src/model.h src/draw.cpp src/draw.h src/worker.cpp src/worker.h src/biomes/rolling_planes.cpp src/biomes/rolling_planes.h src/biomes/biome.h src/biomes/mountains.h src/biomes/mountains.cpp src/height_map.h src/workers/tasks/generate_chunk_task.h src/workers/tasks/task.h src/workers/tasks/generate_chunk_task.cpp src/biomes/flatland.cpp src/biomes/flatland.h)
 
-set(CMAKE_CXX_FLAGS "-std=c++14 -fpermissive -Wno-narrowing")
+set(CMAKE_CXX_FLAGS "-std=c++14 -fpermissive -O2 -Wno-narrowing")
 set(CMAKE_C_FLAGS -O2)
 
 add_subdirectory(deps/glfw)
