@@ -27,6 +27,14 @@ arma::mat copy_from_array(float *src){
 	return dst;
 }
 
+arma::mat copy_vector_from_array(float *src){
+	arma::mat v(1,4);
+	for(int i = 0; i < 4; i++){
+		v(0, i) = src[i];
+	}
+	return v;
+}
+
 void mat_identity(float *matrix) {
 	arma::mat identity(4,4, arma::fill::zeros);
 	identity.eye();
@@ -57,19 +65,13 @@ void mat_rotate(float *matrix, float x, float y, float z, float t) {
 }
 
 void mat_vec_multiply(float *vector, float *a, float *b) {
-    float result[4];
-    for (int i = 0; i < 4; i++) {
-        float total = 0;
-        for (int j = 0; j < 4; j++) {
-            int p = j * 4 + i;
-            int q = j;
-            total += a[p] * b[q];
-        }
-        result[i] = total;
-    }
-    for (int i = 0; i < 4; i++) {
-        vector[i] = result[i];
-    }
+		arma::mat ma = copy_from_array(a);
+		arma::mat vb = copy_vector_from_array(b);
+
+		arma::mat result = vb * ma;
+		for(int i = 0; i < 4; i++){
+			vector[i] = result(0,i);
+		}
 }
 
 void mat_multiply(float *matrix, float *a, float *b) {
