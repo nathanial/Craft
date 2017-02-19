@@ -188,30 +188,38 @@ void set_matrix_3d(
     float x, float y, float z, float rx, float ry,
     float fov, int ortho, int radius)
 {
-    float a[16];
-    float b[16];
+    auto m = set_matrix_3d(width, height, x, y, z, rx, ry, fov, ortho, radius);
+    copy_matrix(matrix, m);
+}
+
+arma::mat set_matrix_3d(int width, int height,
+        float x, float y, float z, float rx, float ry,
+        float fov, int ortho, int radius){
+
+    arma::mat a(4,4);
+    arma::mat b(4,4);
     float aspect = (float)width / height;
     float znear = 0.125;
     float zfar = radius * 32 + 64;
-    mat_identity(a);
-    mat_translate(b, -x, -y, -z);
-    mat_multiply(a, b, a);
-    mat_rotate(b, cosf(rx), 0, sinf(rx), ry);
-    mat_multiply(a, b, a);
-    mat_rotate(b, 0, 1, 0, -rx);
-    mat_multiply(a, b, a);
+    a.eye();
+    b = mat_translate(-x, -y, -z);
+    a = a * b;
+    b = mat_rotate(cosf(rx), 0, sinf(rx), ry);
+    a = a * b;
+    b = mat_rotate(0, 1, 0, -rx);
+    a = a * b;
     if (ortho) {
         int size = ortho;
-        auto orth = mat_ortho(-size * aspect, size * aspect, -size, size, -zfar, zfar);
-        copy_matrix(b, orth);
+        b = mat_ortho(-size * aspect, size * aspect, -size, size, -zfar, zfar);
     }
     else {
-        auto persp = mat_perspective(fov, aspect, znear, zfar);
-        copy_matrix(b, persp);
+        b = mat_perspective(fov, aspect, znear, zfar);
     }
-    mat_multiply(a, b, a);
-    mat_identity(matrix);
-    mat_multiply(matrix, a, matrix);
+    a = a * b;
+    arma::mat m(4,4);
+    m.eye();
+    m = m* a;
+    return m;
 }
 
 void set_matrix_item(float *matrix, int width, int height, int scale) {
