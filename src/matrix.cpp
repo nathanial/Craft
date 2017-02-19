@@ -71,7 +71,11 @@ void mat_multiply(float *matrix, float *a, float *b) {
 }
 
 void mat_apply(std::vector<float>& d, float *matrix, int count, int offset, int stride) {
-	arma::mat ma = copy_from_array(matrix);
+    arma::mat ma = copy_from_array(matrix);
+    mat_apply(d, ma, count, offset, stride);
+}
+
+void mat_apply(std::vector<float>& d, arma::mat &ma, int count, int offset, int stride) {
 	arma::mat vec = {0,0,0,1};
 	for (int i = 0; i < count; i++) {
         int cursor = offset + stride * i;
