@@ -17,7 +17,7 @@ void mat_multiply(float *matrix, float *a, float *b);
 void mat_apply(std::vector<float> &data, float *matrix, int count, int offset, int stride);
 void mat_apply(std::vector<float>& d, arma::mat &ma, int count, int offset, int stride);
 
-void frustum_planes(float planes[6][4], int radius, float *matrix);
+arma::mat frustum_planes(int radius, float *matrix);
 arma::mat mat_frustum(float left, float right, float bottom, float top, float znear, float zfar);
 arma::mat mat_perspective(float fov, float aspect, float near, float far);
 arma::mat mat_ortho(float left, float right, float bottom, float top, float near, float far);

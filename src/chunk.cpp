@@ -340,7 +340,7 @@ void Chunk::populate_opaque_array(BigBlockMap &opaque, HeightMap<48> &highest, i
     }
 }
 
-int chunk_visible(float planes[6][4], int p, int q, int miny, int maxy) {
+int chunk_visible(arma::mat planes, int p, int q, int miny, int maxy) {
     int x = p * CHUNK_SIZE - 1;
     int z = q * CHUNK_SIZE - 1;
     int d = CHUNK_SIZE + 1;
@@ -360,10 +360,10 @@ int chunk_visible(float planes[6][4], int p, int q, int miny, int maxy) {
         int out = 0;
         for (int j = 0; j < 8; j++) {
             float d =
-                    planes[i][0] * points[j][0] +
-                    planes[i][1] * points[j][1] +
-                    planes[i][2] * points[j][2] +
-                    planes[i][3];
+                    planes(i,0) * points[j][0] +
+                    planes(i,1) * points[j][1] +
+                    planes(i,2) * points[j][2] +
+                    planes(i,3);
             if (d < 0) {
                 out++;
             }

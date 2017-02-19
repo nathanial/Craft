@@ -421,8 +421,7 @@ void ensure_chunks_worker(Player *player, WorkerPtr worker) {
     set_matrix_3d(
         matrix, g->width, g->height,
         s->x, s->y, s->z, s->rx, s->ry, g->fov, g->ortho, g->render_radius);
-    float planes[6][4];
-    frustum_planes(planes, g->render_radius, matrix);
+    auto planes = frustum_planes(g->render_radius, matrix);
     int p = chunked(s->x);
     int q = chunked(s->z);
     int r = g->create_radius;
@@ -583,8 +582,7 @@ int render_chunks(Attrib *attrib, Player *player) {
     set_matrix_3d(
         matrix, g->width, g->height,
         s->x, s->y, s->z, s->rx, s->ry, g->fov, g->ortho, g->render_radius);
-    float planes[6][4];
-    frustum_planes(planes, g->render_radius, matrix);
+    auto planes = frustum_planes(g->render_radius, matrix);
     glUseProgram(attrib->program);
     glUniformMatrix4fv(attrib->matrix, 1, GL_FALSE, matrix);
     glUniform3f(attrib->camera, s->x, s->y, s->z);

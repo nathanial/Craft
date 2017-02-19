@@ -12,6 +12,7 @@
 #include <memory>
 #include <mutex>
 #include <vector>
+#include <armadillo>
 
 class Attrib;
 
@@ -73,6 +74,6 @@ public:
 typedef std::shared_ptr<Chunk> ChunkPtr;
 
 int highest_block(float x, float z);
-int chunk_visible(float planes[6][4], int p, int q, int miny, int maxy);
+int chunk_visible(arma::mat planes, int p, int q, int miny, int maxy);
 
 #endif //CRAFT_CHUNK_H
