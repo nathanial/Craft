@@ -651,7 +651,7 @@ void render_wireframe(Attrib *attrib, Player *player) {
 
 void render_crosshairs(Attrib *attrib) {
     float matrix[16];
-    set_matrix_2d(matrix, g->width, g->height);
+    copy_matrix(matrix, set_matrix_2d(g->width, g->height));
     glUseProgram(attrib->program);
     glLineWidth(4 * g->scale);
     glEnable(GL_COLOR_LOGIC_OP);
@@ -687,7 +687,7 @@ void render_text(
     Attrib *attrib, int justify, float x, float y, float n, char *text)
 {
     float matrix[16];
-    set_matrix_2d(matrix, g->width, g->height);
+    copy_matrix(matrix, set_matrix_2d(g->width, g->height));
     glUseProgram(attrib->program);
     glUniformMatrix4fv(attrib->matrix, 1, GL_FALSE, matrix);
     glUniform1i(attrib->sampler, 1);

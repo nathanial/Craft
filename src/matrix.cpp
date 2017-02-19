@@ -130,9 +130,8 @@ arma::mat mat_ortho(float left, float right, float bottom, float top, float near
     };
 }
 
-void set_matrix_2d(float *matrix, int width, int height) {
-    auto m = mat_ortho(0, width, 0, height, -1, 1);
-    copy_matrix(matrix, m);
+arma::mat set_matrix_2d(int width, int height) {
+    return mat_ortho(0, width, 0, height, -1, 1);
 }
 
 arma::mat set_matrix_3d(int width, int height,
