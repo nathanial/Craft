@@ -418,9 +418,7 @@ void force_chunks(Player *player) {
 void ensure_chunks_worker(Player *player, WorkerPtr worker) {
     State *s = &player->state;
     float matrix[16];
-    set_matrix_3d(
-        matrix, g->width, g->height,
-        s->x, s->y, s->z, s->rx, s->ry, g->fov, g->ortho, g->render_radius);
+    copy_matrix(matrix, set_matrix_3d(g->width, g->height, s->x, s->y, s->z, s->rx, s->ry, g->fov, g->ortho, g->render_radius));
     auto planes = frustum_planes(g->render_radius, matrix);
     int p = chunked(s->x);
     int q = chunked(s->z);
@@ -579,9 +577,7 @@ int render_chunks(Attrib *attrib, Player *player) {
     int q = chunked(s->z);
     float light = get_daylight();
     float matrix[16];
-    set_matrix_3d(
-        matrix, g->width, g->height,
-        s->x, s->y, s->z, s->rx, s->ry, g->fov, g->ortho, g->render_radius);
+    copy_matrix(matrix, set_matrix_3d(g->width, g->height, s->x, s->y, s->z, s->rx, s->ry, g->fov, g->ortho, g->render_radius));
     auto planes = frustum_planes(g->render_radius, matrix);
     glUseProgram(attrib->program);
     glUniformMatrix4fv(attrib->matrix, 1, GL_FALSE, matrix);
@@ -610,9 +606,7 @@ int render_chunks(Attrib *attrib, Player *player) {
 void render_players(Attrib *attrib, Player *player) {
     State *s = &player->state;
     float matrix[16];
-    set_matrix_3d(
-        matrix, g->width, g->height,
-        s->x, s->y, s->z, s->rx, s->ry, g->fov, g->ortho, g->render_radius);
+    copy_matrix(matrix, set_matrix_3d(g->width, g->height, s->x, s->y, s->z, s->rx, s->ry, g->fov, g->ortho, g->render_radius));
     glUseProgram(attrib->program);
     glUniformMatrix4fv(attrib->matrix, 1, GL_FALSE, matrix);
     glUniform3f(attrib->camera, s->x, s->y, s->z);
@@ -629,9 +623,7 @@ void render_players(Attrib *attrib, Player *player) {
 void render_sky(Attrib *attrib, Player *player, GLuint buffer) {
     State *s = &player->state;
     float matrix[16];
-    set_matrix_3d(
-        matrix, g->width, g->height,
-        0, 0, 0, s->rx, s->ry, g->fov, 0, g->render_radius);
+    copy_matrix(matrix, set_matrix_3d(g->width, g->height, 0, 0, 0, s->rx, s->ry, g->fov, 0, g->render_radius));
     glUseProgram(attrib->program);
     glUniformMatrix4fv(attrib->matrix, 1, GL_FALSE, matrix);
     glUniform1i(attrib->sampler, 2);
@@ -642,9 +634,7 @@ void render_sky(Attrib *attrib, Player *player, GLuint buffer) {
 void render_wireframe(Attrib *attrib, Player *player) {
     State *s = &player->state;
     float matrix[16];
-    set_matrix_3d(
-        matrix, g->width, g->height,
-        s->x, s->y, s->z, s->rx, s->ry, g->fov, g->ortho, g->render_radius);
+    copy_matrix(matrix, set_matrix_3d(g->width, g->height, s->x, s->y, s->z, s->rx, s->ry, g->fov, g->ortho, g->render_radius));
     int hx, hy, hz;
     int hw = hit_test(0, s->x, s->y, s->z, s->rx, s->ry, &hx, &hy, &hz);
     if (is_obstacle(hw)) {
