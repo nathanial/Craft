@@ -70,6 +70,12 @@ GLuint gen_faces(int components, int faces, GLfloat *data) {
     return buffer;
 }
 
+
+GLuint gen_faces(int components, int faces, const std::vector<GLfloat> &data) {
+    return gen_buffer(
+        sizeof(GLfloat) * 6 * components * faces, data.data());
+}
+
 GLuint make_shader(GLenum type, const char *source) {
     GLuint shader = glCreateShader(type);
     glShaderSource(shader, 1, &source, NULL);

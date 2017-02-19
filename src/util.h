@@ -35,6 +35,7 @@ GLuint gen_buffer(const std::vector<GLfloat> &data);
 void del_buffer(GLuint buffer);
 GLfloat *malloc_faces(int components, int faces);
 GLuint gen_faces(int components, int faces, GLfloat *data);
+GLuint gen_faces(int components, int faces, const std::vector<GLfloat> &data);
 GLuint make_shader(GLenum type, const char *source);
 GLuint load_shader(GLenum type, const char *path);
 GLuint make_program(GLuint shader1, GLuint shader2);

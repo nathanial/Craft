@@ -26,6 +26,10 @@ void scanline_iterate(BigBlockMap &light, BigBlockMap &opaque, std::deque<std::t
                       int x, int y, int z, int w,
                       int cursorX, int cursorW, bool ascend);
 
+void add_all(std::vector<float> &dst, const std::vector<float> &src){
+  dst.insert(dst.end(), src.begin(), src.end());
+}
+
 
 void light_fill_scanline(BigBlockMap &opaque, BigBlockMap &light, int ox, int oy ,int oz, int ow);
 
@@ -198,7 +202,6 @@ void Chunk::load() {
 
     // generate geometry
     std::vector<GLfloat> data;
-    data.resize(6 * 10 * faces);
     //malloc_faces(10, faces);
     int offset = 0;
     auto chunk = g->find_chunk(this->_p, this->_q);
@@ -255,15 +258,10 @@ void Chunk::load() {
                 }
             }
             float rotation = simplex2(ex, ez, 4, 0.5, 2) * 360;
-            make_plant(
-                    data.data() + offset, min_ao, max_light,
-                    ex, ey, ez, 0.5, ew, rotation);
+            add_all(data, make_plant(min_ao, max_light, ex, ey, ez, 0.5, ew, rotation));
         }
         else {
-            make_cube(
-                    data.data() + offset, ao, light,
-                    f1, f2, f3, f4, f5, f6,
-                    ex, ey, ez, 0.5, ew);
+            add_all(data, make_cube(ao, light, f1, f2, f3, f4, f5, f6, ex, ey, ez, 0.5, ew));
         }
         offset += total * 60;
     });
