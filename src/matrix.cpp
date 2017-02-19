@@ -162,38 +162,25 @@ arma::mat mat_frustum(float left, float right, float bottom, float top, float zn
 }
 
 
-arma::mat mat_perspective(float fov, float aspect, float znear, float zfar)
-{
+arma::mat mat_perspective(float fov, float aspect, float znear, float zfar) {
     float ymax, xmax;
     ymax = znear * tanf(fov * PI / 360.0);
     xmax = ymax * aspect;
     return mat_frustum(-xmax, xmax, -ymax, ymax, znear, zfar);
 }
 
-void mat_ortho(
-    float *matrix,
-    float left, float right, float bottom, float top, float near, float far)
-{
-    matrix[0] = 2 / (right - left);
-    matrix[1] = 0;
-    matrix[2] = 0;
-    matrix[3] = 0;
-    matrix[4] = 0;
-    matrix[5] = 2 / (top - bottom);
-    matrix[6] = 0;
-    matrix[7] = 0;
-    matrix[8] = 0;
-    matrix[9] = 0;
-    matrix[10] = -2 / (far - near);
-    matrix[11] = 0;
-    matrix[12] = -(right + left) / (right - left);
-    matrix[13] = -(top + bottom) / (top - bottom);
-    matrix[14] = -(far + near) / (far - near);
-    matrix[15] = 1;
+arma::mat mat_ortho(float left, float right, float bottom, float top, float near, float far) {
+    return arma::mat {
+        {2 / (right - left), 0, 0, 0},
+        {0, 2 / (top - bottom), 0, 0},
+        {0, 0, -2 / (far - near), 0},
+        {-(right + left) / (right - left), -(top + bottom) / (top - bottom), -(far + near) / (far - near), 1}
+    };
 }
 
 void set_matrix_2d(float *matrix, int width, int height) {
-    mat_ortho(matrix, 0, width, 0, height, -1, 1);
+    auto m = mat_ortho(0, width, 0, height, -1, 1);
+    copy_matrix(matrix, m);
 }
 
 void set_matrix_3d(
@@ -215,7 +202,8 @@ void set_matrix_3d(
     mat_multiply(a, b, a);
     if (ortho) {
         int size = ortho;
-        mat_ortho(b, -size * aspect, size * aspect, -size, size, -zfar, zfar);
+        auto orth = mat_ortho(-size * aspect, size * aspect, -size, size, -zfar, zfar);
+        copy_matrix(b, orth);
     }
     else {
         auto persp = mat_perspective(fov, aspect, znear, zfar);
@@ -239,7 +227,8 @@ void set_matrix_item(float *matrix, int width, int height, int scale) {
     mat_multiply(a, b, a);
     mat_rotate(b, 1, 0, 0, -PI / 10);
     mat_multiply(a, b, a);
-    mat_ortho(b, -box * aspect, box * aspect, -box, box, -1, 1);
+    auto ortho = mat_ortho(-box * aspect, box * aspect, -box, box, -1, 1);
+    copy_matrix(b, ortho);
     mat_multiply(a, b, a);
     mat_translate(b, -xoffset, -yoffset, 0);
     mat_multiply(a, b, a);
