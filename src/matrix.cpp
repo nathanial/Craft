@@ -146,41 +146,28 @@ void frustum_planes(float planes[6][4], int radius, float *matrix) {
     planes[5][3] = zfar * m[15] - m[14];
 }
 
-void mat_frustum(
-    float *matrix, float left, float right, float bottom,
-    float top, float znear, float zfar)
+arma::mat mat_frustum(float left, float right, float bottom, float top, float znear, float zfar)
 {
     float temp, temp2, temp3, temp4;
     temp = 2.0 * znear;
     temp2 = right - left;
     temp3 = top - bottom;
     temp4 = zfar - znear;
-    matrix[0] = temp / temp2;
-    matrix[1] = 0.0;
-    matrix[2] = 0.0;
-    matrix[3] = 0.0;
-    matrix[4] = 0.0;
-    matrix[5] = temp / temp3;
-    matrix[6] = 0.0;
-    matrix[7] = 0.0;
-    matrix[8] = (right + left) / temp2;
-    matrix[9] = (top + bottom) / temp3;
-    matrix[10] = (-zfar - znear) / temp4;
-    matrix[11] = -1.0;
-    matrix[12] = 0.0;
-    matrix[13] = 0.0;
-    matrix[14] = (-temp * zfar) / temp4;
-    matrix[15] = 0.0;
+    return arma::mat {
+        {temp / temp2, 0.0, 0.0, 0.0},
+        {0.0, temp / temp3, 0.0, 0.0},
+        {(right + left) / temp2, (top + bottom) / temp3, (-zfar - znear) / temp4, -1.0},
+        {0.0, 0.0, (-temp * zfar) / temp4, 0.0}
+    };
 }
 
-void mat_perspective(
-    float *matrix, float fov, float aspect,
-    float znear, float zfar)
+
+arma::mat mat_perspective(float fov, float aspect, float znear, float zfar)
 {
     float ymax, xmax;
     ymax = znear * tanf(fov * PI / 360.0);
     xmax = ymax * aspect;
-    mat_frustum(matrix, -xmax, xmax, -ymax, ymax, znear, zfar);
+    return mat_frustum(-xmax, xmax, -ymax, ymax, znear, zfar);
 }
 
 void mat_ortho(
@@ -231,7 +218,8 @@ void set_matrix_3d(
         mat_ortho(b, -size * aspect, size * aspect, -size, size, -zfar, zfar);
     }
     else {
-        mat_perspective(b, fov, aspect, znear, zfar);
+        auto persp = mat_perspective(fov, aspect, znear, zfar);
+        copy_matrix(b, persp);
     }
     mat_multiply(a, b, a);
     mat_identity(matrix);
