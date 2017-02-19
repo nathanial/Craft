@@ -4,11 +4,13 @@
 #include <vector>
 #include <armadillo>
 
+void copy_matrix(float *dst, const arma::mat& src);
+
 void normalize(float *x, float *y, float *z);
 void mat_identity(float *matrix);
 void mat_translate(float *matrix, float dx, float dy, float dz);
-
 arma::mat mat_translate(float dx, float dy, float dz);
+
 void mat_rotate(float *matrix, float x, float y, float z, float angle);
 arma::mat mat_rotate(float x, float y, float z, float t);
 
@@ -31,6 +33,6 @@ void set_matrix_3d(
     float *matrix, int width, int height,
     float x, float y, float z, float rx, float ry,
     float fov, int ortho, int radius);
-void set_matrix_item(float *matrix, int width, int height, int scale);
+arma::mat set_matrix_item(int width, int height, int scale);
 
 #endif

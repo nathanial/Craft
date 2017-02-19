@@ -224,24 +224,25 @@ arma::mat set_matrix_3d(int width, int height,
     return m;
 }
 
-void set_matrix_item(float *matrix, int width, int height, int scale) {
-    float a[16];
-    float b[16];
+arma::mat set_matrix_item(int width, int height, int scale) {
+    arma::mat a(4,4);
+    arma::mat b(4,4);
     float aspect = (float)width / height;
     float size = 64 * scale;
     float box = height / size / 2;
     float xoffset = 1 - size / width * 2;
     float yoffset = 1 - size / height * 2;
-    mat_identity(a);
-    mat_rotate(b, 0, 1, 0, -PI / 4);
-    mat_multiply(a, b, a);
-    mat_rotate(b, 1, 0, 0, -PI / 10);
-    mat_multiply(a, b, a);
-    auto ortho = mat_ortho(-box * aspect, box * aspect, -box, box, -1, 1);
-    copy_matrix(b, ortho);
-    mat_multiply(a, b, a);
-    mat_translate(b, -xoffset, -yoffset, 0);
-    mat_multiply(a, b, a);
-    mat_identity(matrix);
-    mat_multiply(matrix, a, matrix);
+    a.eye();
+    b = mat_rotate(0, 1, 0, -PI / 4);
+    a = a * b;
+    b = mat_rotate(1, 0, 0, -PI / 10);
+    a = a * b;
+    b = mat_ortho(-box * aspect, box * aspect, -box, box, -1, 1);
+    a = a * b;
+    b = mat_translate(-xoffset, -yoffset, 0);
+    a = a * b;
+    arma::mat m(4,4);
+    m.eye();
+    m = m * a;
+    return m;
 }
