@@ -35,7 +35,6 @@ public:
     int get_block_or_zero(int x, int y, int z) const;
     int set_block(int x, int y, int z, char w);
 
-    int distance(int p, int q);
     void set_dirty_flag();
 
     void foreach_block(std::function<void (int, int, int, char)> func) const;
@@ -45,7 +44,6 @@ public:
     int q() const;
 
     void set_faces(int faces);
-    int faces() const;
 
     void set_dirty(bool dirty);
     bool dirty() const;
@@ -56,7 +54,6 @@ public:
     int maxy() const;
     int miny() const;
 
-    const std::vector<GLfloat> vertices() const;
     void set_vertices(std::vector<GLfloat> vertices);
 
     void generate_buffer();
@@ -65,6 +62,8 @@ public:
 
     void load();
 
+    const std::vector<GLfloat> vertices() const;
+    int distance(int p, int q) const;
     void populate_opaque_array(BigBlockMap &opaque, HeightMap<48> &highest) const;
     void populate_light_array(BigBlockMap &opaque, BigBlockMap &light) const;
 

@@ -70,7 +70,7 @@ void Chunk::set_dirty_flag() {
     }
 }
 
-int Chunk::distance(int p, int q) {
+int Chunk::distance(int p, int q) const {
     int dp = ABS(this->_p - p);
     int dq = ABS(this->_q - q);
     return MAX(dp, dq);
@@ -96,10 +96,6 @@ int Chunk::q() const {
 
 void Chunk::set_faces(int faces) {
     this->_faces = faces;
-}
-
-int Chunk::faces() const {
-    return this->_faces;
 }
 
 void Chunk::set_dirty(bool dirty) {
