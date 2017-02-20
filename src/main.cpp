@@ -340,9 +340,12 @@ int player_intersects_block(
 }
 
 void load_chunk(int p, int q) {
+    printf("Load Chunk %d,%d\n", p, q);
     auto chunk = g->find_chunk(p,q);
     create_world(*chunk, p, q);
     db_load_blocks(*chunk, p, q);
+    g->add_visual_chunk(chunk->load());
+    g->generate_chunk_buffer(p,q);
 }
 
 void request_chunk(int p, int q) {
@@ -351,6 +354,7 @@ void request_chunk(int p, int q) {
 }
 
 void create_chunk(int p, int q) {
+    printf("CREATE CHUNK %d,%d\n", p, q);
     GenerateChunkTask gen_chunk(p,q);
     auto chunk = gen_chunk.run().get();
 
@@ -358,7 +362,6 @@ void create_chunk(int p, int q) {
 
     load_chunk(chunk->p(), chunk->q());
     request_chunk(p, q);
-
 }
 
 void check_workers() {
@@ -388,7 +391,8 @@ void force_chunks(Player *player) {
             int b = q + dq;
             auto chunk = g->find_chunk(a, b);
             if (chunk) {
-                if (g->is_dirty(a,b)) {
+                if (g->is_dirty(a,b) || !g->has_visual_chunk(a,b)) {
+                    printf("RENDER CHUNK %d,%d\n", chunk->p(), chunk->q());
                     auto vchunk = chunk->load();
                     g->add_visual_chunk(vchunk);
                     g->generate_chunk_buffer(a,b);
@@ -396,70 +400,16 @@ void force_chunks(Player *player) {
             }
             else if (g->chunk_count() < MAX_CHUNKS) {
                 create_chunk(a, b);
+            } else {
+                printf("DO NOTHING\n");
             }
         }
     }
-}
-
-void ensure_chunks_worker(Player *player) {
-    State *s = &player->state;
-    float matrix[16];
-    copy_matrix(matrix, set_matrix_3d(g->width, g->height, s->x, s->y, s->z, s->rx, s->ry, g->fov, g->ortho, g->render_radius));
-    auto planes = frustum_planes(g->render_radius, matrix);
-    int p = chunked(s->x);
-    int q = chunked(s->z);
-    int r = g->create_radius;
-    int start = 0x0fffffff;
-    int best_score = start;
-    int best_a = 0;
-    int best_b = 0;
-    for (int dp = -r; dp <= r; dp++) {
-        for (int dq = -r; dq <= r; dq++) {
-            int a = p + dp;
-            int b = q + dq;
-            auto chunk = g->find_chunk(a, b);
-            if (chunk && !g->is_dirty(a,b)) {
-                continue;
-            }
-            int distance = MAX(ABS(dp), ABS(dq));
-            int invisible = !chunk_visible(planes, a, b, 0, 256);
-            int priority = 0;
-            if (chunk) {
-                priority = g->is_ready_to_draw(a,b);
-            }
-            int score = (invisible << 24) | (priority << 16) | distance;
-            if (score < best_score) {
-                best_score = score;
-                best_a = a;
-                best_b = b;
-            }
-        }
-    }
-    if (best_score == start) {
-        return;
-    }
-    int a = best_a;
-    int b = best_b;
-    int load = 0;
-    auto chunk = g->find_chunk(a, b);
-    if (!chunk) {
-        load = 1;
-        if (g->chunk_count() < MAX_CHUNKS) {
-            GenerateChunkTask gen_chunk(a,b);
-            chunk = gen_chunk.run().get();
-            g->add_chunk(chunk);
-        }
-        else {
-            return;
-        }
-    }
-    g->set_dirty(chunk->p(), chunk->q(), false);
 }
 
 void ensure_chunks(Player *player) {
     check_workers();
     force_chunks(player);
-    ensure_chunks_worker(player);
 }
 
 std::future<VisualChunkPtr> worker_run(int p, int q, bool load) {

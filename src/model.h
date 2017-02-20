@@ -134,6 +134,8 @@ public:
 
     bool is_ready_to_draw(int a, int b);
     void generate_chunk_buffer(int a, int b);
+    bool has_visual_chunk(int a, int b);
+    VisualChunkPtr find_visual_chunk(int a, int b);
 
     Model();
 };

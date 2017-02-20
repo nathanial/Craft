@@ -23,6 +23,7 @@ int VisualChunk::draw(Attrib *attrib) const {
         draw_triangles_3d_ao(attrib, this->buffer, this->faces * 6);
         return this->faces;
     } else {
+        printf("SKIP DRAW %d,%d\n", this->p, this->q);
         return 0;
     }
 
