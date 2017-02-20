@@ -363,8 +363,6 @@ void create_chunk(int p, int q) {
     load_chunk(item);
     request_chunk(p, q);
 
-    g->add_visual_chunk(chunk->load());
-    g->set_dirty(chunk->p(), chunk->q(), true);
 }
 
 void check_workers() {
@@ -398,9 +396,8 @@ void force_chunks(Player *player) {
             if (chunk) {
                 if (g->is_dirty(a,b)) {
                     auto vchunk = chunk->load();
-                    vchunk = generate_buffer(*vchunk);
                     g->add_visual_chunk(vchunk);
-                    g->set_dirty(a,b, false);
+                    g->generate_chunk_buffer(a,b);
                 }
             }
             else if (g->chunk_count() < MAX_CHUNKS) {
@@ -501,7 +498,8 @@ int worker_run(WorkerPtr worker) {
             load_chunk(item);
         }
         auto chunk = g->find_chunk(item->p, item->q);
-        chunk->load();
+        auto vchunk = chunk->load();
+        g->add_visual_chunk(vchunk);
         {
             std::lock_guard<std::mutex> lock(worker->mtx);
             worker->state = WORKER_DONE;

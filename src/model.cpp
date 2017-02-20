@@ -98,7 +98,7 @@ void Model::add_chunk(ChunkPtr chunk) {
 
 void Model::add_visual_chunk(VisualChunkPtr vchunk) {
     this->visual_chunks[std::make_tuple(vchunk->p, vchunk->q)] = vchunk;
-    this->dirty_chunks[std::make_tuple(vchunk->p, vchunk->q)] = true;
+    this->dirty_chunks[std::make_tuple(vchunk->p, vchunk->q)] = false;
 }
 
 void Model::invalidate(int p, int q) {
@@ -131,10 +131,10 @@ void Model::each_visual_chunk(std::function<void (VisualChunk& vchunk)> func) {
 
 void Model::generate_chunk_buffer(int a, int b) {
     if(this->visual_chunks.count(std::make_tuple(a,b)) <= 0){
-        this->add_visual_chunk(this->chunks[std::make_tuple(a,b)]->load());
+        return;
     }
     auto vchunk = this->visual_chunks.at(std::make_tuple(a,b));
     this->visual_chunks[std::make_tuple(a,b)] = generate_buffer(*vchunk);
-    this->dirty_chunks[std::make_tuple(a,b)] = true;
+    this->dirty_chunks[std::make_tuple(a,b)] = false;
 
 }
