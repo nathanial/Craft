@@ -149,6 +149,41 @@ bool Chunk::is_ready_to_draw() const {
     return this->_buffer && this->dirty();
 }
 
+std::tuple<int,int,int> Chunk::count_faces(BigBlockMap &opaque){
+    int ox = this->_p * CHUNK_SIZE - CHUNK_SIZE;
+    int oy = -1;
+    int oz = this->_q * CHUNK_SIZE - CHUNK_SIZE;
+
+    int miny = 256;
+    int maxy = 0;
+    int faces = 0;
+    this->foreach_block([&](int ex, int ey, int ez, int ew) {
+        if (ew <= 0) {
+            return;
+        }
+        int x = ex - ox;
+        int y = ey - oy;
+        int z = ez - oz;
+        int f1 = !opaque.get(x - 1, y, z);
+        int f2 = !opaque.get(x + 1, y, z);
+        int f3 = !opaque.get(x, y + 1, z);
+        int f4 = !opaque.get(x, y - 1, z) && (ey > 0);
+        int f5 = !opaque.get(x, y, z - 1);
+        int f6 = !opaque.get(x, y, z + 1);
+        int total = f1 + f2 + f3 + f4 + f5 + f6;
+        if (total == 0) {
+            return;
+        }
+        if (is_plant(ew)) {
+            total = 4;
+        }
+        miny = MIN(miny, ey);
+        maxy = MAX(maxy, ey);
+        faces += total;
+    });
+    return std::make_tuple(miny,maxy,faces);
+};
+
 
 void Chunk::load() {
     auto opaque = std::make_unique<BigBlockMap>();
@@ -168,30 +203,8 @@ void Chunk::load() {
     int miny = 256;
     int maxy = 0;
     int faces = 0;
-    this->foreach_block([&](int ex, int ey, int ez, int ew) {
-        if (ew <= 0) {
-            return;
-        }
-        int x = ex - ox;
-        int y = ey - oy;
-        int z = ez - oz;
-        int f1 = !opaque->get(x - 1, y, z);
-        int f2 = !opaque->get(x + 1, y, z);
-        int f3 = !opaque->get(x, y + 1, z);
-        int f4 = !opaque->get(x, y - 1, z) && (ey > 0);
-        int f5 = !opaque->get(x, y, z - 1);
-        int f6 = !opaque->get(x, y, z + 1);
-        int total = f1 + f2 + f3 + f4 + f5 + f6;
-        if (total == 0) {
-            return;
-        }
-        if (is_plant(ew)) {
-            total = 4;
-        }
-        miny = MIN(miny, ey);
-        maxy = MAX(maxy, ey);
-        faces += total;
-    });
+    std::tie(miny, maxy, faces) = this->count_faces(*opaque);
+
 
     // generate geometry
     std::vector<GLfloat> data;
