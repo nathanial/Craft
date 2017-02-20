@@ -3,7 +3,7 @@
 
 #include "block_map.h"
 #include "sign.h"
-#include "chunk.h"
+#include "chunk/chunk.h"
 
 void db_enable();
 void db_disable();

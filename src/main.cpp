@@ -17,7 +17,7 @@
 #include "sign.h"
 #include "util.h"
 #include "world.h"
-#include "chunk.h"
+#include "chunk/chunk.h"
 #include "model.h"
 #include "draw.h"
 #include "player.h"

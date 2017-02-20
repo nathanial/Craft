@@ -3,7 +3,7 @@
 //
 
 #include "TerrainFeature.h"
-#include "../chunk.h"
+#include "../chunk/chunk.h"
 
 
 void TerrainFeature::add_to_chunk(Chunk &chunk, int x, int h, int z){

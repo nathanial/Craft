@@ -6,7 +6,7 @@
 #define CRAFT_MODEL_H
 
 #include <GL/glew.h>
-#include "chunk.h"
+#include "chunk/chunk.h"
 #include "config.h"
 #include "worker.h"
 #include <functional>

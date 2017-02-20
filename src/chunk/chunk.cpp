@@ -8,11 +8,11 @@ extern "C" {
 #include <armadillo>
 #include <queue>
 #include "chunk.h"
-#include "model.h"
-#include "util.h"
-#include "item.h"
-#include "draw.h"
-#include "cube.h"
+#include "../model.h"
+#include "../util.h"
+#include "../item.h"
+#include "../draw.h"
+#include "../cube.h"
 
 extern Model *g;
 

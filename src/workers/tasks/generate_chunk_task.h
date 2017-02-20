@@ -6,7 +6,7 @@
 #define CRAFT_GENERATE_CHUNK_TASK_H
 
 #include "task.h"
-#include "../../chunk.h"
+#include "../../chunk/chunk.h"
 
 class GenerateChunkTask : public Task<ChunkPtr> {
 private:
