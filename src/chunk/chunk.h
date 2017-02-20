@@ -6,9 +6,9 @@
 #define CRAFT_CHUNK_H
 
 #include <GL/glew.h>
-#include "block_map.h"
-#include "height_map.h"
-#include "sign.h"
+#include "../block_map.h"
+#include "../height_map.h"
+#include "../sign.h"
 #include <memory>
 #include <mutex>
 #include <vector>
@@ -28,7 +28,6 @@ private:
     std::vector<GLfloat> _vertices;
 public:
 
-
     Chunk(int p, int q);
     ~Chunk();
 
@@ -36,17 +35,15 @@ public:
     int get_block_or_zero(int x, int y, int z) const;
     int set_block(int x, int y, int z, char w);
 
-    int distance(int p, int q);
     void set_dirty_flag();
 
-    void foreach_block(std::function<void (int, int, int, char)> func);
+    void foreach_block(std::function<void (int, int, int, char)> func) const;
     int draw(Attrib *attrib);
 
     int p() const;
     int q() const;
 
     void set_faces(int faces);
-    int faces() const;
 
     void set_dirty(bool dirty);
     bool dirty() const;
@@ -57,7 +54,6 @@ public:
     int maxy() const;
     int miny() const;
 
-    const std::vector<GLfloat> vertices() const;
     void set_vertices(std::vector<GLfloat> vertices);
 
     void generate_buffer();
@@ -66,9 +62,13 @@ public:
 
     void load();
 
-    void populate_opaque_array(BigBlockMap &opaque, HeightMap<48> &highest, int ox, int oy, int oz) const;
+    const std::vector<GLfloat> vertices() const;
+    int distance(int p, int q) const;
+    void populate_opaque_array(BigBlockMap &opaque, HeightMap<48> &highest) const;
+    void populate_light_array(BigBlockMap &opaque, BigBlockMap &light) const;
 
-    void populate_light_array(BigBlockMap &opaque, BigBlockMap &light, int ox, int oy, int oz) const;
+    std::tuple<int,int,int> count_faces(BigBlockMap &opaque) const;
+    std::vector<GLfloat> generate_geometry(BigBlockMap &opaque, BigBlockMap &light, HeightMap<CHUNK_SIZE * 3> &highest) const;
 };
 
 typedef std::shared_ptr<Chunk> ChunkPtr;

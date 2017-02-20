@@ -8,9 +8,8 @@ extern "C" {
 #include "rolling_planes.h"
 #include "../item.h"
 #include "../terrain_features/trees/OakTree.h"
-#include <tuple>
 
-void RollingPlanes::create_chunk(ChunkPtr chunk, int p, int q) {
+void RollingPlanes::create_chunk(Chunk& chunk, int p, int q) {
     for (int dx = 0; dx < CHUNK_SIZE; dx++) {
         for (int dz = 0; dz < CHUNK_SIZE; dz++) {
             int x = p * CHUNK_SIZE + dx;
@@ -27,22 +26,22 @@ void RollingPlanes::create_chunk(ChunkPtr chunk, int p, int q) {
             }
             // sand and grass terrain
             for (int y = 0; y < h; y++) {
-                chunk->set_block(x, y, z, w);
+                chunk.set_block(x, y, z, w);
             }
 
             if(simplex2(x, z, 6, 0.5, 2) > 0.80){
-                chunk->set_block(x,h+1,z, BEACON);
+                chunk.set_block(x,h+1,z, BEACON);
             }
             if (w == 1) {
                 if (SHOW_PLANTS) {
                     // grass
                     if (simplex2(-x * 0.1, z * 0.1, 4, 0.8, 2) > 0.6) {
-                        chunk->set_block(x, h, z, 17);
+                        chunk.set_block(x, h, z, 17);
                     }
                     // flowers
                     if (simplex2(x * 0.05, -z * 0.05, 4, 0.8, 2) > 0.7) {
                         int w = 18 + simplex2(x * 0.1, z * 0.1, 4, 0.8, 2) * 7;
-                        chunk->set_block(x, h, z, w);
+                        chunk.set_block(x, h, z, w);
                     }
                 }
                 // trees
@@ -54,11 +53,7 @@ void RollingPlanes::create_chunk(ChunkPtr chunk, int p, int q) {
                 }
                 if (ok && simplex2(x, z, 6, 0.5, 2) > 0.84) {
                     OakTree tree;
-                    for(auto &kv : tree.create()){
-                        int ox , y, oz;
-                        std::tie(ox,y,oz) = std::get<0>(kv);
-                        chunk->set_block(x + ox, h + y, z + oz, std::get<1>(kv));
-                    }
+                    tree.add_to_chunk(chunk, x, h, z);
                 }
             }
 
@@ -68,7 +63,7 @@ void RollingPlanes::create_chunk(ChunkPtr chunk, int p, int q) {
                     if (simplex3(
                             x * 0.01, y * 0.1, z * 0.01, 8, 0.5, 2) > 0.75)
                     {
-                        chunk->set_block(x, y, z, 16);
+                        chunk.set_block(x, y, z, 16);
                     }
                 }
             }

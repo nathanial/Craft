@@ -403,7 +403,7 @@ void db_delete_all_signs() {
     sqlite3_exec(db, "delete from sign;", NULL, NULL, NULL);
 }
 
-void db_load_blocks(ChunkPtr chunk, int p, int q) {
+void db_load_blocks(Chunk& chunk, int p, int q) {
     if (!db_enabled) {
         return;
     }
@@ -416,7 +416,7 @@ void db_load_blocks(ChunkPtr chunk, int p, int q) {
         int y = sqlite3_column_int(load_blocks_stmt, 1);
         int z = sqlite3_column_int(load_blocks_stmt, 2);
         int w = sqlite3_column_int(load_blocks_stmt, 3);
-        chunk->set_block(x, y, z, w);
+        chunk.set_block(x, y, z, w);
     }
 }
 
