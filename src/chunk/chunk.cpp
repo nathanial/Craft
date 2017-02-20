@@ -184,46 +184,26 @@ std::tuple<int,int,int> Chunk::count_faces(BigBlockMap &opaque){
     return std::make_tuple(miny,maxy,faces);
 };
 
-
-void Chunk::load() {
-    auto opaque = std::make_unique<BigBlockMap>();
-    auto light = std::make_unique<BigBlockMap>();
-    auto highest = std::make_unique<HeightMap<CHUNK_SIZE * 3>>();
-
+std::vector<GLfloat> Chunk::generate_geometry(BigBlockMap &opaque, BigBlockMap &light, HeightMap<CHUNK_SIZE * 3> &highest)  {
     int ox = this->_p * CHUNK_SIZE - CHUNK_SIZE;
     int oy = -1;
     int oz = this->_q * CHUNK_SIZE - CHUNK_SIZE;
-    // printf("Compute Chunk %d,%d\n", this->_p, this->_q);
 
-    // populate opaque array
-    populate_opaque_array(*opaque, *highest, ox, oy, oz);
-    populate_light_array(*opaque, *light, ox, oy, oz);
-
-    // count exposed faces
-    int miny = 256;
-    int maxy = 0;
-    int faces = 0;
-    std::tie(miny, maxy, faces) = this->count_faces(*opaque);
-
-
-    // generate geometry
     std::vector<GLfloat> data;
-    //malloc_faces(10, faces);
     int offset = 0;
-    auto chunk = g->find_chunk(this->_p, this->_q);
-    chunk->foreach_block([&](int ex, int ey, int ez, int ew) {
+    this->foreach_block([&](int ex, int ey, int ez, int ew) {
         if (ew <= 0) {
             return;
         }
         int x = ex - ox;
         int y = ey - oy;
         int z = ez - oz;
-        int f1 = !opaque->get(x - 1, y, z);
-        int f2 = !opaque->get(x + 1, y, z);
-        int f3 = !opaque->get(x, y + 1, z);
-        int f4 = !opaque->get(x, y - 1, z) && (ey > 0);
-        int f5 = !opaque->get(x, y, z - 1);
-        int f6 = !opaque->get(x, y, z + 1);
+        int f1 = !opaque.get(x - 1, y, z);
+        int f2 = !opaque.get(x + 1, y, z);
+        int f3 = !opaque.get(x, y + 1, z);
+        int f4 = !opaque.get(x, y - 1, z) && (ey > 0);
+        int f5 = !opaque.get(x, y, z - 1);
+        int f6 = !opaque.get(x, y, z + 1);
         int total = f1 + f2 + f3 + f4 + f5 + f6;
         if (total == 0) {
             return;
@@ -235,12 +215,12 @@ void Chunk::load() {
         for (int dx = -1; dx <= 1; dx++) {
             for (int dy = -1; dy <= 1; dy++) {
                 for (int dz = -1; dz <= 1; dz++) {
-                    neighbors[index] = opaque->get(x + dx, y + dy, z + dz);
-                    lights[index] = light->get(x + dx, y + dy, z + dz);
+                    neighbors[index] = opaque.get(x + dx, y + dy, z + dz);
+                    lights[index] = light.get(x + dx, y + dy, z + dz);
                     shades[index] = 0;
-                    if (y + dy <= highest->get(x + dx, z + dz)) {
+                    if (y + dy <= highest.get(x + dx, z + dz)) {
                         for (int oy = 0; oy < 8; oy++) {
-                            if (opaque->get(x + dx, y + dy + oy, z + dz)) {
+                            if (opaque.get(x + dx, y + dy + oy, z + dz)) {
                                 shades[index] = 1.0 - oy * 0.125;
                                 break;
                             }
@@ -271,11 +251,33 @@ void Chunk::load() {
         }
         offset += total * 60;
     });
+    return data;
+}
 
-    chunk->set_miny(miny);
-    chunk->set_maxy(maxy);
-    chunk->set_faces(faces);
-    chunk->set_vertices(data);
+
+void Chunk::load() {
+    auto opaque = std::make_unique<BigBlockMap>();
+    auto light = std::make_unique<BigBlockMap>();
+    auto highest = std::make_unique<HeightMap<CHUNK_SIZE * 3>>();
+
+    int ox = this->_p * CHUNK_SIZE - CHUNK_SIZE;
+    int oy = -1;
+    int oz = this->_q * CHUNK_SIZE - CHUNK_SIZE;
+    // printf("Compute Chunk %d,%d\n", this->_p, this->_q);
+
+    // populate opaque array
+    populate_opaque_array(*opaque, *highest, ox, oy, oz);
+    populate_light_array(*opaque, *light, ox, oy, oz);
+
+    int miny, maxy, faces;
+    std::tie(miny, maxy, faces) = this->count_faces(*opaque);
+    auto data = this->generate_geometry(*opaque, *light, *highest);
+
+
+    this->set_miny(miny);
+    this->set_maxy(maxy);
+    this->set_faces(faces);
+    this->set_vertices(data);
 }
 
 void Chunk::populate_light_array(BigBlockMap &opaque, BigBlockMap &light, int ox, int oy, int oz) const {

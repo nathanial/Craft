@@ -70,6 +70,7 @@ public:
     void populate_light_array(BigBlockMap &opaque, BigBlockMap &light, int ox, int oy, int oz) const;
 
     std::tuple<int,int,int> count_faces(BigBlockMap &opaque);
+    std::vector<GLfloat> generate_geometry(BigBlockMap &opaque, BigBlockMap &light, HeightMap<CHUNK_SIZE * 3> &highest);
 };
 
 typedef std::shared_ptr<Chunk> ChunkPtr;
