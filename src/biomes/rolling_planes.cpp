@@ -8,7 +8,6 @@ extern "C" {
 #include "rolling_planes.h"
 #include "../item.h"
 #include "../terrain_features/trees/OakTree.h"
-#include <tuple>
 
 void RollingPlanes::create_chunk(ChunkPtr chunk, int p, int q) {
     for (int dx = 0; dx < CHUNK_SIZE; dx++) {

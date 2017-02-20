@@ -9,10 +9,6 @@ extern "C" {
 #include "../item.h"
 #include "../terrain_features/trees/OakTree.h"
 
-//float simplex2(
-//        float x, float y,
-//        int octaves, float persistence, float lacunarity)
-
 void Mountains::create_chunk(ChunkPtr chunk, int p, int q) {
     for (int dx = 0; dx < CHUNK_SIZE; dx++) {
         for (int dz = 0; dz < CHUNK_SIZE; dz++) {
