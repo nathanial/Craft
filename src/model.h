@@ -8,11 +8,13 @@
 #include <GL/glew.h>
 #include "chunk/chunk.h"
 #include "config.h"
-#include "worker.h"
 #include "chunk/VisualChunk.h"
 #include <functional>
 #include <tuple>
 #include <vector>
+#include <future>
+#include <deque>
+#include <GLFW/glfw3.h>
 
 class Block {
 public:
@@ -73,9 +75,11 @@ private:
     std::unordered_map<ChunkPosition, ChunkPtr, ChunkPositionHash> chunks;
     std::unordered_map<ChunkPosition, VisualChunkPtr, ChunkPositionHash> visual_chunks;
     std::unordered_map<ChunkPosition, bool, ChunkPositionHash> dirty_chunks;
+
 public:
+    std::deque<std::shared_future<VisualChunkPtr>> vchunk_futures;
+
     GLFWwindow *window;
-    std::vector<WorkerPtr> workers;
     int create_radius;
     int render_radius;
     int delete_radius;

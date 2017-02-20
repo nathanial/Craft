@@ -28,6 +28,8 @@ extern "C" {
     #include "noise.h"
 }
 
+#include <chrono>
+
 static Model model;
 Model *g = &model;
 
@@ -337,9 +339,7 @@ int player_intersects_block(
     return 0;
 }
 
-void load_chunk(WorkerItemPtr item) {
-    int p = item->p;
-    int q = item->q;
+void load_chunk(int p, int q) {
     auto chunk = g->find_chunk(p,q);
     create_world(*chunk, p, q);
     db_load_blocks(*chunk, p, q);
@@ -356,29 +356,23 @@ void create_chunk(int p, int q) {
 
     g->add_chunk(chunk);
 
-    auto item = std::make_shared<WorkerItem>();
-    item->p = chunk->p();
-    item->q = chunk->q();
-
-    load_chunk(item);
+    load_chunk(chunk->p(), chunk->q());
     request_chunk(p, q);
 
 }
 
 void check_workers() {
-    for (int i = 0; i < WORKERS; i++) {
-        auto worker = g->workers.at(i);
-        std::lock_guard<std::mutex> lock(worker->mtx);
-        if (worker->state == WORKER_DONE) {
-            auto item = worker->item;
-            auto chunk = g->find_chunk(item->p, item->q);
-            if (chunk) {
-                if (item->load) {
-                    request_chunk(item->p, item->q);
-                }
-                g->generate_chunk_buffer(item->p, item->q);
-            }
-            worker->state = WORKER_IDLE;
+    for(int i = 0; i < 100 && i < g->vchunk_futures.size(); i++){
+        auto &vfuture = g->vchunk_futures.front();
+        auto status = vfuture.wait_for(std::chrono::seconds(0));
+        if(status == std::future_status::ready){
+            auto vchunk = vfuture.get();
+            vchunk = generate_buffer(*vchunk);
+            g->add_visual_chunk(vchunk);
+            g->vchunk_futures.pop_front();
+        } else {
+            g->vchunk_futures.push_back(vfuture);
+            g->vchunk_futures.pop_front();
         }
     }
 }
@@ -407,7 +401,7 @@ void force_chunks(Player *player) {
     }
 }
 
-void ensure_chunks_worker(Player *player, WorkerPtr worker) {
+void ensure_chunks_worker(Player *player) {
     State *s = &player->state;
     float matrix[16];
     copy_matrix(matrix, set_matrix_3d(g->width, g->height, s->x, s->y, s->z, s->rx, s->ry, g->fov, g->ortho, g->render_radius));
@@ -423,10 +417,6 @@ void ensure_chunks_worker(Player *player, WorkerPtr worker) {
         for (int dq = -r; dq <= r; dq++) {
             int a = p + dp;
             int b = q + dq;
-            int index = (ABS(a) ^ ABS(b)) % WORKERS;
-            if (index != worker->index) {
-                continue;
-            }
             auto chunk = g->find_chunk(a, b);
             if (chunk && !g->is_dirty(a,b)) {
                 continue;
@@ -463,53 +453,25 @@ void ensure_chunks_worker(Player *player, WorkerPtr worker) {
             return;
         }
     }
-    worker->item = std::make_shared<WorkerItem>();
-    worker->item->p = chunk->p();
-    worker->item->q = chunk->q();
-    worker->item->load = load;
     g->set_dirty(chunk->p(), chunk->q(), false);
-    worker->state = WORKER_BUSY;
-    worker->cnd.notify_all();
 }
 
 void ensure_chunks(Player *player) {
     check_workers();
     force_chunks(player);
-    for (int i = 0; i < WORKERS; i++) {
-        auto worker = g->workers.at(i);
-        std::lock_guard<std::mutex> lock(worker->mtx);
-        if (worker->state == WORKER_IDLE) {
-            ensure_chunks_worker(player, worker);
-        }
-    }
+    ensure_chunks_worker(player);
 }
 
-int worker_run(WorkerPtr worker) {
-    int running = 1;
-    while (running) {
-        {
-            std::unique_lock<std::mutex> lock(worker->mtx);
-            while (worker->state != WORKER_BUSY) {
-                worker->cnd.wait(lock);
-            }
+std::future<VisualChunkPtr> worker_run(int p, int q, bool load) {
+    return std::async([=]{
+        if (load) {
+            load_chunk(p, q);
         }
-        auto item = worker->item;
-        if (item->load) {
-            load_chunk(item);
-        }
-        auto chunk = g->find_chunk(item->p, item->q);
-        auto vchunk = chunk->load();
-        g->add_visual_chunk(vchunk);
-        {
-            std::lock_guard<std::mutex> lock(worker->mtx);
-            worker->state = WORKER_DONE;
-        }
-    }
-    return 0;
+        return g->find_chunk(p, q)->load();
+    });
 }
 
 void _set_block(int p, int q, int x, int y, int z, int w, int dirty) {
-    printf("Inner Set Block %d,%d,%d,%d,%d\n", p, q, x, y, z);
     auto chunk = g->find_chunk(p, q);
     if (chunk) {
         if (chunk->set_block(x, y, z, w)) {
@@ -1515,14 +1477,6 @@ int main(int argc, char **argv) {
     g->render_radius = RENDER_CHUNK_RADIUS;
     g->delete_radius = DELETE_CHUNK_RADIUS;
     g->sign_radius = RENDER_SIGN_RADIUS;
-
-    // INITIALIZE WORKER THREADS
-    for (int i = 0; i < WORKERS; i++) {
-        auto worker = g->workers.at(i);
-        worker->index = i;
-        worker->state = WORKER_IDLE;
-        worker->thrd = std::thread(worker_run, worker);
-    }
 
     // OUTER LOOP //
     int running = 1;
