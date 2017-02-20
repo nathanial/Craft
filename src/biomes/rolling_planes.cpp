@@ -53,11 +53,7 @@ void RollingPlanes::create_chunk(ChunkPtr chunk, int p, int q) {
                 }
                 if (ok && simplex2(x, z, 6, 0.5, 2) > 0.84) {
                     OakTree tree;
-                    for(auto &kv : tree.create()){
-                        int ox , y, oz;
-                        std::tie(ox,y,oz) = std::get<0>(kv);
-                        chunk->set_block(x + ox, h + y, z + oz, std::get<1>(kv));
-                    }
+                    tree.add_to_chunk(*chunk, x, h, z);
                 }
             }
 
