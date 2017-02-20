@@ -337,12 +337,6 @@ int player_intersects_block(
     return 0;
 }
 
-void gen_chunk_buffer(Chunk& chunk) {
-    chunk.load();
-    chunk.generate_buffer();
-    chunk.set_dirty(false);
-}
-
 void load_chunk(WorkerItemPtr item) {
     int p = item->p;
     int q = item->q;
@@ -368,7 +362,8 @@ void create_chunk(int p, int q) {
 
     load_chunk(item);
     request_chunk(p, q);
-    gen_chunk_buffer(*chunk);
+
+    g->add_visual_chunk(chunk->load());
 }
 
 void check_workers() {
@@ -382,7 +377,7 @@ void check_workers() {
                 if (item->load) {
                     request_chunk(item->p, item->q);
                 }
-                chunk->generate_buffer();
+                throw "chunk->generate_buffer();";
             }
             worker->state = WORKER_IDLE;
         }
@@ -400,8 +395,8 @@ void force_chunks(Player *player) {
             int b = q + dq;
             auto chunk = g->find_chunk(a, b);
             if (chunk) {
-                if (chunk->dirty()) {
-                    gen_chunk_buffer(*chunk);
+                if (g->is_dirty(a,b)) {
+                    throw "gen_chunk_buffer(*chunk);";
                 }
             }
             else if (g->chunk_count() < MAX_CHUNKS) {
@@ -432,14 +427,14 @@ void ensure_chunks_worker(Player *player, WorkerPtr worker) {
                 continue;
             }
             auto chunk = g->find_chunk(a, b);
-            if (chunk && !chunk->dirty()) {
+            if (chunk && !g->is_dirty(a,b)) {
                 continue;
             }
             int distance = MAX(ABS(dp), ABS(dq));
             int invisible = !chunk_visible(planes, a, b, 0, 256);
             int priority = 0;
             if (chunk) {
-                priority = chunk->is_ready_to_draw();
+                priority = g->is_ready_to_draw(a,b);
             }
             int score = (invisible << 24) | (priority << 16) | distance;
             if (score < best_score) {
@@ -471,7 +466,7 @@ void ensure_chunks_worker(Player *player, WorkerPtr worker) {
     worker->item->p = chunk->p();
     worker->item->q = chunk->q();
     worker->item->load = load;
-    chunk->set_dirty(false);
+    g->set_dirty(chunk->p(), chunk->q(), false);
     worker->state = WORKER_BUSY;
     worker->cnd.notify_all();
 }
@@ -517,7 +512,7 @@ void _set_block(int p, int q, int x, int y, int z, int w, int dirty) {
     if (chunk) {
         if (chunk->set_block(x, y, z, w)) {
             if (dirty) {
-                chunk->set_dirty_flag();
+                g->invalidate(p,q);
             }
             db_insert_block(p, q, x, y, z, w);
         }
@@ -584,16 +579,15 @@ int render_chunks(Attrib *attrib, Player *player) {
     glUniform1f(attrib->extra3, g->render_radius * CHUNK_SIZE);
     glUniform1i(attrib->extra4, g->ortho);
     glUniform1f(attrib->timer, time_of_day());
-    g->each_chunk([&](Chunk& chunk) {
-        if (chunk.distance(p, q) > g->render_radius) {
+    g->each_visual_chunk([&](VisualChunk& vchunk) {
+        if (vchunk.distance(p, q) > g->render_radius) {
             return;
         }
-        if (!chunk_visible(
-            planes, chunk.p(), chunk.q(), chunk.miny(), chunk.maxy()))
+        if (!chunk_visible(planes, vchunk.p, vchunk.q, vchunk.miny, vchunk.maxy))
         {
             return;
         }
-        result += chunk.draw(attrib);
+        result += vchunk.draw(attrib);
     });
     return result;
 }
@@ -1336,7 +1330,7 @@ void parse_buffer(char *buffer) {
         if (sscanf(line, "R,%d,%d", &kp, &kq) == 2) {
             auto chunk = g->find_chunk(kp, kq);
             if (chunk) {
-                chunk->set_dirty_flag();
+                g->invalidate(kp, kq);
             }
         }
         double elapsed;

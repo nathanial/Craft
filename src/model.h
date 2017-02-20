@@ -9,6 +9,7 @@
 #include "chunk/chunk.h"
 #include "config.h"
 #include "worker.h"
+#include "chunk/VisualChunk.h"
 #include <functional>
 #include <tuple>
 #include <vector>
@@ -70,6 +71,7 @@ struct ChunkPositionHash : public std::unary_function<ChunkPosition, std::size_t
 class Model {
 private:
     std::unordered_map<ChunkPosition, ChunkPtr, ChunkPositionHash> chunks;
+    std::unordered_map<ChunkPosition, VisualChunkPtr, ChunkPositionHash> visual_chunks;
 public:
     GLFWwindow *window;
     std::vector<WorkerPtr> workers;
@@ -110,6 +112,7 @@ public:
     ChunkPtr find_chunk(int p, int q);
 
     void each_chunk(std::function<void (Chunk& chunk)>);
+    void each_visual_chunk(std::function<void (VisualChunk& vchunk)>);
     void delete_chunks();
     void delete_all_chunks();
 
@@ -117,6 +120,15 @@ public:
     void add_chunk(ChunkPtr chunk);
 
     char get_block(int x, int y, int z);
+
+    void invalidate(int p, int q);
+    void set_dirty(int p, int q, bool dirty);
+    bool is_dirty(int p, int q);
+
+    void add_visual_chunk(VisualChunkPtr vchunk);
+
+    bool is_ready_to_draw(int a, int b);
+
 
     Model();
 };

@@ -27,6 +27,10 @@ ChunkPtr Model::find_chunk(int p, int q) {
     return chunk;
 }
 
+bool Model::is_dirty(int p, int q) {
+    throw "oops";
+}
+
 void Model::each_chunk(std::function<void (Chunk& chunk)> func) {
     for(const auto & kv : this->chunks){
         auto chunk = kv.second;
@@ -36,7 +40,6 @@ void Model::each_chunk(std::function<void (Chunk& chunk)> func) {
         } else {
             func(*chunk);
         }
-
     }
 }
 
@@ -90,4 +93,36 @@ void Model::add_chunk(ChunkPtr chunk) {
         throw "Couldn't Make Shared Ptr";
     }
     this->chunks[std::make_tuple(chunk->p(), chunk->q())] = chunk;
+}
+
+void Model::add_visual_chunk(VisualChunkPtr vchunk) {
+    this->visual_chunks[std::make_tuple(vchunk->p, vchunk->q)] = vchunk;
+}
+
+void Model::invalidate(int p, int q) {
+    for (int dp = -1; dp <= 1; dp++) {
+        for (int dq = -1; dq <= 1; dq++) {
+            this->set_dirty(p + dp, q + dq, true);
+        }
+    }
+}
+
+void Model::set_dirty(int p, int q, bool dirty){
+    throw "Set Dirty Not Implemented";
+}
+
+bool Model::is_ready_to_draw(int p, int q) {
+    throw "oops";
+}
+
+void Model::each_visual_chunk(std::function<void (VisualChunk& vchunk)> func) {
+    for(const auto & kv : this->visual_chunks){
+        auto chunk = kv.second;
+        if(chunk == nullptr){
+            printf("Missing Chunk %d,%d\n", std::get<0>(kv.first), std::get<1>(kv.first));
+            throw "Missing Chunk";
+        } else {
+            func(*chunk);
+        }
+    }
 }
