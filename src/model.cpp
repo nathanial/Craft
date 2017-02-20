@@ -131,11 +131,10 @@ void Model::each_visual_chunk(std::function<void (VisualChunk& vchunk)> func) {
 
 void Model::generate_chunk_buffer(int a, int b) {
     if(this->visual_chunks.count(std::make_tuple(a,b)) <= 0){
-        return;
-    } else {
-        auto vchunk = this->visual_chunks.at(std::make_tuple(a,b));
-        this->visual_chunks[std::make_tuple(a,b)] = generate_buffer(*vchunk);
-        this->dirty_chunks[std::make_tuple(a,b)] = true;
+        this->add_visual_chunk(this->chunks[std::make_tuple(a,b)]->load());
     }
+    auto vchunk = this->visual_chunks.at(std::make_tuple(a,b));
+    this->visual_chunks[std::make_tuple(a,b)] = generate_buffer(*vchunk);
+    this->dirty_chunks[std::make_tuple(a,b)] = true;
 
 }
