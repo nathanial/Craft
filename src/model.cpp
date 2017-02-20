@@ -1,5 +1,6 @@
 #include "model.h"
 #include "util.h"
+#include "workers/tasks/generate_chunk_task.h"
 
 Model::Model(){
 }
@@ -51,21 +52,14 @@ char Model::get_block(int x, int y, int z) {
 }
 
 void Model::delete_chunks(){
-    State *s1 = &this->players->state;
-    State *s2 = &(this->players + this->observe1)->state;
-    State *s3 = &(this->players + this->observe2)->state;
-    State *states[3] = {s1, s2, s3};
+    State *s = &this->player.state;
     std::vector<ChunkPosition> deletion_list;
     this->each_chunk([&](Chunk& chunk){
         int _delete = 1;
-        for (int j = 0; j < 3; j++) {
-            State *s = states[j];
-            int p = chunked(s->x);
-            int q = chunked(s->z);
-            if (chunk.distance(p, q) < this->delete_radius) {
-                _delete = 0;
-                break;
-            }
+        int p = chunked(s->x);
+        int q = chunked(s->z);
+        if (chunk.distance(p, q) < this->delete_radius) {
+            _delete = 0;
         }
         if (_delete) {
             deletion_list.push_back(std::make_tuple(chunk.p(), chunk.q()));
@@ -142,4 +136,20 @@ bool Model::has_visual_chunk(int a, int b){
 
 VisualChunkPtr Model::find_visual_chunk(int a, int b){
     return this->visual_chunks.at(std::make_tuple(a,b));
+}
+
+void Model::load_async_chunks(){
+    for(int i = 0; i < 100 && i < this->vchunk_futures.size(); i++){
+        auto &vfuture = this->vchunk_futures.front();
+        auto status = vfuture.wait_for(std::chrono::seconds(0));
+        if(status == std::future_status::ready){
+            auto vchunk = vfuture.get();
+            vchunk = generate_buffer(*vchunk);
+            this->add_visual_chunk(vchunk);
+            this->vchunk_futures.pop_front();
+        } else {
+            this->vchunk_futures.push_back(vfuture);
+            this->vchunk_futures.pop_front();
+        }
+    }
 }

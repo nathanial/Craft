@@ -84,16 +84,13 @@ public:
     int render_radius;
     int delete_radius;
     int sign_radius;
-    Player players[MAX_PLAYERS];
-    int player_count;
+    Player player;
     int typing;
     char typing_buffer[MAX_TEXT_LENGTH];
     int message_index;
     char messages[MAX_MESSAGES][MAX_TEXT_LENGTH];
     int width;
     int height;
-    int observe1;
-    int observe2;
     int flying;
     int item_index;
     int scale;
@@ -136,6 +133,7 @@ public:
     void generate_chunk_buffer(int a, int b);
     bool has_visual_chunk(int a, int b);
     VisualChunkPtr find_visual_chunk(int a, int b);
+    void load_async_chunks();
 
     Model();
 };
