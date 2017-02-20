@@ -48,7 +48,7 @@ int Chunk::get_block_or_zero(int x, int y, int z) const {
     return this->blocks->get_or_default(x - this->_p * CHUNK_SIZE, y, z - this->_q * CHUNK_SIZE, 0);
 }
 
-void Chunk::foreach_block(std::function<void (int, int, int, char)> func) {
+void Chunk::foreach_block(std::function<void (int, int, int, char)> func) const {
     this->blocks->each([&](int x, int y, int z, char w){
         func(x + this->_p * CHUNK_SIZE, y, z + this->_q * CHUNK_SIZE, w);
     });
@@ -149,7 +149,7 @@ bool Chunk::is_ready_to_draw() const {
     return this->_buffer && this->dirty();
 }
 
-std::tuple<int,int,int> Chunk::count_faces(BigBlockMap &opaque){
+std::tuple<int,int,int> Chunk::count_faces(BigBlockMap &opaque) const {
     int ox = this->_p * CHUNK_SIZE - CHUNK_SIZE;
     int oy = -1;
     int oz = this->_q * CHUNK_SIZE - CHUNK_SIZE;
@@ -184,7 +184,7 @@ std::tuple<int,int,int> Chunk::count_faces(BigBlockMap &opaque){
     return std::make_tuple(miny,maxy,faces);
 };
 
-std::vector<GLfloat> Chunk::generate_geometry(BigBlockMap &opaque, BigBlockMap &light, HeightMap<CHUNK_SIZE * 3> &highest)  {
+std::vector<GLfloat> Chunk::generate_geometry(BigBlockMap &opaque, BigBlockMap &light, HeightMap<CHUNK_SIZE * 3> &highest) const {
     int ox = this->_p * CHUNK_SIZE - CHUNK_SIZE;
     int oy = -1;
     int oz = this->_q * CHUNK_SIZE - CHUNK_SIZE;
@@ -260,19 +260,12 @@ void Chunk::load() {
     auto light = std::make_unique<BigBlockMap>();
     auto highest = std::make_unique<HeightMap<CHUNK_SIZE * 3>>();
 
-    int ox = this->_p * CHUNK_SIZE - CHUNK_SIZE;
-    int oy = -1;
-    int oz = this->_q * CHUNK_SIZE - CHUNK_SIZE;
-    // printf("Compute Chunk %d,%d\n", this->_p, this->_q);
-
-    // populate opaque array
-    populate_opaque_array(*opaque, *highest, ox, oy, oz);
-    populate_light_array(*opaque, *light, ox, oy, oz);
+    this->populate_opaque_array(*opaque, *highest);
+    this->populate_light_array(*opaque, *light);
 
     int miny, maxy, faces;
     std::tie(miny, maxy, faces) = this->count_faces(*opaque);
     auto data = this->generate_geometry(*opaque, *light, *highest);
-
 
     this->set_miny(miny);
     this->set_maxy(maxy);
@@ -280,7 +273,11 @@ void Chunk::load() {
     this->set_vertices(data);
 }
 
-void Chunk::populate_light_array(BigBlockMap &opaque, BigBlockMap &light, int ox, int oy, int oz) const {
+void Chunk::populate_light_array(BigBlockMap &opaque, BigBlockMap &light) const {
+    int ox = this->_p * CHUNK_SIZE - CHUNK_SIZE;
+    int oy = -1;
+    int oz = this->_q * CHUNK_SIZE - CHUNK_SIZE;
+
     for (int a = 0; a < 3; a++) {
         for (int b = 0; b < 3; b++) {
             auto chunk = g->find_chunk(_p - (a - 1), _q - (b - 1));
@@ -317,7 +314,10 @@ void Chunk::populate_light_array(BigBlockMap &opaque, BigBlockMap &light, int ox
     }
 }
 
-void Chunk::populate_opaque_array(BigBlockMap &opaque, HeightMap<48> &highest, int ox, int oy, int oz) const {
+void Chunk::populate_opaque_array(BigBlockMap &opaque, HeightMap<48> &highest) const {
+    int ox = this->_p * CHUNK_SIZE - CHUNK_SIZE;
+    int oy = -1;
+    int oz = this->_q * CHUNK_SIZE - CHUNK_SIZE;
     for (int a = 0; a < 3; a++) {
         for (int b = 0; b < 3; b++) {
             auto chunk = g->find_chunk(this->_p + (a - 1), this->_q + (b - 1));

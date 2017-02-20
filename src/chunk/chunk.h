@@ -38,7 +38,7 @@ public:
     int distance(int p, int q);
     void set_dirty_flag();
 
-    void foreach_block(std::function<void (int, int, int, char)> func);
+    void foreach_block(std::function<void (int, int, int, char)> func) const;
     int draw(Attrib *attrib);
 
     int p() const;
@@ -65,12 +65,11 @@ public:
 
     void load();
 
-    void populate_opaque_array(BigBlockMap &opaque, HeightMap<48> &highest, int ox, int oy, int oz) const;
+    void populate_opaque_array(BigBlockMap &opaque, HeightMap<48> &highest) const;
+    void populate_light_array(BigBlockMap &opaque, BigBlockMap &light) const;
 
-    void populate_light_array(BigBlockMap &opaque, BigBlockMap &light, int ox, int oy, int oz) const;
-
-    std::tuple<int,int,int> count_faces(BigBlockMap &opaque);
-    std::vector<GLfloat> generate_geometry(BigBlockMap &opaque, BigBlockMap &light, HeightMap<CHUNK_SIZE * 3> &highest);
+    std::tuple<int,int,int> count_faces(BigBlockMap &opaque) const;
+    std::vector<GLfloat> generate_geometry(BigBlockMap &opaque, BigBlockMap &light, HeightMap<CHUNK_SIZE * 3> &highest) const;
 };
 
 typedef std::shared_ptr<Chunk> ChunkPtr;
