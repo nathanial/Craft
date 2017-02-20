@@ -10,7 +10,7 @@
 
 class Flatland : public Biome {
 public:
-    void create_chunk(ChunkPtr chunk, int p, int q) override;
+    void create_chunk(Chunk& chunk, int p, int q) override;
 };
 
 

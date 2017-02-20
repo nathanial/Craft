@@ -9,7 +9,7 @@
 
 class Mountains : public Biome {
 public:
-    void create_chunk(ChunkPtr chunk, int p, int q) override;
+    void create_chunk(Chunk& chunk, int p, int q) override;
 };
 
 #endif //CRAFT_MOUNTAINS_H

@@ -28,7 +28,6 @@ private:
     std::vector<GLfloat> _vertices;
 public:
 
-
     Chunk(int p, int q);
     ~Chunk();
 

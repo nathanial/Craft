@@ -351,8 +351,8 @@ void load_chunk(WorkerItemPtr item) {
     int p = item->p;
     int q = item->q;
     auto chunk = g->find_chunk(p,q);
-    create_world(chunk, p, q);
-    db_load_blocks(chunk, p, q);
+    create_world(*chunk, p, q);
+    db_load_blocks(*chunk, p, q);
 }
 
 void request_chunk(int p, int q) {

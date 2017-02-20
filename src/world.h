@@ -3,6 +3,6 @@
 
 #include "chunk.h"
 
-void create_world(ChunkPtr chunk, int p, int q);
+void create_world(Chunk& chunk, int p, int q);
 
 #endif
