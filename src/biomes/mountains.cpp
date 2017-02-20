@@ -7,6 +7,7 @@ extern "C" {
 }
 #include "mountains.h"
 #include "../item.h"
+#include "../terrain_features/trees/OakTree.h"
 
 //float simplex2(
 //        float x, float y,
@@ -55,6 +56,33 @@ void Mountains::create_chunk(ChunkPtr chunk, int p, int q) {
 
             if(simplex2(x, z, 6, 0.5, 2) > 0.78){
                 chunk->set_block(x,h+1,z, BEACON);
+            }
+
+            if (SHOW_PLANTS) {
+                // grass
+                if (simplex2(-x * 0.1, z * 0.1, 4, 0.8, 2) > 0.6) {
+                    chunk->set_block(x, h, z, 17);
+                }
+                // flowers
+                if (simplex2(x * 0.05, -z * 0.05, 4, 0.8, 2) > 0.7) {
+                    int w = 18 + simplex2(x * 0.1, z * 0.1, 4, 0.8, 2) * 7;
+                    chunk->set_block(x, h, z, w);
+                }
+            }
+            // trees
+            int ok = SHOW_TREES;
+            if (dx - 4 < 0 || dz - 4 < 0 ||
+                dx + 4 >= CHUNK_SIZE || dz + 4 >= CHUNK_SIZE)
+            {
+                ok = 0;
+            }
+            if (ok && simplex2(x, z, 6, 0.5, 2) > 0.84) {
+                OakTree tree;
+                for(auto &kv : tree.create()){
+                    int ox , y, oz;
+                    std::tie(ox,y,oz) = std::get<0>(kv);
+                    chunk->set_block(x + ox, h + y, z + oz, std::get<1>(kv));
+                }
             }
         }
     }

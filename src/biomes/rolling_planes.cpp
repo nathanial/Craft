@@ -7,14 +7,12 @@ extern "C" {
 }
 #include "rolling_planes.h"
 #include "../item.h"
+#include "../terrain_features/trees/OakTree.h"
+#include <tuple>
 
 void RollingPlanes::create_chunk(ChunkPtr chunk, int p, int q) {
     for (int dx = 0; dx < CHUNK_SIZE; dx++) {
         for (int dz = 0; dz < CHUNK_SIZE; dz++) {
-            int flag = 1;
-            if (dx < 0 || dz < 0 || dx >= CHUNK_SIZE || dz >= CHUNK_SIZE) {
-                flag = -1;
-            }
             int x = p * CHUNK_SIZE + dx;
             int z = q * CHUNK_SIZE + dz;
             float f = simplex2(x * 0.01, z * 0.01, 4, 0.5, 2);
@@ -29,19 +27,22 @@ void RollingPlanes::create_chunk(ChunkPtr chunk, int p, int q) {
             }
             // sand and grass terrain
             for (int y = 0; y < h; y++) {
-                chunk->set_block(x, y, z, w * flag);
+                chunk->set_block(x, y, z, w);
             }
 
+            if(simplex2(x, z, 6, 0.5, 2) > 0.80){
+                chunk->set_block(x,h+1,z, BEACON);
+            }
             if (w == 1) {
                 if (SHOW_PLANTS) {
                     // grass
                     if (simplex2(-x * 0.1, z * 0.1, 4, 0.8, 2) > 0.6) {
-                        chunk->set_block(x, h, z, 17 * flag);
+                        chunk->set_block(x, h, z, 17);
                     }
                     // flowers
                     if (simplex2(x * 0.05, -z * 0.05, 4, 0.8, 2) > 0.7) {
                         int w = 18 + simplex2(x * 0.1, z * 0.1, 4, 0.8, 2) * 7;
-                        chunk->set_block(x, h, z, w * flag);
+                        chunk->set_block(x, h, z, w);
                     }
                 }
                 // trees
@@ -52,32 +53,22 @@ void RollingPlanes::create_chunk(ChunkPtr chunk, int p, int q) {
                     ok = 0;
                 }
                 if (ok && simplex2(x, z, 6, 0.5, 2) > 0.84) {
-                    for (int y = h + 3; y < h + 8; y++) {
-                        for (int ox = -3; ox <= 3; ox++) {
-                            for (int oz = -3; oz <= 3; oz++) {
-                                int d = (ox * ox) + (oz * oz) +
-                                        (y - (h + 4)) * (y - (h + 4));
-                                if (d < 11) {
-                                    chunk->set_block(x + ox, y, z + oz, 15);
-                                }
-                            }
-                        }
-                    }
-                    for (int y = h; y < h + 7; y++) {
-                        chunk->set_block(x, y, z, 5);
+                    OakTree tree;
+                    for(auto &kv : tree.create()){
+                        int ox , y, oz;
+                        std::tie(ox,y,oz) = std::get<0>(kv);
+                        chunk->set_block(x + ox, h + y, z + oz, std::get<1>(kv));
                     }
                 }
             }
-            if(simplex2(x, z, 6, 0.5, 2) > 0.80){
-                chunk->set_block(x,h+1,z, BEACON);
-            }
+
             // clouds
             if (SHOW_CLOUDS) {
                 for (int y = 64; y < 72; y++) {
                     if (simplex3(
                             x * 0.01, y * 0.1, z * 0.01, 8, 0.5, 2) > 0.75)
                     {
-                        chunk->set_block(x, y, z, 16 * flag);
+                        chunk->set_block(x, y, z, 16);
                     }
                 }
             }
