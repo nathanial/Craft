@@ -72,6 +72,7 @@ class Model {
 private:
     std::unordered_map<ChunkPosition, ChunkPtr, ChunkPositionHash> chunks;
     std::unordered_map<ChunkPosition, VisualChunkPtr, ChunkPositionHash> visual_chunks;
+    std::unordered_map<ChunkPosition, bool, ChunkPositionHash> dirty_chunks;
 public:
     GLFWwindow *window;
     std::vector<WorkerPtr> workers;
@@ -128,7 +129,7 @@ public:
     void add_visual_chunk(VisualChunkPtr vchunk);
 
     bool is_ready_to_draw(int a, int b);
-
+    void generate_chunk_buffer(int a, int b);
 
     Model();
 };

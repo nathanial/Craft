@@ -30,7 +30,7 @@ public:
 
 typedef std::shared_ptr<VisualChunk> VisualChunkPtr;
 
-VisualChunk generate_buffer(const VisualChunk &chunk);
+VisualChunkPtr generate_buffer(const VisualChunk &chunk);
 
 
 #endif //CRAFT_VISUALCHUNK_H

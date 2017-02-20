@@ -182,9 +182,8 @@ VisualChunkPtr Chunk::load() const {
 
     int miny, maxy, faces;
     std::tie(miny, maxy, faces) = this->count_faces(*opaque);
-    auto data = this->generate_geometry(*opaque, *light, *highest);
-
-    throw "oops";
+    auto vertices = this->generate_geometry(*opaque, *light, *highest);
+    return std::make_shared<VisualChunk>(this->p(), this->q(), faces, miny, maxy, 0, vertices);
 }
 
 void Chunk::populate_light_array(BigBlockMap &opaque, BigBlockMap &light) const {

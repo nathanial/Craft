@@ -13,7 +13,9 @@ VisualChunk::VisualChunk(int p, int q, int faces, int miny, int maxy, GLuint buf
 }
 
 VisualChunk::~VisualChunk() {
-    del_buffer(this->buffer);
+    if(this->buffer){
+        del_buffer(this->buffer);
+    }
 }
 
 int VisualChunk::draw(Attrib *attrib) const {
@@ -27,16 +29,16 @@ int VisualChunk::draw(Attrib *attrib) const {
 }
 
 
-VisualChunk generate_buffer(const VisualChunk &vchunk) {
-    throw "Ooops";
-//    if(this->_buffer) {
-//        del_buffer(this->_buffer);
-//    }
-//    if(this->_vertices.size() == 0){
-//        return;
-//    }
-//    this->_buffer = gen_buffer(this->vertices());
-//    this->_vertices.clear();
+VisualChunkPtr generate_buffer(const VisualChunk &vchunk) {
+    return std::make_shared<VisualChunk>(
+        vchunk.p,
+        vchunk.q,
+        vchunk.faces,
+        vchunk.miny,
+        vchunk.maxy,
+        gen_buffer(vchunk.vertices),
+        vchunk.vertices
+    );
 }
 
 int VisualChunk::distance(int p, int q) const {

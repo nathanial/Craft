@@ -377,7 +377,7 @@ void check_workers() {
                 if (item->load) {
                     request_chunk(item->p, item->q);
                 }
-                throw "chunk->generate_buffer();";
+                g->generate_chunk_buffer(item->p, item->q);
             }
             worker->state = WORKER_IDLE;
         }
@@ -396,7 +396,10 @@ void force_chunks(Player *player) {
             auto chunk = g->find_chunk(a, b);
             if (chunk) {
                 if (g->is_dirty(a,b)) {
-                    throw "gen_chunk_buffer(*chunk);";
+                    auto vchunk = chunk->load();
+                    vchunk = generate_buffer(*vchunk);
+                    g->add_visual_chunk(vchunk);
+                    g->set_dirty(a,b, false);
                 }
             }
             else if (g->chunk_count() < MAX_CHUNKS) {
