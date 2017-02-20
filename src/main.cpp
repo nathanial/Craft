@@ -316,9 +316,64 @@ void force_chunks(Player *player) {
     }
 }
 
+void ensure_chunks_worker(Player *player);
 void ensure_chunks(Player *player) {
+    ensure_chunks_worker(player);
     force_chunks(player);
     g->load_async_chunks();
+}
+
+void ensure_chunks_worker(Player *player){
+    State *s = &player->state;
+    float matrix[16];
+    copy_matrix(matrix, set_matrix_3d(g->width, g->height, s->x, s->y, s->z, s->rx, s->ry, g->fov, g->ortho, g->render_radius));
+    auto planes = frustum_planes(g->render_radius, matrix);
+    int p = chunked(s->x);
+    int q = chunked(s->z);
+    int r = g->create_radius;
+    int start = 0x0fffffff;
+    int best_score = start;
+    int best_a = 0;
+    int best_b = 0;
+    for (int dp = -r; dp <= r; dp++) {
+        for (int dq = -r; dq <= r; dq++) {
+            int a = p + dp;
+            int b = q + dq;
+            auto chunk = g->find_chunk(a, b);
+            if (chunk && !g->is_dirty(a,b)) {
+                continue;
+            }
+            int distance = MAX(ABS(dp), ABS(dq));
+            int invisible = !chunk_visible(planes, a, b, 0, 256);
+            int priority = 0;
+            if (chunk) {
+                priority = g->is_ready_to_draw(a,b);
+            }
+            int score = (invisible << 24) | (priority << 16) | distance;
+            if (score < best_score) {
+                best_score = score;
+                best_a = a;
+                best_b = b;
+            }
+        }
+   }
+   if (best_score == start) {
+       return;
+   }
+    int a = best_a;
+    int b = best_b;
+    int load = 0;
+    auto chunk = g->find_chunk(a, b);
+    if (!chunk) {
+        if (g->chunk_count() < MAX_CHUNKS) {
+            g->vchunk_futures.push_back(std::async([&]{
+                GenerateChunkTask gen_chunk(a,b);
+                auto chunk = gen_chunk.run().get();
+                g->add_chunk(chunk);
+                return chunk->load();
+            }));
+        }
+    }
 }
 
 void _set_block(int p, int q, int x, int y, int z, int w, int dirty) {
