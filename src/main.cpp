@@ -364,6 +364,7 @@ void create_chunk(int p, int q) {
     request_chunk(p, q);
 
     g->add_visual_chunk(chunk->load());
+    g->set_dirty(chunk->p(), chunk->q(), true);
 }
 
 void check_workers() {
