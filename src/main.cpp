@@ -226,7 +226,7 @@ Player *player_crosshair(Player *player) {
 
 
 int _hit_test(
-    ChunkPtr chunk, float max_distance, int previous,
+    Chunk& chunk, float max_distance, int previous,
     float x, float y, float z,
     float vx, float vy, float vz,
     int *hx, int *hy, int *hz)
@@ -240,7 +240,7 @@ int _hit_test(
         int ny = roundf(y);
         int nz = roundf(z);
         if (nx != px || ny != py || nz != pz) {
-            int hw = chunk->get_block_or_zero(nx, ny, nz);
+            int hw = chunk.get_block_or_zero(nx, ny, nz);
             if (hw > 0) {
                 if (previous) {
                     *hx = px; *hy = py; *hz = pz;
@@ -267,15 +267,14 @@ int hit_test(
     int q = chunked(z);
     float vx, vy, vz;
     get_sight_vector(rx, ry, &vx, &vy, &vz);
-    g->each_chunk([&](ChunkPtr chunk){
-        if (chunk->distance(p, q) > 1) {
+    g->each_chunk([&](Chunk& chunk){
+        if (chunk.distance(p, q) > 1) {
             return;
         }
         int hx, hy, hz;
         int hw = _hit_test(chunk, 8, previous,
                            x, y, z, vx, vy, vz, &hx, &hy, &hz);
         if (hw > 0) {
-            printf("HIT %d\n", hw);
             float d = sqrtf(
                     powf(hx - x, 2) + powf(hy - y, 2) + powf(hz - z, 2));
             if (best == 0 || d < best) {
@@ -338,13 +337,10 @@ int player_intersects_block(
     return 0;
 }
 
-void gen_chunk_buffer(ChunkPtr chunk) {
-    auto item = std::make_shared<WorkerItem>();
-    item->p = chunk->p();
-    item->q = chunk->q();
-    chunk->load();
-    chunk->generate_buffer();
-    chunk->set_dirty(false);
+void gen_chunk_buffer(Chunk& chunk) {
+    chunk.load();
+    chunk.generate_buffer();
+    chunk.set_dirty(false);
 }
 
 void load_chunk(WorkerItemPtr item) {
@@ -372,7 +368,7 @@ void create_chunk(int p, int q) {
 
     load_chunk(item);
     request_chunk(p, q);
-    gen_chunk_buffer(chunk);
+    gen_chunk_buffer(*chunk);
 }
 
 void check_workers() {
@@ -405,7 +401,7 @@ void force_chunks(Player *player) {
             auto chunk = g->find_chunk(a, b);
             if (chunk) {
                 if (chunk->dirty()) {
-                    gen_chunk_buffer(chunk);
+                    gen_chunk_buffer(*chunk);
                 }
             }
             else if (g->chunk_count() < MAX_CHUNKS) {
@@ -588,16 +584,16 @@ int render_chunks(Attrib *attrib, Player *player) {
     glUniform1f(attrib->extra3, g->render_radius * CHUNK_SIZE);
     glUniform1i(attrib->extra4, g->ortho);
     glUniform1f(attrib->timer, time_of_day());
-    g->each_chunk([&](ChunkPtr chunk) {
-        if (chunk->distance(p, q) > g->render_radius) {
+    g->each_chunk([&](Chunk& chunk) {
+        if (chunk.distance(p, q) > g->render_radius) {
             return;
         }
         if (!chunk_visible(
-            planes, chunk->p(), chunk->q(), chunk->miny(), chunk->maxy()))
+            planes, chunk.p(), chunk.q(), chunk.miny(), chunk.maxy()))
         {
             return;
         }
-        result += chunk->draw(attrib);
+        result += chunk.draw(attrib);
     });
     return result;
 }

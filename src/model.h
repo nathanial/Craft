@@ -109,7 +109,7 @@ public:
     void clear_chunks();
     ChunkPtr find_chunk(int p, int q);
 
-    void each_chunk(std::function<void (ChunkPtr chunk)>);
+    void each_chunk(std::function<void (Chunk& chunk)>);
     void delete_chunks();
     void delete_all_chunks();
 

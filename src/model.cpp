@@ -27,14 +27,14 @@ ChunkPtr Model::find_chunk(int p, int q) {
     return chunk;
 }
 
-void Model::each_chunk(std::function<void (ChunkPtr chunk)> func) {
+void Model::each_chunk(std::function<void (Chunk& chunk)> func) {
     for(const auto & kv : this->chunks){
         auto chunk = kv.second;
         if(chunk == nullptr){
             printf("Missing Chunk %d,%d\n", std::get<0>(kv.first), std::get<1>(kv.first));
             throw "Missing Chunk";
         } else {
-            func(chunk);
+            func(*chunk);
         }
 
     }
@@ -56,19 +56,19 @@ void Model::delete_chunks(){
     State *s3 = &(this->players + this->observe2)->state;
     State *states[3] = {s1, s2, s3};
     std::vector<ChunkPosition> deletion_list;
-    this->each_chunk([&](ChunkPtr chunk){
+    this->each_chunk([&](Chunk& chunk){
         int _delete = 1;
         for (int j = 0; j < 3; j++) {
             State *s = states[j];
             int p = chunked(s->x);
             int q = chunked(s->z);
-            if (chunk->distance(p, q) < this->delete_radius) {
+            if (chunk.distance(p, q) < this->delete_radius) {
                 _delete = 0;
                 break;
             }
         }
         if (_delete) {
-            deletion_list.push_back(std::make_tuple(chunk->p(), chunk->q()));
+            deletion_list.push_back(std::make_tuple(chunk.p(), chunk.q()));
         }
     });
     for(auto & position : deletion_list){
