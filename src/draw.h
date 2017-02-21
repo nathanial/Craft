@@ -5,6 +5,8 @@
 #ifndef CRAFT_DRAW_H
 #define CRAFT_DRAW_H
 
+class Attrib;
+class Player;
 
 void draw_triangles_3d_ao(Attrib *attrib, GLuint buffer, int count);
 void draw_triangles_3d(Attrib *attrib, GLuint buffer, int count);
