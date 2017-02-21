@@ -16,18 +16,22 @@
 
 class Attrib;
 
+class ChunkRenderData {
+public:
+    int faces;
+    bool dirty;
+    int miny;
+    int maxy;
+    GLuint buffer;
+    std::vector<GLfloat> vertices;
+};
+
 class Chunk {
 private:
     std::unique_ptr<BlockMap<CHUNK_SIZE, CHUNK_HEIGHT>> blocks;
+    ChunkRenderData render_data;
     int _p, _q; // chunk position
-    int _faces;
-    bool _dirty;
-    int _miny;
-    int _maxy;
-    GLuint _buffer;
-    std::vector<GLfloat> _vertices;
 public:
-
     Chunk(int p, int q);
     ~Chunk();
 

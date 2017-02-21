@@ -31,13 +31,13 @@ Chunk::Chunk(int p, int q) :
 {
     this->_p = p;
     this->_q = q;
-    this->_faces = 0;
-    this->_buffer = 0;
+    this->render_data.faces = 0;
+    this->render_data.buffer = 0;
     this->set_dirty_flag();
 }
 
 Chunk::~Chunk() {
-    del_buffer(this->_buffer);
+    del_buffer(this->render_data.buffer);
 }
 
 int Chunk::get_block(int x, int y, int z) const {
@@ -77,9 +77,9 @@ int Chunk::distance(int p, int q) const {
 }
 
 int Chunk::draw(Attrib *attrib) {
-    if(this->_buffer){
-        draw_triangles_3d_ao(attrib, this->_buffer, this->_faces * 6);
-        return this->_faces;
+    if(this->render_data.buffer){
+        draw_triangles_3d_ao(attrib, this->render_data.buffer, this->render_data.faces * 6);
+        return this->render_data.faces;
     } else {
         return 0;
     }
@@ -95,54 +95,54 @@ int Chunk::q() const {
 }
 
 void Chunk::set_faces(int faces) {
-    this->_faces = faces;
+    this->render_data.faces = faces;
 }
 
 void Chunk::set_dirty(bool dirty) {
-    this->_dirty = dirty;
+    this->render_data.dirty = dirty;
 }
 
 bool Chunk::dirty() const {
-    return this->_dirty;
+    return this->render_data.dirty;
 }
 
 void Chunk::set_maxy(int maxy) {
-    this->_maxy = maxy;
+    this->render_data.maxy = maxy;
 }
 
 void Chunk::set_miny(int miny) {
-    this->_miny = miny;
+    this->render_data.miny = miny;
 }
 
 int Chunk::maxy() const {
-    return this->_maxy;
+    return this->render_data.maxy;
 }
 
 int Chunk::miny() const {
-    return this->_miny;
+    return this->render_data.miny;
 }
 
 const std::vector<GLfloat> Chunk::vertices() const {
-    return this->_vertices;
+    return this->render_data.vertices;
 }
 
 void Chunk::set_vertices(std::vector<GLfloat> vertices) {
-    this->_vertices = vertices;
+    this->render_data.vertices = vertices;
 }
 
 void Chunk::generate_buffer() {
-    if(this->_buffer) {
-        del_buffer(this->_buffer);
+    if(this->render_data.buffer) {
+        del_buffer(this->render_data.buffer);
     }
-    if(this->_vertices.size() == 0){
+    if(this->render_data.vertices.size() == 0){
         return;
     }
-    this->_buffer = gen_buffer(this->vertices());
-    this->_vertices.clear();
+    this->render_data.buffer = gen_buffer(this->vertices());
+    this->render_data.vertices.clear();
 }
 
 bool Chunk::is_ready_to_draw() const {
-    return this->_buffer && this->dirty();
+    return this->render_data.buffer && this->dirty();
 }
 
 std::tuple<int,int,int> Chunk::count_faces(BigBlockMap &opaque) const {
