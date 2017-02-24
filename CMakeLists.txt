@@ -23,6 +23,7 @@ include_directories(deps/lodepng)
 include_directories(deps/noise)
 include_directories(deps/sqlite)
 include_directories(deps/tinycthread)
+include_directories(/usr/local/include)
 
 if(MINGW)
     set(CMAKE_LIBRARY_PATH ${CMAKE_LIBRARY_PATH}
@@ -35,7 +36,7 @@ find_package(CURL REQUIRED)
 include_directories(${CURL_INCLUDE_DIR})
 
 if(APPLE)
-    target_link_libraries(craft glfw
+    target_link_libraries(craft glfw -larmadillo
         ${GLFW_LIBRARIES} ${CURL_LIBRARIES})
 endif()
 
