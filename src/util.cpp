@@ -59,18 +59,6 @@ void del_buffer(GLuint buffer) {
     glDeleteBuffers(1, &buffer);
 }
 
-GLfloat *malloc_faces(int components, int faces) {
-    return (GLfloat*)malloc(sizeof(GLfloat) * 6 * components * faces);
-}
-
-GLuint gen_faces(int components, int faces, GLfloat *data) {
-    GLuint buffer = gen_buffer(
-        sizeof(GLfloat) * 6 * components * faces, data);
-    free(data);
-    return buffer;
-}
-
-
 GLuint gen_faces(int components, int faces, const std::vector<GLfloat> &data) {
     return gen_buffer(
         sizeof(GLfloat) * 6 * components * faces, const_cast<GLfloat*>(data.data()));
@@ -196,41 +184,6 @@ int string_width(const char *input) {
         result += char_width(input[i]);
     }
     return result;
-}
-
-int wrap(const char *input, int max_width, char *output, int max_length) {
-    *output = '\0';
-    char *text = (char*)malloc(sizeof(char) * (strlen(input) + 1));
-    strcpy(text, input);
-    int space_width = char_width(' ');
-    int line_number = 0;
-    char *key1, *key2;
-    char *line = tokenize(text, "\r\n", &key1);
-    while (line) {
-        int line_width = 0;
-        char *token = tokenize(line, " ", &key2);
-        while (token) {
-            int token_width = string_width(token);
-            if (line_width) {
-                if (line_width + token_width > max_width) {
-                    line_width = 0;
-                    line_number++;
-                    strncat(output, "\n", max_length - strlen(output) - 1);
-                }
-                else {
-                    strncat(output, " ", max_length - strlen(output) - 1);
-                }
-            }
-            strncat(output, token, max_length - strlen(output) - 1);
-            line_width += token_width + space_width;
-            token = tokenize(NULL, " ", &key2);
-        }
-        line_number++;
-        strncat(output, "\n", max_length - strlen(output) - 1);
-        line = tokenize(NULL, "\r\n", &key1);
-    }
-    free(text);
-    return line_number;
 }
 
 void get_sight_vector(float rx, float ry, float *vx, float *vy, float *vz) {
