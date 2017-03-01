@@ -94,24 +94,12 @@ int Chunk::q() const {
     return this->_q;
 }
 
-void Chunk::set_faces(int faces) {
-    this->render_data.faces = faces;
-}
-
 void Chunk::set_dirty(bool dirty) {
     this->render_data.dirty = dirty;
 }
 
 bool Chunk::dirty() const {
     return this->render_data.dirty;
-}
-
-void Chunk::set_maxy(int maxy) {
-    this->render_data.maxy = maxy;
-}
-
-void Chunk::set_miny(int miny) {
-    this->render_data.miny = miny;
 }
 
 int Chunk::maxy() const {
@@ -124,10 +112,6 @@ int Chunk::miny() const {
 
 const std::vector<GLfloat> Chunk::vertices() const {
     return this->render_data.vertices;
-}
-
-void Chunk::set_vertices(std::vector<GLfloat> vertices) {
-    this->render_data.vertices = vertices;
 }
 
 void Chunk::generate_buffer() {
@@ -263,10 +247,10 @@ void Chunk::load() {
     std::tie(miny, maxy, faces) = this->count_faces(*opaque);
     auto data = this->generate_geometry(*opaque, *light, *highest);
 
-    this->set_miny(miny);
-    this->set_maxy(maxy);
-    this->set_faces(faces);
-    this->set_vertices(data);
+    this->render_data.miny = miny;
+    this->render_data.maxy = maxy;
+    this->render_data.faces = faces;
+    this->render_data.vertices = std::move(data);
 }
 
 void Chunk::populate_light_array(BigBlockMap &opaque, BigBlockMap &light) const {

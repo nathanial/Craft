@@ -47,18 +47,11 @@ public:
     int p() const;
     int q() const;
 
-    void set_faces(int faces);
-
     void set_dirty(bool dirty);
     bool dirty() const;
 
-    void set_maxy(int maxy);
-    void set_miny(int miny);
-
     int maxy() const;
     int miny() const;
-
-    void set_vertices(std::vector<GLfloat> vertices);
 
     void generate_buffer();
 
