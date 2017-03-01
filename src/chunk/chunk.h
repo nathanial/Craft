@@ -35,35 +35,27 @@ public:
     Chunk(int p, int q);
     ~Chunk();
 
-    int get_block(int x, int y, int z) const;
-    int get_block_or_zero(int x, int y, int z) const;
+
+    int draw(Attrib *attrib);
+    void generate_buffer();
+    void load();
     int set_block(int x, int y, int z, char w);
 
+    int get_block(int x, int y, int z) const;
+    int get_block_or_zero(int x, int y, int z) const;
     void set_dirty_flag();
-
     void foreach_block(std::function<void (int, int, int, char)> func) const;
-    int draw(Attrib *attrib);
-
     int p() const;
     int q() const;
-
     void set_dirty(bool dirty);
     bool dirty() const;
-
     int maxy() const;
     int miny() const;
-
-    void generate_buffer();
-
     bool is_ready_to_draw() const;
-
-    void load();
-
     const std::vector<GLfloat> vertices() const;
     int distance(int p, int q) const;
     void populate_opaque_array(BigBlockMap &opaque, HeightMap<48> &highest) const;
     void populate_light_array(BigBlockMap &opaque, BigBlockMap &light) const;
-
     std::tuple<int,int,int> count_faces(BigBlockMap &opaque) const;
     std::vector<GLfloat> generate_geometry(BigBlockMap &opaque, BigBlockMap &light, HeightMap<CHUNK_SIZE * 3> &highest) const;
 };
