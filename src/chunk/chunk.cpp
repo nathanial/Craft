@@ -235,7 +235,7 @@ std::vector<GLfloat> Chunk::generate_geometry(BigBlockMap &opaque, BigBlockMap &
 }
 
 
-ChunkRenderData Chunk::load() {
+ChunkRenderData Chunk::load() const {
     auto opaque = std::make_unique<BigBlockMap>();
     auto light = std::make_unique<BigBlockMap>();
     auto highest = std::make_unique<HeightMap<CHUNK_SIZE * 3>>();

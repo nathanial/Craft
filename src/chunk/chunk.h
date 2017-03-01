@@ -41,7 +41,7 @@ public:
 
     int draw(Attrib *attrib);
     void generate_buffer();
-    ChunkRenderData load();
+    ChunkRenderData load() const;
     int set_block(int x, int y, int z, char w);
 
     int get_block(int x, int y, int z) const;
