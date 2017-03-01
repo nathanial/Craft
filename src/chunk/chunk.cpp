@@ -235,7 +235,7 @@ std::vector<GLfloat> Chunk::generate_geometry(BigBlockMap &opaque, BigBlockMap &
 }
 
 
-void Chunk::load() {
+ChunkRenderData Chunk::load() {
     auto opaque = std::make_unique<BigBlockMap>();
     auto light = std::make_unique<BigBlockMap>();
     auto highest = std::make_unique<HeightMap<CHUNK_SIZE * 3>>();
@@ -247,10 +247,7 @@ void Chunk::load() {
     std::tie(miny, maxy, faces) = this->count_faces(*opaque);
     auto data = this->generate_geometry(*opaque, *light, *highest);
 
-    this->render_data.miny = miny;
-    this->render_data.maxy = maxy;
-    this->render_data.faces = faces;
-    this->render_data.vertices = std::move(data);
+    return ChunkRenderData(miny, maxy, faces, this->dirty(), this->render_data.buffer, data);
 }
 
 void Chunk::populate_light_array(BigBlockMap &opaque, BigBlockMap &light) const {

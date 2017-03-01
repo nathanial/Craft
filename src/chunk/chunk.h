@@ -24,21 +24,24 @@ public:
     int maxy;
     GLuint buffer;
     std::vector<GLfloat> vertices;
+
+    ChunkRenderData(){}
+    ChunkRenderData(int miny, int maxy, int faces, bool dirty, GLuint buffer, const std::vector<GLfloat> &vertices) :
+            miny(miny), maxy(maxy), faces(faces), dirty(dirty), buffer(buffer), vertices(vertices) {}
 };
 
 class Chunk {
 private:
     std::unique_ptr<BlockMap<CHUNK_SIZE, CHUNK_HEIGHT>> blocks;
-    ChunkRenderData render_data;
     int _p, _q; // chunk position
 public:
+    ChunkRenderData render_data;
     Chunk(int p, int q);
     ~Chunk();
 
-
     int draw(Attrib *attrib);
     void generate_buffer();
-    void load();
+    ChunkRenderData load();
     int set_block(int x, int y, int z, char w);
 
     int get_block(int x, int y, int z) const;

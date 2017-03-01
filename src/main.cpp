@@ -338,7 +338,7 @@ int player_intersects_block(
 }
 
 void gen_chunk_buffer(Chunk& chunk) {
-    chunk.load();
+    chunk.render_data = chunk.load();
     chunk.generate_buffer();
     chunk.set_dirty(false);
 }
@@ -502,7 +502,7 @@ int worker_run(WorkerPtr worker) {
             load_chunk(item);
         }
         auto chunk = g->find_chunk(item->p, item->q);
-        chunk->load();
+        chunk->render_data = chunk->load();
         {
             std::lock_guard<std::mutex> lock(worker->mtx);
             worker->state = WORKER_DONE;
