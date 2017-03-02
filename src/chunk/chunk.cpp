@@ -104,8 +104,10 @@ void Chunk::generate_buffer() {
     if(this->render_data->vertices.size() == 0){
         return;
     }
-    this->render_data = this->render_data->set_buffer(gen_buffer(this->vertices()));
-    this->render_data->vertices.clear();
+    std::vector<GLfloat> emptyVertices;
+    this->render_data = this->render_data
+            ->set_buffer(gen_buffer(this->vertices()))
+            ->set_vertices(emptyVertices);
 }
 
 bool Chunk::is_ready_to_draw() const {

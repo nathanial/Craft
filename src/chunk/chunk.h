@@ -23,7 +23,7 @@ public:
     const int miny;
     const int maxy;
     const GLuint buffer;
-    std::vector<GLfloat> vertices;
+    const std::vector<GLfloat> vertices;
 
     ChunkRenderData() : faces(0), buffer(0), dirty(false), miny(INT_MAX), maxy(INT_MIN) {}
     ChunkRenderData(int miny, int maxy, int faces, bool dirty, GLuint buffer, const std::vector<GLfloat> &vertices) :
@@ -34,6 +34,10 @@ public:
     }
 
     std::shared_ptr<ChunkRenderData> set_buffer(GLuint buffer){
+        return std::make_shared<ChunkRenderData>(miny, maxy, faces, dirty, buffer, vertices);
+    }
+
+    std::shared_ptr<ChunkRenderData> set_vertices(const std::vector<GLfloat>& vertices) {
         return std::make_shared<ChunkRenderData>(miny, maxy, faces, dirty, buffer, vertices);
     }
 };
