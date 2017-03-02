@@ -4,6 +4,7 @@
 
 #include "ChunkRenderData.h"
 #include "../draw.h"
+#include "../util.h"
 
 int ChunkRenderData::draw(Attrib *attrib) const {
     if(buffer){
@@ -12,4 +13,16 @@ int ChunkRenderData::draw(Attrib *attrib) const {
     } else {
         return 0;
     }
+}
+
+std::shared_ptr<ChunkRenderData> ChunkRenderData::generate_buffer() const {
+    if(buffer) {
+        del_buffer(buffer);
+        if(vertices.size() == 0){
+            return set_buffer(0);
+        }
+    }
+    std::vector<GLfloat> emptyVertices;
+    return this->set_buffer(gen_buffer(vertices))
+            ->set_vertices(emptyVertices);
 }

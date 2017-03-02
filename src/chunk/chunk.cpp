@@ -77,22 +77,6 @@ int Chunk::q() const {
     return this->_q;
 }
 
-const std::vector<GLfloat> Chunk::vertices() const {
-    return this->render_data()->vertices;
-}
-
-std::shared_ptr<ChunkRenderData> Chunk::generate_buffer() const {
-    if(this->render_data()->buffer) {
-        del_buffer(this->render_data()->buffer);
-        if(this->render_data()->vertices.size() == 0){
-            return this->render_data()->set_buffer(0);
-        }
-    }
-    std::vector<GLfloat> emptyVertices;
-    return this->render_data()
-            ->set_buffer(gen_buffer(this->vertices()))
-            ->set_vertices(emptyVertices);
-}
 
 bool Chunk::is_ready_to_draw() const {
     return this->render_data()->buffer && this->render_data()->dirty;

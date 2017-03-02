@@ -350,9 +350,9 @@ int player_intersects_block(
 }
 
 void gen_chunk_buffer(Chunk& chunk) {
-    chunk.set_render_data(chunk.load());
-    chunk.set_render_data(chunk.generate_buffer());
-    chunk.set_render_data(chunk.render_data()->set_dirty(false));
+    chunk.set_render_data(
+        chunk.load()->generate_buffer()->set_dirty(false)
+    );
 }
 
 void load_chunk(WorkerItemPtr item) {
@@ -395,7 +395,7 @@ void check_workers() {
                 if (item->load) {
                     request_chunk(item->p, item->q);
                 }
-                chunk->set_render_data(chunk->generate_buffer());
+                chunk->set_render_data(chunk->render_data()->generate_buffer());
             }
             worker->state = WORKER_IDLE;
         }

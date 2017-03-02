@@ -31,7 +31,6 @@ public:
     void set_render_data(std::shared_ptr<ChunkRenderData> data);
 
     std::shared_ptr<ChunkRenderData> render_data() const;
-    std::shared_ptr<ChunkRenderData> generate_buffer() const;
     int draw(Attrib *attrib) const;
     std::shared_ptr<ChunkRenderData> load() const;
     int get_block(int x, int y, int z) const;
@@ -40,7 +39,6 @@ public:
     int p() const;
     int q() const;
     bool is_ready_to_draw() const;
-    const std::vector<GLfloat> vertices() const;
     int distance(int p, int q) const;
     void populate_opaque_array(BigBlockMap &opaque, HeightMap<48> &highest) const;
     void populate_light_array(BigBlockMap &opaque, BigBlockMap &light) const;
