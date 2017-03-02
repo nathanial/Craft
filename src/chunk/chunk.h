@@ -52,7 +52,6 @@ public:
     ~Chunk();
 
     int set_block(int x, int y, int z, char w);
-    void set_dirty_flag();
 
     std::shared_ptr<ChunkRenderData> generate_buffer() const;
     int draw(Attrib *attrib) const;

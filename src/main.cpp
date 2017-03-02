@@ -50,7 +50,17 @@ int get_scale_factor() {
     return result;
 }
 
-
+void set_dirty_flag(Chunk &chunk) {
+    chunk.render_data = chunk.render_data->set_dirty(true);
+    for (int dp = -1; dp <= 1; dp++) {
+        for (int dq = -1; dq <= 1; dq++) {
+            auto other = g->find_chunk(chunk.p() + dp, chunk.q() + dq);
+            if (other) {
+                other->render_data = other->render_data->set_dirty(true);
+            }
+        }
+    }
+}
 
 GLuint gen_crosshair_buffer() {
     int x = g->width / 2;
@@ -359,6 +369,7 @@ void request_chunk(int p, int q) {
 void create_chunk(int p, int q) {
     GenerateChunkTask gen_chunk(p,q);
     auto chunk = gen_chunk.run().get();
+    set_dirty_flag(*chunk);
 
     g->add_chunk(chunk);
 
@@ -461,6 +472,7 @@ void ensure_chunks_worker(Player *player, WorkerPtr worker) {
         if (g->chunk_count() < MAX_CHUNKS) {
             GenerateChunkTask gen_chunk(a,b);
             chunk = gen_chunk.run().get();
+            set_dirty_flag(*chunk);
             g->add_chunk(chunk);
         }
         else {
@@ -517,7 +529,7 @@ void _set_block(int p, int q, int x, int y, int z, int w, int dirty) {
     if (chunk) {
         if (chunk->set_block(x, y, z, w)) {
             if (dirty) {
-                chunk->set_dirty_flag();
+                set_dirty_flag(*chunk);
             }
             db_insert_block(p, q, x, y, z, w);
         }
@@ -1336,7 +1348,7 @@ void parse_buffer(char *buffer) {
         if (sscanf(line, "R,%d,%d", &kp, &kq) == 2) {
             auto chunk = g->find_chunk(kp, kq);
             if (chunk) {
-                chunk->set_dirty_flag();
+                set_dirty_flag(*chunk);
             }
         }
         double elapsed;

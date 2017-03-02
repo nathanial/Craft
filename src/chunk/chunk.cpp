@@ -30,9 +30,9 @@ Chunk::Chunk(int p, int q) :
     blocks(new BlockMap<CHUNK_SIZE, CHUNK_HEIGHT>())
 {
     this->render_data = std::make_shared<ChunkRenderData>();
+    this->render_data = this->render_data->set_dirty(true);
     this->_p = p;
     this->_q = q;
-    this->set_dirty_flag();
 }
 
 Chunk::~Chunk() {
@@ -55,18 +55,6 @@ void Chunk::foreach_block(std::function<void (int, int, int, char)> func) const 
 
 int Chunk::set_block(int x, int y, int z, char w){
     return this->blocks->set(x - this->_p * CHUNK_SIZE, y, z - this->_q * CHUNK_SIZE, w);
-}
-
-void Chunk::set_dirty_flag() {
-    this->render_data = this->render_data->set_dirty(true);
-    for (int dp = -1; dp <= 1; dp++) {
-        for (int dq = -1; dq <= 1; dq++) {
-            auto other = g->find_chunk(this->_p + dp, this->_q + dq);
-            if (other) {
-                other->render_data = other->render_data->set_dirty(true);
-            }
-        }
-    }
 }
 
 int Chunk::distance(int p, int q) const {
