@@ -53,7 +53,6 @@ int get_scale_factor() {
 }
 
 void set_dirty_flag(Chunk &chunk) {
-    chunk.set_mesh(chunk.mesh()->set_dirty(true));
     for (int dp = -1; dp <= 1; dp++) {
         for (int dq = -1; dq <= 1; dq++) {
             auto other = g->find_chunk(chunk.p() + dp, chunk.q() + dq);
