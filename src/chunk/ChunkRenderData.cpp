@@ -15,7 +15,7 @@ int ChunkRenderData::draw(Attrib *attrib) const {
     }
 }
 
-std::shared_ptr<ChunkRenderData> ChunkRenderData::generate_buffer() const {
+std::unique_ptr<ChunkRenderData> ChunkRenderData::generate_buffer() const {
     if(buffer) {
         del_buffer(buffer);
         if(vertices.size() == 0){
@@ -25,4 +25,17 @@ std::shared_ptr<ChunkRenderData> ChunkRenderData::generate_buffer() const {
     std::vector<GLfloat> emptyVertices;
     return this->set_buffer(gen_buffer(vertices))
             ->set_vertices(emptyVertices);
+}
+
+
+std::unique_ptr<ChunkRenderData> ChunkRenderData::set_dirty(bool dirty) const {
+    return std::make_unique<ChunkRenderData>(miny, maxy, faces, dirty, buffer, vertices);
+}
+
+std::unique_ptr<ChunkRenderData> ChunkRenderData::set_buffer(GLuint buffer) const{
+    return std::make_unique<ChunkRenderData>(miny, maxy, faces, dirty, buffer, vertices);
+}
+
+std::unique_ptr<ChunkRenderData> ChunkRenderData::set_vertices(const std::vector<GLfloat>& vertices) const {
+    return std::make_unique<ChunkRenderData>(miny, maxy, faces, dirty, buffer, vertices);
 }

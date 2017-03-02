@@ -24,20 +24,10 @@ public:
     ChunkRenderData(int miny, int maxy, int faces, bool dirty, GLuint buffer, const std::vector<GLfloat> &vertices) :
             miny(miny), maxy(maxy), faces(faces), dirty(dirty), buffer(buffer), vertices(vertices) {}
 
-    std::shared_ptr<ChunkRenderData> set_dirty(bool dirty) const {
-        return std::make_shared<ChunkRenderData>(miny, maxy, faces, dirty, buffer, vertices);
-    }
-
-    std::shared_ptr<ChunkRenderData> set_buffer(GLuint buffer) const{
-        return std::make_shared<ChunkRenderData>(miny, maxy, faces, dirty, buffer, vertices);
-    }
-
-    std::shared_ptr<ChunkRenderData> set_vertices(const std::vector<GLfloat>& vertices) const {
-        return std::make_shared<ChunkRenderData>(miny, maxy, faces, dirty, buffer, vertices);
-    }
-
-
-    std::shared_ptr<ChunkRenderData> generate_buffer() const;
+    std::unique_ptr<ChunkRenderData> set_dirty(bool dirty) const;
+    std::unique_ptr<ChunkRenderData> set_buffer(GLuint buffer) const;
+    std::unique_ptr<ChunkRenderData> set_vertices(const std::vector<GLfloat>& vertices) const;
+    std::unique_ptr<ChunkRenderData> generate_buffer() const;
     int draw(Attrib *attrib) const;
 };
 
