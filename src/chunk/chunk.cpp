@@ -58,12 +58,12 @@ int Chunk::set_block(int x, int y, int z, char w){
 }
 
 void Chunk::set_dirty_flag() {
-    this->render_data->dirty = true;
+    this->render_data = this->render_data->set_dirty(true);
     for (int dp = -1; dp <= 1; dp++) {
         for (int dq = -1; dq <= 1; dq++) {
             auto other = g->find_chunk(this->_p + dp, this->_q + dq);
             if (other) {
-                other->render_data->dirty = true;
+                other->render_data = other->render_data->set_dirty(true);
             }
         }
     }

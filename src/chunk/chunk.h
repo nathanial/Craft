@@ -19,15 +19,19 @@ class Attrib;
 class ChunkRenderData {
 public:
     const int faces;
-    bool dirty;
+    const bool dirty;
     int miny;
     int maxy;
     GLuint buffer;
     std::vector<GLfloat> vertices;
 
-    ChunkRenderData() : faces(0), buffer(0) {}
+    ChunkRenderData() : faces(0), buffer(0), dirty(false) {}
     ChunkRenderData(int miny, int maxy, int faces, bool dirty, GLuint buffer, const std::vector<GLfloat> &vertices) :
             miny(miny), maxy(maxy), faces(faces), dirty(dirty), buffer(buffer), vertices(vertices) {}
+
+    std::shared_ptr<ChunkRenderData> set_dirty(bool dirty){
+        return std::make_shared<ChunkRenderData>(miny, maxy, faces, dirty, buffer, vertices);
+    }
 };
 
 class Chunk {
