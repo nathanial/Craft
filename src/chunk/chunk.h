@@ -46,13 +46,16 @@ class Chunk {
 private:
     std::unique_ptr<BlockMap<CHUNK_SIZE, CHUNK_HEIGHT>> blocks;
     int _p, _q; // chunk position
+    std::shared_ptr<ChunkRenderData> _render_data;
+    mutable std::mutex _render_data_mtx;
 public:
-    std::shared_ptr<ChunkRenderData> render_data;
     Chunk(int p, int q);
     ~Chunk();
 
     int set_block(int x, int y, int z, char w);
+    void set_render_data(std::shared_ptr<ChunkRenderData> data);
 
+    std::shared_ptr<ChunkRenderData> render_data() const;
     std::shared_ptr<ChunkRenderData> generate_buffer() const;
     int draw(Attrib *attrib) const;
     std::shared_ptr<ChunkRenderData> load() const;

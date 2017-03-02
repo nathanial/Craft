@@ -51,12 +51,12 @@ int get_scale_factor() {
 }
 
 void set_dirty_flag(Chunk &chunk) {
-    chunk.render_data = chunk.render_data->set_dirty(true);
+    chunk.set_render_data(chunk.render_data()->set_dirty(true));
     for (int dp = -1; dp <= 1; dp++) {
         for (int dq = -1; dq <= 1; dq++) {
             auto other = g->find_chunk(chunk.p() + dp, chunk.q() + dq);
             if (other) {
-                other->render_data = other->render_data->set_dirty(true);
+                other->set_render_data(other->render_data()->set_dirty(true));
             }
         }
     }
@@ -348,9 +348,9 @@ int player_intersects_block(
 }
 
 void gen_chunk_buffer(Chunk& chunk) {
-    chunk.render_data = chunk.load();
-    chunk.render_data = chunk.generate_buffer();
-    chunk.render_data = chunk.render_data->set_dirty(false);
+    chunk.set_render_data(chunk.load());
+    chunk.set_render_data(chunk.generate_buffer());
+    chunk.set_render_data(chunk.render_data()->set_dirty(false));
 }
 
 void load_chunk(WorkerItemPtr item) {
@@ -393,7 +393,7 @@ void check_workers() {
                 if (item->load) {
                     request_chunk(item->p, item->q);
                 }
-                chunk->render_data = chunk->generate_buffer();
+                chunk->set_render_data(chunk->generate_buffer());
             }
             worker->state = WORKER_IDLE;
         }
@@ -411,7 +411,7 @@ void force_chunks(Player *player) {
             int b = q + dq;
             auto chunk = g->find_chunk(a, b);
             if (chunk) {
-                if (chunk->render_data->dirty) {
+                if (chunk->render_data()->dirty) {
                     gen_chunk_buffer(*chunk);
                 }
             }
@@ -443,7 +443,7 @@ void ensure_chunks_worker(Player *player, WorkerPtr worker) {
                 continue;
             }
             auto chunk = g->find_chunk(a, b);
-            if (chunk && !chunk->render_data->dirty) {
+            if (chunk && !chunk->render_data()->dirty) {
                 continue;
             }
             int distance = MAX(ABS(dp), ABS(dq));
@@ -483,7 +483,7 @@ void ensure_chunks_worker(Player *player, WorkerPtr worker) {
     worker->item->p = chunk->p();
     worker->item->q = chunk->q();
     worker->item->load = load;
-    chunk->render_data = chunk->render_data->set_dirty(false);
+    chunk->set_render_data(chunk->render_data()->set_dirty(false));
     worker->state = WORKER_BUSY;
     worker->cnd.notify_all();
 }
@@ -514,7 +514,7 @@ int worker_run(WorkerPtr worker) {
             load_chunk(item);
         }
         auto chunk = g->find_chunk(item->p, item->q);
-        chunk->render_data = chunk->load();
+        chunk->set_render_data(chunk->load());
         {
             std::lock_guard<std::mutex> lock(worker->mtx);
             worker->state = WORKER_DONE;
@@ -601,7 +601,7 @@ int render_chunks(Attrib *attrib, Player *player) {
             return;
         }
         if (!chunk_visible(
-            planes, chunk.p(), chunk.q(), chunk.render_data->miny, chunk.render_data->maxy))
+            planes, chunk.p(), chunk.q(), chunk.render_data()->miny, chunk.render_data()->maxy))
         {
             return;
         }

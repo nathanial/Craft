@@ -29,14 +29,14 @@ void light_fill_scanline(BigBlockMap &opaque, BigBlockMap &light, int ox, int oy
 Chunk::Chunk(int p, int q) :
     blocks(new BlockMap<CHUNK_SIZE, CHUNK_HEIGHT>())
 {
-    this->render_data = std::make_shared<ChunkRenderData>();
-    this->render_data = this->render_data->set_dirty(true);
+    auto render_data = std::make_shared<ChunkRenderData>();
+    this->_render_data = render_data->set_dirty(true);
     this->_p = p;
     this->_q = q;
 }
 
 Chunk::~Chunk() {
-    del_buffer(this->render_data->buffer);
+    del_buffer(this->render_data()->buffer);
 }
 
 int Chunk::get_block(int x, int y, int z) const {
@@ -64,9 +64,9 @@ int Chunk::distance(int p, int q) const {
 }
 
 int Chunk::draw(Attrib *attrib) const {
-    if(this->render_data->buffer){
-        draw_triangles_3d_ao(attrib, this->render_data->buffer, this->render_data->faces * 6);
-        return this->render_data->faces;
+    if(this->render_data()->buffer){
+        draw_triangles_3d_ao(attrib, this->render_data()->buffer, this->render_data()->faces * 6);
+        return this->render_data()->faces;
     } else {
         return 0;
     }
@@ -82,24 +82,24 @@ int Chunk::q() const {
 }
 
 const std::vector<GLfloat> Chunk::vertices() const {
-    return this->render_data->vertices;
+    return this->render_data()->vertices;
 }
 
 std::shared_ptr<ChunkRenderData> Chunk::generate_buffer() const {
-    if(this->render_data->buffer) {
-        del_buffer(this->render_data->buffer);
-        if(this->render_data->vertices.size() == 0){
-            return this->render_data->set_buffer(0);
+    if(this->render_data()->buffer) {
+        del_buffer(this->render_data()->buffer);
+        if(this->render_data()->vertices.size() == 0){
+            return this->render_data()->set_buffer(0);
         }
     }
     std::vector<GLfloat> emptyVertices;
-    return this->render_data
+    return this->render_data()
             ->set_buffer(gen_buffer(this->vertices()))
             ->set_vertices(emptyVertices);
 }
 
 bool Chunk::is_ready_to_draw() const {
-    return this->render_data->buffer && this->render_data->dirty;
+    return this->render_data()->buffer && this->render_data()->dirty;
 }
 
 std::tuple<int,int,int> Chunk::count_faces(BigBlockMap &opaque) const {
@@ -220,7 +220,7 @@ std::shared_ptr<ChunkRenderData> Chunk::load() const {
     std::tie(miny, maxy, faces) = this->count_faces(*opaque);
     auto data = this->generate_geometry(*opaque, *light, *highest);
 
-    return std::make_shared<ChunkRenderData>(miny, maxy, faces, this->render_data->dirty, this->render_data->buffer, data);
+    return std::make_shared<ChunkRenderData>(miny, maxy, faces, this->render_data()->dirty, this->render_data()->buffer, data);
 }
 
 void Chunk::populate_light_array(BigBlockMap &opaque, BigBlockMap &light) const {
@@ -303,6 +303,16 @@ void Chunk::populate_opaque_array(BigBlockMap &opaque, HeightMap<48> &highest) c
             }
         }
     }
+}
+
+void Chunk::set_render_data(std::shared_ptr<ChunkRenderData> render_data) {
+    std::lock_guard<std::mutex> lock_guard(_render_data_mtx);
+    this->_render_data = render_data;
+}
+
+std::shared_ptr<ChunkRenderData> Chunk::render_data() const {
+    std::lock_guard<std::mutex> lock_guard(_render_data_mtx);
+    return this->_render_data;
 }
 
 int chunk_visible(arma::mat planes, int p, int q, int miny, int maxy) {
