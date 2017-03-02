@@ -28,6 +28,8 @@ extern "C" {
     #include "noise.h"
 }
 
+#include "./chunk/ChunkRenderData.h"
+
 static Model model;
 Model *g = &model;
 

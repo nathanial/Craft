@@ -13,6 +13,7 @@ extern "C" {
 #include "../item.h"
 #include "../draw.h"
 #include "../cube.h"
+#include "ChunkRenderData.h"
 
 extern Model *g;
 
@@ -67,14 +68,6 @@ int Chunk::draw(Attrib *attrib) const {
     return this->render_data()->draw(attrib);
 }
 
-int ChunkRenderData::draw(Attrib *attrib) const {
-    if(buffer){
-        draw_triangles_3d_ao(attrib, buffer, faces * 6);
-        return faces;
-    } else {
-        return 0;
-    }
-}
 
 int Chunk::p() const {
     return this->_p;
