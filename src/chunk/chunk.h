@@ -15,24 +15,24 @@
 #include <armadillo>
 
 class Attrib;
-class ChunkRenderData;
+class ChunkMesh;
 
 class Chunk {
 private:
     std::unique_ptr<BlockMap<CHUNK_SIZE, CHUNK_HEIGHT>> blocks;
     int _p, _q; // chunk position
-    std::shared_ptr<ChunkRenderData> _render_data;
-    mutable std::mutex _render_data_mtx;
+    std::shared_ptr<ChunkMesh> _mesh;
+    mutable std::mutex _mesh_mtx;
 public:
     Chunk(int p, int q);
     ~Chunk();
 
     int set_block(int x, int y, int z, char w);
-    void set_render_data(std::shared_ptr<ChunkRenderData> data);
+    void set_mesh(std::shared_ptr<ChunkMesh> data);
 
-    std::shared_ptr<ChunkRenderData> render_data() const;
+    std::shared_ptr<ChunkMesh> mesh() const;
     int draw(Attrib *attrib) const;
-    std::shared_ptr<ChunkRenderData> load() const;
+    std::shared_ptr<ChunkMesh> load() const;
     int get_block(int x, int y, int z) const;
     int get_block_or_zero(int x, int y, int z) const;
     void foreach_block(std::function<void (int, int, int, char)> func) const;

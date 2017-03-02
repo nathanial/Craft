@@ -13,7 +13,7 @@ extern "C" {
 #include "../item.h"
 #include "../draw.h"
 #include "../cube.h"
-#include "ChunkRenderData.h"
+#include "ChunkMesh.h"
 
 extern Model *g;
 
@@ -30,14 +30,14 @@ void light_fill_scanline(BigBlockMap &opaque, BigBlockMap &light, int ox, int oy
 Chunk::Chunk(int p, int q) :
     blocks(new BlockMap<CHUNK_SIZE, CHUNK_HEIGHT>())
 {
-    auto render_data = std::make_shared<ChunkRenderData>();
-    this->_render_data = render_data->set_dirty(true);
+    auto render_data = std::make_shared<ChunkMesh>();
+    this->_mesh = render_data->set_dirty(true);
     this->_p = p;
     this->_q = q;
 }
 
 Chunk::~Chunk() {
-    del_buffer(this->render_data()->buffer);
+    del_buffer(this->mesh()->buffer);
 }
 
 int Chunk::get_block(int x, int y, int z) const {
@@ -65,7 +65,7 @@ int Chunk::distance(int p, int q) const {
 }
 
 int Chunk::draw(Attrib *attrib) const {
-    return this->render_data()->draw(attrib);
+    return this->mesh()->draw(attrib);
 }
 
 
@@ -79,7 +79,7 @@ int Chunk::q() const {
 
 
 bool Chunk::is_ready_to_draw() const {
-    return this->render_data()->buffer && this->render_data()->dirty;
+    return this->mesh()->buffer && this->mesh()->dirty;
 }
 
 std::tuple<int,int,int> Chunk::count_faces(BigBlockMap &opaque) const {
@@ -188,7 +188,7 @@ std::vector<GLfloat> Chunk::generate_geometry(BigBlockMap &opaque, BigBlockMap &
 }
 
 
-std::shared_ptr<ChunkRenderData> Chunk::load() const {
+std::shared_ptr<ChunkMesh> Chunk::load() const {
     auto opaque = std::make_unique<BigBlockMap>();
     auto light = std::make_unique<BigBlockMap>();
     auto highest = std::make_unique<HeightMap<CHUNK_SIZE * 3>>();
@@ -200,7 +200,7 @@ std::shared_ptr<ChunkRenderData> Chunk::load() const {
     std::tie(miny, maxy, faces) = this->count_faces(*opaque);
     auto data = this->generate_geometry(*opaque, *light, *highest);
 
-    return std::make_shared<ChunkRenderData>(miny, maxy, faces, this->render_data()->dirty, this->render_data()->buffer, data);
+    return std::make_shared<ChunkMesh>(miny, maxy, faces, this->mesh()->dirty, this->mesh()->buffer, data);
 }
 
 void Chunk::populate_light_array(BigBlockMap &opaque, BigBlockMap &light) const {
@@ -285,14 +285,14 @@ void Chunk::populate_opaque_array(BigBlockMap &opaque, HeightMap<48> &highest) c
     }
 }
 
-void Chunk::set_render_data(std::shared_ptr<ChunkRenderData> render_data) {
-    std::lock_guard<std::mutex> lock_guard(_render_data_mtx);
-    this->_render_data = render_data;
+void Chunk::set_mesh(std::shared_ptr<ChunkMesh> render_data) {
+    std::lock_guard<std::mutex> lock_guard(_mesh_mtx);
+    this->_mesh = render_data;
 }
 
-std::shared_ptr<ChunkRenderData> Chunk::render_data() const {
-    std::lock_guard<std::mutex> lock_guard(_render_data_mtx);
-    return this->_render_data;
+std::shared_ptr<ChunkMesh> Chunk::mesh() const {
+    std::lock_guard<std::mutex> lock_guard(_mesh_mtx);
+    return this->_mesh;
 }
 
 int chunk_visible(arma::mat planes, int p, int q, int miny, int maxy) {
