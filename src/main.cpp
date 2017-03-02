@@ -606,7 +606,7 @@ int render_chunks(Attrib *attrib, Player *player) {
         {
             return;
         }
-        result += chunk.draw(attrib);
+        result += chunk.mesh()->draw(attrib);
     });
     return result;
 }

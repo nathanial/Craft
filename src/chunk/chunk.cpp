@@ -64,11 +64,6 @@ int Chunk::distance(int p, int q) const {
     return MAX(dp, dq);
 }
 
-int Chunk::draw(Attrib *attrib) const {
-    return this->mesh()->draw(attrib);
-}
-
-
 int Chunk::p() const {
     return this->_p;
 }
