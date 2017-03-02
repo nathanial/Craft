@@ -349,8 +349,9 @@ int player_intersects_block(
 }
 
 void gen_chunk_buffer(Chunk& chunk) {
+    auto mesh = chunk.mesh();
     chunk.set_mesh(
-            chunk.load()->generate_buffer()->set_dirty(false)
+            chunk.load(mesh->dirty, mesh->buffer)->generate_buffer()->set_dirty(false)
     );
 }
 
@@ -515,7 +516,8 @@ int worker_run(WorkerPtr worker) {
             load_chunk(item);
         }
         auto chunk = g->find_chunk(item->p, item->q);
-        chunk->set_mesh(chunk->load());
+        auto mesh = chunk->mesh();
+        chunk->set_mesh(chunk->load(mesh->dirty, mesh->buffer));
         {
             std::lock_guard<std::mutex> lock(worker->mtx);
             worker->state = WORKER_DONE;
