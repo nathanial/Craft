@@ -40,6 +40,9 @@ public:
     std::shared_ptr<ChunkRenderData> set_vertices(const std::vector<GLfloat>& vertices) {
         return std::make_shared<ChunkRenderData>(miny, maxy, faces, dirty, buffer, vertices);
     }
+
+
+    int draw(Attrib *attrib) const;
 };
 
 class Chunk {

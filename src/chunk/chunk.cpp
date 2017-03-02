@@ -64,13 +64,16 @@ int Chunk::distance(int p, int q) const {
 }
 
 int Chunk::draw(Attrib *attrib) const {
-    if(this->render_data()->buffer){
-        draw_triangles_3d_ao(attrib, this->render_data()->buffer, this->render_data()->faces * 6);
-        return this->render_data()->faces;
+    return this->render_data()->draw(attrib);
+}
+
+int ChunkRenderData::draw(Attrib *attrib) const {
+    if(buffer){
+        draw_triangles_3d_ao(attrib, buffer, faces * 6);
+        return faces;
     } else {
         return 0;
     }
-
 }
 
 int Chunk::p() const {
