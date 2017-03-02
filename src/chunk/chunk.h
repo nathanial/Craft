@@ -31,7 +31,7 @@ public:
     void set_mesh(std::shared_ptr<ChunkMesh> data);
     std::shared_ptr<ChunkMesh> mesh() const;
 
-    std::shared_ptr<ChunkMesh> load() const;
+    std::unique_ptr<ChunkMesh> load() const;
     int get_block(int x, int y, int z) const;
     int get_block_or_zero(int x, int y, int z) const;
     void foreach_block(std::function<void (int, int, int, char)> func) const;

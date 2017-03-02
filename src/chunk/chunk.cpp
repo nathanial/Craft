@@ -178,7 +178,7 @@ std::vector<GLfloat> Chunk::generate_geometry(BigBlockMap &opaque, BigBlockMap &
 }
 
 
-std::shared_ptr<ChunkMesh> Chunk::load() const {
+std::unique_ptr<ChunkMesh> Chunk::load() const {
     auto opaque = std::make_unique<BigBlockMap>();
     auto light = std::make_unique<BigBlockMap>();
     auto highest = std::make_unique<HeightMap<CHUNK_SIZE * 3>>();
@@ -190,7 +190,7 @@ std::shared_ptr<ChunkMesh> Chunk::load() const {
     std::tie(miny, maxy, faces) = this->count_faces(*opaque);
     auto data = this->generate_geometry(*opaque, *light, *highest);
 
-    return std::make_shared<ChunkMesh>(miny, maxy, faces, this->mesh()->dirty, this->mesh()->buffer, data);
+    return std::make_unique<ChunkMesh>(miny, maxy, faces, this->mesh()->dirty, this->mesh()->buffer, data);
 }
 
 void Chunk::populate_light_array(BigBlockMap &opaque, BigBlockMap &light) const {
