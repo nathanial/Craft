@@ -59,12 +59,12 @@ int Chunk::set_block(int x, int y, int z, char w){
 }
 
 void Chunk::set_dirty_flag() {
-    this->set_dirty(true);
+    this->render_data.dirty = true;
     for (int dp = -1; dp <= 1; dp++) {
         for (int dq = -1; dq <= 1; dq++) {
             auto other = g->find_chunk(this->_p + dp, this->_q + dq);
             if (other) {
-                other->set_dirty(true);
+                other->render_data.dirty = true;
             }
         }
     }
@@ -92,10 +92,6 @@ int Chunk::p() const {
 
 int Chunk::q() const {
     return this->_q;
-}
-
-void Chunk::set_dirty(bool dirty) {
-    this->render_data.dirty = dirty;
 }
 
 const std::vector<GLfloat> Chunk::vertices() const {

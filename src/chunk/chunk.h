@@ -50,7 +50,6 @@ public:
     void foreach_block(std::function<void (int, int, int, char)> func) const;
     int p() const;
     int q() const;
-    void set_dirty(bool dirty);
     bool is_ready_to_draw() const;
     const std::vector<GLfloat> vertices() const;
     int distance(int p, int q) const;
