@@ -97,15 +97,15 @@ const std::vector<GLfloat> Chunk::vertices() const {
     return this->render_data->vertices;
 }
 
-void Chunk::generate_buffer() {
+std::shared_ptr<ChunkRenderData> Chunk::generate_buffer() const {
     if(this->render_data->buffer) {
         del_buffer(this->render_data->buffer);
-    }
-    if(this->render_data->vertices.size() == 0){
-        return;
+        if(this->render_data->vertices.size() == 0){
+            return this->render_data->set_buffer(0);
+        }
     }
     std::vector<GLfloat> emptyVertices;
-    this->render_data = this->render_data
+    return this->render_data
             ->set_buffer(gen_buffer(this->vertices()))
             ->set_vertices(emptyVertices);
 }

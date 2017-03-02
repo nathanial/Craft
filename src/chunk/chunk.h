@@ -51,7 +51,7 @@ public:
     Chunk(int p, int q);
     ~Chunk();
 
-    void generate_buffer();
+    std::shared_ptr<ChunkRenderData> generate_buffer() const;
     int set_block(int x, int y, int z, char w);
     void set_dirty_flag();
 

@@ -339,7 +339,7 @@ int player_intersects_block(
 
 void gen_chunk_buffer(Chunk& chunk) {
     chunk.render_data = chunk.load();
-    chunk.generate_buffer();
+    chunk.render_data = chunk.generate_buffer();
     chunk.render_data = chunk.render_data->set_dirty(false);
 }
 
@@ -382,7 +382,7 @@ void check_workers() {
                 if (item->load) {
                     request_chunk(item->p, item->q);
                 }
-                chunk->generate_buffer();
+                chunk->render_data = chunk->generate_buffer();
             }
             worker->state = WORKER_IDLE;
         }
