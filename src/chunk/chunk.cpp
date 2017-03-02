@@ -104,7 +104,7 @@ void Chunk::generate_buffer() {
     if(this->render_data->vertices.size() == 0){
         return;
     }
-    this->render_data->buffer = gen_buffer(this->vertices());
+    this->render_data = this->render_data->set_buffer(gen_buffer(this->vertices()));
     this->render_data->vertices.clear();
 }
 
