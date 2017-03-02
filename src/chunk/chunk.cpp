@@ -29,15 +29,14 @@ void light_fill_scanline(BigBlockMap &opaque, BigBlockMap &light, int ox, int oy
 Chunk::Chunk(int p, int q) :
     blocks(new BlockMap<CHUNK_SIZE, CHUNK_HEIGHT>())
 {
+    this->render_data = std::make_shared<ChunkRenderData>();
     this->_p = p;
     this->_q = q;
-    this->render_data.faces = 0;
-    this->render_data.buffer = 0;
     this->set_dirty_flag();
 }
 
 Chunk::~Chunk() {
-    del_buffer(this->render_data.buffer);
+    del_buffer(this->render_data->buffer);
 }
 
 int Chunk::get_block(int x, int y, int z) const {
@@ -59,12 +58,12 @@ int Chunk::set_block(int x, int y, int z, char w){
 }
 
 void Chunk::set_dirty_flag() {
-    this->render_data.dirty = true;
+    this->render_data->dirty = true;
     for (int dp = -1; dp <= 1; dp++) {
         for (int dq = -1; dq <= 1; dq++) {
             auto other = g->find_chunk(this->_p + dp, this->_q + dq);
             if (other) {
-                other->render_data.dirty = true;
+                other->render_data->dirty = true;
             }
         }
     }
@@ -77,9 +76,9 @@ int Chunk::distance(int p, int q) const {
 }
 
 int Chunk::draw(Attrib *attrib) const {
-    if(this->render_data.buffer){
-        draw_triangles_3d_ao(attrib, this->render_data.buffer, this->render_data.faces * 6);
-        return this->render_data.faces;
+    if(this->render_data->buffer){
+        draw_triangles_3d_ao(attrib, this->render_data->buffer, this->render_data->faces * 6);
+        return this->render_data->faces;
     } else {
         return 0;
     }
@@ -95,22 +94,22 @@ int Chunk::q() const {
 }
 
 const std::vector<GLfloat> Chunk::vertices() const {
-    return this->render_data.vertices;
+    return this->render_data->vertices;
 }
 
 void Chunk::generate_buffer() {
-    if(this->render_data.buffer) {
-        del_buffer(this->render_data.buffer);
+    if(this->render_data->buffer) {
+        del_buffer(this->render_data->buffer);
     }
-    if(this->render_data.vertices.size() == 0){
+    if(this->render_data->vertices.size() == 0){
         return;
     }
-    this->render_data.buffer = gen_buffer(this->vertices());
-    this->render_data.vertices.clear();
+    this->render_data->buffer = gen_buffer(this->vertices());
+    this->render_data->vertices.clear();
 }
 
 bool Chunk::is_ready_to_draw() const {
-    return this->render_data.buffer && this->render_data.dirty;
+    return this->render_data->buffer && this->render_data->dirty;
 }
 
 std::tuple<int,int,int> Chunk::count_faces(BigBlockMap &opaque) const {
@@ -219,7 +218,7 @@ std::vector<GLfloat> Chunk::generate_geometry(BigBlockMap &opaque, BigBlockMap &
 }
 
 
-ChunkRenderData Chunk::load() const {
+std::shared_ptr<ChunkRenderData> Chunk::load() const {
     auto opaque = std::make_unique<BigBlockMap>();
     auto light = std::make_unique<BigBlockMap>();
     auto highest = std::make_unique<HeightMap<CHUNK_SIZE * 3>>();
@@ -231,7 +230,7 @@ ChunkRenderData Chunk::load() const {
     std::tie(miny, maxy, faces) = this->count_faces(*opaque);
     auto data = this->generate_geometry(*opaque, *light, *highest);
 
-    return ChunkRenderData(miny, maxy, faces, this->render_data.dirty, this->render_data.buffer, data);
+    return std::make_shared<ChunkRenderData>(miny, maxy, faces, this->render_data->dirty, this->render_data->buffer, data);
 }
 
 void Chunk::populate_light_array(BigBlockMap &opaque, BigBlockMap &light) const {

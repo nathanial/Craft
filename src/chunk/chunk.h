@@ -18,14 +18,14 @@ class Attrib;
 
 class ChunkRenderData {
 public:
-    int faces;
+    const int faces;
     bool dirty;
     int miny;
     int maxy;
     GLuint buffer;
     std::vector<GLfloat> vertices;
 
-    ChunkRenderData(){}
+    ChunkRenderData() : faces(0), buffer(0) {}
     ChunkRenderData(int miny, int maxy, int faces, bool dirty, GLuint buffer, const std::vector<GLfloat> &vertices) :
             miny(miny), maxy(maxy), faces(faces), dirty(dirty), buffer(buffer), vertices(vertices) {}
 };
@@ -35,7 +35,7 @@ private:
     std::unique_ptr<BlockMap<CHUNK_SIZE, CHUNK_HEIGHT>> blocks;
     int _p, _q; // chunk position
 public:
-    ChunkRenderData render_data;
+    std::shared_ptr<ChunkRenderData> render_data;
     Chunk(int p, int q);
     ~Chunk();
 
@@ -44,7 +44,7 @@ public:
     void set_dirty_flag();
 
     int draw(Attrib *attrib) const;
-    ChunkRenderData load() const;
+    std::shared_ptr<ChunkRenderData> load() const;
     int get_block(int x, int y, int z) const;
     int get_block_or_zero(int x, int y, int z) const;
     void foreach_block(std::function<void (int, int, int, char)> func) const;

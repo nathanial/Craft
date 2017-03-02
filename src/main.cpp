@@ -340,7 +340,7 @@ int player_intersects_block(
 void gen_chunk_buffer(Chunk& chunk) {
     chunk.render_data = chunk.load();
     chunk.generate_buffer();
-    chunk.render_data.dirty = false;
+    chunk.render_data->dirty = false;
 }
 
 void load_chunk(WorkerItemPtr item) {
@@ -400,7 +400,7 @@ void force_chunks(Player *player) {
             int b = q + dq;
             auto chunk = g->find_chunk(a, b);
             if (chunk) {
-                if (chunk->render_data.dirty) {
+                if (chunk->render_data->dirty) {
                     gen_chunk_buffer(*chunk);
                 }
             }
@@ -432,7 +432,7 @@ void ensure_chunks_worker(Player *player, WorkerPtr worker) {
                 continue;
             }
             auto chunk = g->find_chunk(a, b);
-            if (chunk && !chunk->render_data.dirty) {
+            if (chunk && !chunk->render_data->dirty) {
                 continue;
             }
             int distance = MAX(ABS(dp), ABS(dq));
@@ -471,7 +471,7 @@ void ensure_chunks_worker(Player *player, WorkerPtr worker) {
     worker->item->p = chunk->p();
     worker->item->q = chunk->q();
     worker->item->load = load;
-    chunk->render_data.dirty = false;
+    chunk->render_data->dirty = false;
     worker->state = WORKER_BUSY;
     worker->cnd.notify_all();
 }
@@ -589,7 +589,7 @@ int render_chunks(Attrib *attrib, Player *player) {
             return;
         }
         if (!chunk_visible(
-            planes, chunk.p(), chunk.q(), chunk.render_data.miny, chunk.render_data.maxy))
+            planes, chunk.p(), chunk.q(), chunk.render_data->miny, chunk.render_data->maxy))
         {
             return;
         }
