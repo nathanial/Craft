@@ -39,3 +39,8 @@ std::unique_ptr<ChunkMesh> ChunkMesh::set_buffer(GLuint buffer) const{
 std::unique_ptr<ChunkMesh> ChunkMesh::set_vertices(const std::vector<GLfloat>& vertices) const {
     return std::make_unique<ChunkMesh>(miny, maxy, faces, dirty, buffer, vertices);
 }
+
+
+bool ChunkMesh::is_ready_to_draw() const {
+    return buffer && dirty;
+}

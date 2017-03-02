@@ -72,11 +72,6 @@ int Chunk::q() const {
     return this->_q;
 }
 
-
-bool Chunk::is_ready_to_draw() const {
-    return this->mesh()->buffer && this->mesh()->dirty;
-}
-
 std::tuple<int,int,int> Chunk::count_faces(BigBlockMap &opaque) const {
     int ox = this->_p * CHUNK_SIZE - CHUNK_SIZE;
     int oy = -1;

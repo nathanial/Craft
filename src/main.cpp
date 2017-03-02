@@ -451,7 +451,7 @@ void ensure_chunks_worker(Player *player, WorkerPtr worker) {
             int invisible = !chunk_visible(planes, a, b, 0, 256);
             int priority = 0;
             if (chunk) {
-                priority = chunk->is_ready_to_draw();
+                priority = chunk->mesh()->is_ready_to_draw();
             }
             int score = (invisible << 24) | (priority << 16) | distance;
             if (score < best_score) {

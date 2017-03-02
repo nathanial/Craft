@@ -37,7 +37,6 @@ public:
     void foreach_block(std::function<void (int, int, int, char)> func) const;
     int p() const;
     int q() const;
-    bool is_ready_to_draw() const;
     int distance(int p, int q) const;
     void populate_opaque_array(BigBlockMap &opaque, HeightMap<48> &highest) const;
     void populate_light_array(BigBlockMap &opaque, BigBlockMap &light) const;
