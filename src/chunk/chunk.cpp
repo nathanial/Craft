@@ -76,7 +76,7 @@ int Chunk::distance(int p, int q) const {
     return MAX(dp, dq);
 }
 
-int Chunk::draw(Attrib *attrib) {
+int Chunk::draw(Attrib *attrib) const {
     if(this->render_data.buffer){
         draw_triangles_3d_ao(attrib, this->render_data.buffer, this->render_data.faces * 6);
         return this->render_data.faces;
@@ -98,18 +98,6 @@ void Chunk::set_dirty(bool dirty) {
     this->render_data.dirty = dirty;
 }
 
-bool Chunk::dirty() const {
-    return this->render_data.dirty;
-}
-
-int Chunk::maxy() const {
-    return this->render_data.maxy;
-}
-
-int Chunk::miny() const {
-    return this->render_data.miny;
-}
-
 const std::vector<GLfloat> Chunk::vertices() const {
     return this->render_data.vertices;
 }
@@ -126,7 +114,7 @@ void Chunk::generate_buffer() {
 }
 
 bool Chunk::is_ready_to_draw() const {
-    return this->render_data.buffer && this->dirty();
+    return this->render_data.buffer && this->render_data.dirty;
 }
 
 std::tuple<int,int,int> Chunk::count_faces(BigBlockMap &opaque) const {
@@ -247,7 +235,7 @@ ChunkRenderData Chunk::load() const {
     std::tie(miny, maxy, faces) = this->count_faces(*opaque);
     auto data = this->generate_geometry(*opaque, *light, *highest);
 
-    return ChunkRenderData(miny, maxy, faces, this->dirty(), this->render_data.buffer, data);
+    return ChunkRenderData(miny, maxy, faces, this->render_data.dirty, this->render_data.buffer, data);
 }
 
 void Chunk::populate_light_array(BigBlockMap &opaque, BigBlockMap &light) const {

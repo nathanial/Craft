@@ -39,21 +39,18 @@ public:
     Chunk(int p, int q);
     ~Chunk();
 
-    int draw(Attrib *attrib);
     void generate_buffer();
-    ChunkRenderData load() const;
     int set_block(int x, int y, int z, char w);
+    void set_dirty_flag();
 
+    int draw(Attrib *attrib) const;
+    ChunkRenderData load() const;
     int get_block(int x, int y, int z) const;
     int get_block_or_zero(int x, int y, int z) const;
-    void set_dirty_flag();
     void foreach_block(std::function<void (int, int, int, char)> func) const;
     int p() const;
     int q() const;
     void set_dirty(bool dirty);
-    bool dirty() const;
-    int maxy() const;
-    int miny() const;
     bool is_ready_to_draw() const;
     const std::vector<GLfloat> vertices() const;
     int distance(int p, int q) const;

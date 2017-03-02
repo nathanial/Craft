@@ -400,7 +400,7 @@ void force_chunks(Player *player) {
             int b = q + dq;
             auto chunk = g->find_chunk(a, b);
             if (chunk) {
-                if (chunk->dirty()) {
+                if (chunk->render_data.dirty) {
                     gen_chunk_buffer(*chunk);
                 }
             }
@@ -432,7 +432,7 @@ void ensure_chunks_worker(Player *player, WorkerPtr worker) {
                 continue;
             }
             auto chunk = g->find_chunk(a, b);
-            if (chunk && !chunk->dirty()) {
+            if (chunk && !chunk->render_data.dirty) {
                 continue;
             }
             int distance = MAX(ABS(dp), ABS(dq));
@@ -589,7 +589,7 @@ int render_chunks(Attrib *attrib, Player *player) {
             return;
         }
         if (!chunk_visible(
-            planes, chunk.p(), chunk.q(), chunk.miny(), chunk.maxy()))
+            planes, chunk.p(), chunk.q(), chunk.render_data.miny, chunk.render_data.maxy))
         {
             return;
         }
