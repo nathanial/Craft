@@ -28,12 +28,11 @@ void scanline_iterate(BigBlockMap &light, BigBlockMap &opaque, std::deque<std::t
 void light_fill_scanline(BigBlockMap &opaque, BigBlockMap &light, int ox, int oy ,int oz, int ow);
 
 Chunk::Chunk(int p, int q) :
-    blocks(new BlockMap<CHUNK_SIZE, CHUNK_HEIGHT>())
+    _p(p), _q(q),
+    blocks(std::make_unique<BlockMap<CHUNK_SIZE, CHUNK_HEIGHT>>())
 {
     auto render_data = std::make_shared<ChunkMesh>();
     this->_mesh = render_data->set_dirty(true);
-    this->_p = p;
-    this->_q = q;
 }
 
 Chunk::~Chunk() {

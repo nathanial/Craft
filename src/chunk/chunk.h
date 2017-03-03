@@ -19,10 +19,13 @@ class ChunkMesh;
 
 class Chunk {
 private:
-    std::unique_ptr<BlockMap<CHUNK_SIZE, CHUNK_HEIGHT>> blocks;
-    int _p, _q; // chunk position
-    std::shared_ptr<ChunkMesh> _mesh;
     mutable std::mutex _mesh_mtx;
+    mutable std::mutex _block_mtx;
+    const int _p;
+    const int _q; // chunk position
+
+    std::unique_ptr<BlockMap<CHUNK_SIZE, CHUNK_HEIGHT>> blocks;
+    std::shared_ptr<ChunkMesh> _mesh;
 public:
     Chunk(int p, int q);
     ~Chunk();
