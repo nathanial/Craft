@@ -71,7 +71,7 @@ int Chunk::q() const {
     return this->_q;
 }
 
-std::tuple<int,int,int> Chunk::count_faces(BigBlockMap &opaque) const {
+std::tuple<int,int,int> Chunk::count_faces(const BigBlockMap &opaque) const {
     int ox = this->_p * CHUNK_SIZE - CHUNK_SIZE;
     int oy = -1;
     int oz = this->_q * CHUNK_SIZE - CHUNK_SIZE;

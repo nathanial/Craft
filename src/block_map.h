@@ -36,7 +36,7 @@ public:
         }
         return overwrite;
     }
-    char get(int x, int y, int z) {
+    char get(int x, int y, int z) const {
         if(x < 0 || x >= WIDTH || y < 0 || y >= HEIGHT|| z < 0 || z >= WIDTH){
             printf("Bad Index %d,%d,%d\n", x, y, z);
             throw new std::invalid_argument("Bad Index");

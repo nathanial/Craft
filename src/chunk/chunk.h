@@ -43,7 +43,7 @@ public:
     int distance(int p, int q) const;
     void populate_opaque_array(BigBlockMap &opaque, HeightMap<48> &highest) const;
     void populate_light_array(BigBlockMap &opaque, BigBlockMap &light) const;
-    std::tuple<int,int,int> count_faces(BigBlockMap &opaque) const;
+    std::tuple<int,int,int> count_faces(const BigBlockMap &opaque) const;
     std::vector<GLfloat> generate_geometry(BigBlockMap &opaque, BigBlockMap &light, HeightMap<CHUNK_SIZE * 3> &highest) const;
 };
 
