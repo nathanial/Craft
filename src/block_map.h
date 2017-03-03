@@ -58,6 +58,15 @@ public:
             }
         }
     }
+    void each(std::function<void (int, int, int, char)> func) const {
+        for(int x = 0; x < WIDTH; x++){
+            for(int y = 0; y < HEIGHT; y++){
+                for(int z = 0; z < WIDTH; z++){
+                    func(x, y, z, this->_data[x][y][z]);
+                }
+            }
+        }
+    }
     unsigned int size() {
         return WIDTH * WIDTH * HEIGHT;
     };

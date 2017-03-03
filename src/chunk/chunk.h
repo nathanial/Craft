@@ -17,6 +17,8 @@
 class Attrib;
 class ChunkMesh;
 
+typedef BlockMap<CHUNK_SIZE, CHUNK_HEIGHT> ChunkBlocks;
+
 class Chunk {
 private:
     mutable std::mutex _mesh_mtx;
@@ -24,7 +26,7 @@ private:
     const int _p;
     const int _q; // chunk position
 
-    std::unique_ptr<BlockMap<CHUNK_SIZE, CHUNK_HEIGHT>> blocks;
+    std::unique_ptr<ChunkBlocks> blocks;
     std::shared_ptr<ChunkMesh> _mesh;
 public:
     Chunk(int p, int q);
@@ -43,8 +45,10 @@ public:
     int distance(int p, int q) const;
     void populate_opaque_array(BigBlockMap &opaque, HeightMap<48> &highest) const;
     void populate_light_array(BigBlockMap &opaque, BigBlockMap &light) const;
-    std::tuple<int,int,int> count_faces(const BigBlockMap &opaque) const;
     std::vector<GLfloat> generate_geometry(BigBlockMap &opaque, BigBlockMap &light, HeightMap<CHUNK_SIZE * 3> &highest) const;
+
+private:
+    static std::tuple<int,int,int> count_faces(int p, int q, const ChunkBlocks& blocks, const BigBlockMap &opaque);
 };
 
 typedef std::shared_ptr<Chunk> ChunkPtr;
