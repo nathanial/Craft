@@ -108,17 +108,19 @@ std::tuple<int,int,int> Chunk::count_faces(int p, int q, const ChunkBlocks& bloc
     return std::make_tuple(miny,maxy,faces);
 };
 
-std::vector<GLfloat> Chunk::generate_geometry(BigBlockMap &opaque, BigBlockMap &light, HeightMap<CHUNK_SIZE * 3> &highest) const {
-    int ox = this->_p * CHUNK_SIZE - CHUNK_SIZE;
+std::vector<GLfloat> Chunk::generate_geometry(int p, int q, const ChunkBlocks &blocks,  BigBlockMap &opaque, BigBlockMap &light, HeightMap<CHUNK_SIZE * 3> &highest) {
+    int ox = p * CHUNK_SIZE - CHUNK_SIZE;
     int oy = -1;
-    int oz = this->_q * CHUNK_SIZE - CHUNK_SIZE;
+    int oz = q * CHUNK_SIZE - CHUNK_SIZE;
 
     std::vector<GLfloat> data;
     int offset = 0;
-    this->foreach_block([&](int ex, int ey, int ez, int ew) {
+    blocks.each([&](int ex, int ey, int ez, int ew) {
         if (ew <= 0) {
             return;
         }
+        ex += p * CHUNK_SIZE;
+        ez += q * CHUNK_SIZE;
         int x = ex - ox;
         int y = ey - oy;
         int z = ez - oz;
@@ -189,7 +191,7 @@ std::unique_ptr<ChunkMesh> Chunk::load(bool dirty, GLuint buffer) const {
 
     int miny, maxy, faces;
     std::tie(miny, maxy, faces) = Chunk::count_faces(_p, _q, *blocks, *opaque);
-    auto data = this->generate_geometry(*opaque, *light, *highest);
+    auto data = this->generate_geometry(_p, _q, *blocks, *opaque, *light, *highest);
 
     return std::make_unique<ChunkMesh>(miny, maxy, faces, dirty, buffer, data);
 }
