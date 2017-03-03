@@ -55,7 +55,7 @@ int get_scale_factor() {
 void set_dirty_flag(Chunk &chunk) {
     for (int dp = -1; dp <= 1; dp++) {
         for (int dq = -1; dq <= 1; dq++) {
-            auto other = g->find_chunk(chunk.p() + dp, chunk.q() + dq);
+            auto other = g->find_chunk(chunk.p + dp, chunk.q + dq);
             if (other) {
                 other->set_mesh(other->mesh()->set_dirty(true));
             }
@@ -348,11 +348,21 @@ int player_intersects_block(
     return 0;
 }
 
+ChunkNeighbors find_neighbors(const Chunk& chunk){
+    ChunkNeighbors neighbors;
+    for(int dp = -1; dp <= 1; dp++){
+        for(int dq = -1; dq <= 1; dq++){
+            neighbors[std::make_tuple(dp + chunk.p, dq + chunk.q)] = g->find_chunk(dp + chunk.p, dq + chunk.q);
+        }
+    }
+    return neighbors;
+}
+
 void gen_chunk_buffer(Chunk& chunk) {
     auto mesh = chunk.mesh();
-    chunk.set_mesh(
-            chunk.load(mesh->dirty, mesh->buffer)->generate_buffer()->set_dirty(false)
-    );
+    std::shared_ptr<ChunkMesh> newMesh = Chunk::create_mesh(chunk.p, chunk.q, mesh->dirty, mesh->buffer, *chunk.blocks,
+                                                            find_neighbors(chunk))->generate_buffer()->set_dirty(false);
+    chunk.set_mesh(newMesh);
 }
 
 void load_chunk(WorkerItemPtr item) {
@@ -376,8 +386,8 @@ void create_chunk(int p, int q) {
     g->add_chunk(chunk);
 
     auto item = std::make_shared<WorkerItem>();
-    item->p = chunk->p();
-    item->q = chunk->q();
+    item->p = chunk->p;
+    item->q = chunk->q;
 
     load_chunk(item);
     request_chunk(p, q);
@@ -482,8 +492,8 @@ void ensure_chunks_worker(Player *player, WorkerPtr worker) {
         }
     }
     worker->item = std::make_shared<WorkerItem>();
-    worker->item->p = chunk->p();
-    worker->item->q = chunk->q();
+    worker->item->p = chunk->p;
+    worker->item->q = chunk->q;
     worker->item->load = load;
     chunk->set_mesh(chunk->mesh()->set_dirty(false));
     worker->state = WORKER_BUSY;
@@ -517,7 +527,8 @@ int worker_run(WorkerPtr worker) {
         }
         auto chunk = g->find_chunk(item->p, item->q);
         auto mesh = chunk->mesh();
-        chunk->set_mesh(chunk->load(mesh->dirty, mesh->buffer));
+        auto newMesh = chunk->create_mesh(item->p, item->q, mesh->dirty, mesh->buffer, *chunk->blocks, find_neighbors(*chunk));
+        chunk->set_mesh(newMesh);
         {
             std::lock_guard<std::mutex> lock(worker->mtx);
             worker->state = WORKER_DONE;
@@ -604,7 +615,7 @@ int render_chunks(Attrib *attrib, Player *player) {
             return;
         }
         if (!chunk_visible(
-            planes, chunk.p(), chunk.q(), chunk.mesh()->miny, chunk.mesh()->maxy))
+            planes, chunk.p, chunk.q, chunk.mesh()->miny, chunk.mesh()->maxy))
         {
             return;
         }

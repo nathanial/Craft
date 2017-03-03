@@ -8,14 +8,12 @@ extern "C" {
 #include <armadillo>
 #include <queue>
 #include "chunk.h"
-#include "../model.h"
 #include "../util.h"
 #include "../item.h"
 #include "../draw.h"
 #include "../cube.h"
 #include "ChunkMesh.h"
-
-extern Model *g;
+#include "../model.h"
 
 void occlusion(
         char neighbors[27], char lights[27], float shades[27],
@@ -28,12 +26,11 @@ void scanline_iterate(BigBlockMap &light, BigBlockMap &opaque, std::deque<std::t
 void light_fill_scanline(BigBlockMap &opaque, BigBlockMap &light, int ox, int oy ,int oz, int ow);
 
 Chunk::Chunk(int p, int q) :
-    blocks(new BlockMap<CHUNK_SIZE, CHUNK_HEIGHT>())
+    p(p), q(q),
+    blocks(std::make_unique<BlockMap<CHUNK_SIZE, CHUNK_HEIGHT>>())
 {
     auto render_data = std::make_shared<ChunkMesh>();
     this->_mesh = render_data->set_dirty(true);
-    this->_p = p;
-    this->_q = q;
 }
 
 Chunk::~Chunk() {
@@ -41,49 +38,43 @@ Chunk::~Chunk() {
 }
 
 int Chunk::get_block(int x, int y, int z) const {
-    return this->blocks->get(x - this->_p * CHUNK_SIZE, y, z - this->_q * CHUNK_SIZE);
+    return this->blocks->get(x - this->p * CHUNK_SIZE, y, z - this->q * CHUNK_SIZE);
 }
 
 int Chunk::get_block_or_zero(int x, int y, int z) const {
-    return this->blocks->get_or_default(x - this->_p * CHUNK_SIZE, y, z - this->_q * CHUNK_SIZE, 0);
+    return this->blocks->get_or_default(x - this->p * CHUNK_SIZE, y, z - this->q * CHUNK_SIZE, 0);
 }
 
 void Chunk::foreach_block(std::function<void (int, int, int, char)> func) const {
     this->blocks->each([&](int x, int y, int z, char w){
-        func(x + this->_p * CHUNK_SIZE, y, z + this->_q * CHUNK_SIZE, w);
+        func(x + this->p * CHUNK_SIZE, y, z + this->q * CHUNK_SIZE, w);
     });
 }
 
 int Chunk::set_block(int x, int y, int z, char w){
-    return this->blocks->set(x - this->_p * CHUNK_SIZE, y, z - this->_q * CHUNK_SIZE, w);
+    return this->blocks->set(x - this->p * CHUNK_SIZE, y, z - this->q * CHUNK_SIZE, w);
 }
 
 int Chunk::distance(int p, int q) const {
-    int dp = ABS(this->_p - p);
-    int dq = ABS(this->_q - q);
+    int dp = ABS(this->p - p);
+    int dq = ABS(this->q - q);
     return MAX(dp, dq);
 }
 
-int Chunk::p() const {
-    return this->_p;
-}
-
-int Chunk::q() const {
-    return this->_q;
-}
-
-std::tuple<int,int,int> Chunk::count_faces(BigBlockMap &opaque) const {
-    int ox = this->_p * CHUNK_SIZE - CHUNK_SIZE;
+std::tuple<int,int,int> Chunk::count_faces(int p, int q, const ChunkBlocks& blocks, const BigBlockMap &opaque) {
+    int ox = p * CHUNK_SIZE - CHUNK_SIZE;
     int oy = -1;
-    int oz = this->_q * CHUNK_SIZE - CHUNK_SIZE;
+    int oz = q * CHUNK_SIZE - CHUNK_SIZE;
 
     int miny = 256;
     int maxy = 0;
     int faces = 0;
-    this->foreach_block([&](int ex, int ey, int ez, int ew) {
+    blocks.each([&](int ex, int ey, int ez, int ew) {
         if (ew <= 0) {
             return;
         }
+        ex += p * CHUNK_SIZE;
+        ez += q * CHUNK_SIZE;
         int x = ex - ox;
         int y = ey - oy;
         int z = ez - oz;
@@ -107,17 +98,19 @@ std::tuple<int,int,int> Chunk::count_faces(BigBlockMap &opaque) const {
     return std::make_tuple(miny,maxy,faces);
 };
 
-std::vector<GLfloat> Chunk::generate_geometry(BigBlockMap &opaque, BigBlockMap &light, HeightMap<CHUNK_SIZE * 3> &highest) const {
-    int ox = this->_p * CHUNK_SIZE - CHUNK_SIZE;
+std::vector<GLfloat> Chunk::generate_geometry(int p, int q, const ChunkBlocks &blocks,  BigBlockMap &opaque, BigBlockMap &light, HeightMap<CHUNK_SIZE * 3> &highest) {
+    int ox = p * CHUNK_SIZE - CHUNK_SIZE;
     int oy = -1;
-    int oz = this->_q * CHUNK_SIZE - CHUNK_SIZE;
+    int oz = q * CHUNK_SIZE - CHUNK_SIZE;
 
     std::vector<GLfloat> data;
     int offset = 0;
-    this->foreach_block([&](int ex, int ey, int ez, int ew) {
+    blocks.each([&](int ex, int ey, int ez, int ew) {
         if (ew <= 0) {
             return;
         }
+        ex += p * CHUNK_SIZE;
+        ez += q * CHUNK_SIZE;
         int x = ex - ox;
         int y = ey - oy;
         int z = ez - oz;
@@ -178,32 +171,33 @@ std::vector<GLfloat> Chunk::generate_geometry(BigBlockMap &opaque, BigBlockMap &
 }
 
 
-std::unique_ptr<ChunkMesh> Chunk::load(bool dirty, GLuint buffer) const {
+std::shared_ptr<ChunkMesh> Chunk::create_mesh(int _p, int _q, bool dirty, GLuint buffer, const ChunkBlocks &blocks,
+                                              const ChunkNeighbors &neighbors) {
     auto opaque = std::make_unique<BigBlockMap>();
     auto light = std::make_unique<BigBlockMap>();
     auto highest = std::make_unique<HeightMap<CHUNK_SIZE * 3>>();
 
-    this->populate_opaque_array(*opaque, *highest);
-    this->populate_light_array(*opaque, *light);
+    Chunk::populate_opaque_array(_p, _q, *opaque, *highest, neighbors);
+    Chunk::populate_light_array(_p, _q, *opaque, *light, neighbors);
 
     int miny, maxy, faces;
-    std::tie(miny, maxy, faces) = this->count_faces(*opaque);
-    auto data = this->generate_geometry(*opaque, *light, *highest);
+    std::tie(miny, maxy, faces) = Chunk::count_faces(_p, _q, blocks, *opaque);
+    auto data = Chunk::generate_geometry(_p, _q, blocks, *opaque, *light, *highest);
 
-    return std::make_unique<ChunkMesh>(miny, maxy, faces, dirty, buffer, data);
+    return std::make_shared<ChunkMesh>(miny, maxy, faces, dirty, buffer, data);
 }
 
-void Chunk::populate_light_array(BigBlockMap &opaque, BigBlockMap &light) const {
-    int ox = this->_p * CHUNK_SIZE - CHUNK_SIZE;
+void Chunk::populate_light_array(int _p, int _q, BigBlockMap &opaque, BigBlockMap &light, const ChunkNeighbors& neighbors) {
+    int ox = _p * CHUNK_SIZE - CHUNK_SIZE;
     int oy = -1;
-    int oz = this->_q * CHUNK_SIZE - CHUNK_SIZE;
+    int oz = _q * CHUNK_SIZE - CHUNK_SIZE;
 
     for (int a = 0; a < 3; a++) {
         for (int b = 0; b < 3; b++) {
-            auto chunk = g->find_chunk(_p - (a - 1), _q - (b - 1));
+            auto chunk = neighbors.at(std::make_tuple(_p - (a - 1), _q - (b - 1)));
             if(chunk){
-                int chunk_x_offset = chunk->_p * CHUNK_SIZE;
-                int chunk_z_offset = chunk->_q * CHUNK_SIZE;
+                int chunk_x_offset = chunk->p * CHUNK_SIZE;
+                int chunk_z_offset = chunk->q * CHUNK_SIZE;
                 for(int bx = 0; bx < CHUNK_SIZE; bx++){
                     for(int by = 0; by < CHUNK_HEIGHT; by++) {
                         for (int bz = 0; bz < CHUNK_SIZE; bz++) {
@@ -234,18 +228,18 @@ void Chunk::populate_light_array(BigBlockMap &opaque, BigBlockMap &light) const 
     }
 }
 
-void Chunk::populate_opaque_array(BigBlockMap &opaque, HeightMap<48> &highest) const {
-    int ox = this->_p * CHUNK_SIZE - CHUNK_SIZE;
+void Chunk::populate_opaque_array(int _p, int _q, BigBlockMap &opaque, HeightMap<48> &highest, const ChunkNeighbors &neighbors) {
+    int ox = _p * CHUNK_SIZE - CHUNK_SIZE;
     int oy = -1;
-    int oz = this->_q * CHUNK_SIZE - CHUNK_SIZE;
+    int oz = _q * CHUNK_SIZE - CHUNK_SIZE;
     for (int a = 0; a < 3; a++) {
         for (int b = 0; b < 3; b++) {
-            auto chunk = g->find_chunk(this->_p + (a - 1), this->_q + (b - 1));
+            auto chunk = neighbors.at(std::make_tuple(_p + (a - 1), _q + (b - 1)));
             if(!chunk){
                 continue;
             }
-            int chunk_x_offset = chunk->_p * CHUNK_SIZE;
-            int chunk_z_offset = chunk->_q * CHUNK_SIZE;
+            int chunk_x_offset = chunk->p * CHUNK_SIZE;
+            int chunk_z_offset = chunk->q * CHUNK_SIZE;
             for(int bx = 0; bx < CHUNK_SIZE; bx++){
                 for(int by = 0; by < CHUNK_HEIGHT; by++){
                     for(int bz = 0; bz < CHUNK_SIZE; bz++){
@@ -299,7 +293,7 @@ int chunk_visible(arma::mat planes, int p, int q, int miny, int maxy) {
             {x + 0, maxy, z + d},
             {x + d, maxy, z + d}
     };
-    int n = g->ortho ? 4 : 6;
+    int n = 6;
     for (int i = 0; i < n; i++) {
         int in = 0;
         int out = 0;
@@ -326,6 +320,7 @@ int chunk_visible(arma::mat planes, int p, int q, int miny, int maxy) {
     return 1;
 }
 
+extern Model *g;
 int highest_block(float x, float z) {
     int result = -1;
     int nx = roundf(x);

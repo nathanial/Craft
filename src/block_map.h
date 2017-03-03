@@ -36,7 +36,7 @@ public:
         }
         return overwrite;
     }
-    char get(int x, int y, int z) {
+    char get(int x, int y, int z) const {
         if(x < 0 || x >= WIDTH || y < 0 || y >= HEIGHT|| z < 0 || z >= WIDTH){
             printf("Bad Index %d,%d,%d\n", x, y, z);
             throw new std::invalid_argument("Bad Index");
@@ -50,6 +50,15 @@ public:
         return this->_data[x][y][z];
     }
     void each(std::function<void (int, int, int, char)> func) {
+        for(int x = 0; x < WIDTH; x++){
+            for(int y = 0; y < HEIGHT; y++){
+                for(int z = 0; z < WIDTH; z++){
+                    func(x, y, z, this->_data[x][y][z]);
+                }
+            }
+        }
+    }
+    void each(std::function<void (int, int, int, char)> func) const {
         for(int x = 0; x < WIDTH; x++){
             for(int y = 0; y < HEIGHT; y++){
                 for(int z = 0; z < WIDTH; z++){
