@@ -185,7 +185,7 @@ std::unique_ptr<ChunkMesh> Chunk::load(bool dirty, GLuint buffer, const ChunkNei
     auto highest = std::make_unique<HeightMap<CHUNK_SIZE * 3>>();
 
     this->populate_opaque_array(*opaque, *highest, neighbors);
-    this->populate_light_array(*opaque, *light, neighbors);
+    Chunk::populate_light_array(this->p(), this->q(), *opaque, *light, neighbors);
 
     int miny, maxy, faces;
     std::tie(miny, maxy, faces) = Chunk::count_faces(_p, _q, *blocks, *opaque);
@@ -194,10 +194,10 @@ std::unique_ptr<ChunkMesh> Chunk::load(bool dirty, GLuint buffer, const ChunkNei
     return std::make_unique<ChunkMesh>(miny, maxy, faces, dirty, buffer, data);
 }
 
-void Chunk::populate_light_array(BigBlockMap &opaque, BigBlockMap &light, const ChunkNeighbors& neighbors) const {
-    int ox = this->_p * CHUNK_SIZE - CHUNK_SIZE;
+void Chunk::populate_light_array(int _p, int _q, BigBlockMap &opaque, BigBlockMap &light, const ChunkNeighbors& neighbors) {
+    int ox = _p * CHUNK_SIZE - CHUNK_SIZE;
     int oy = -1;
-    int oz = this->_q * CHUNK_SIZE - CHUNK_SIZE;
+    int oz = _q * CHUNK_SIZE - CHUNK_SIZE;
 
     for (int a = 0; a < 3; a++) {
         for (int b = 0; b < 3; b++) {
