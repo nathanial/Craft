@@ -26,7 +26,7 @@ void scanline_iterate(BigBlockMap &light, BigBlockMap &opaque, std::deque<std::t
 void light_fill_scanline(BigBlockMap &opaque, BigBlockMap &light, int ox, int oy ,int oz, int ow);
 
 Chunk::Chunk(int p, int q) :
-    _p(p), _q(q),
+    p(p), q(q),
     blocks(std::make_unique<BlockMap<CHUNK_SIZE, CHUNK_HEIGHT>>())
 {
     auto render_data = std::make_shared<ChunkMesh>();
@@ -38,35 +38,27 @@ Chunk::~Chunk() {
 }
 
 int Chunk::get_block(int x, int y, int z) const {
-    return this->blocks->get(x - this->_p * CHUNK_SIZE, y, z - this->_q * CHUNK_SIZE);
+    return this->blocks->get(x - this->p * CHUNK_SIZE, y, z - this->q * CHUNK_SIZE);
 }
 
 int Chunk::get_block_or_zero(int x, int y, int z) const {
-    return this->blocks->get_or_default(x - this->_p * CHUNK_SIZE, y, z - this->_q * CHUNK_SIZE, 0);
+    return this->blocks->get_or_default(x - this->p * CHUNK_SIZE, y, z - this->q * CHUNK_SIZE, 0);
 }
 
 void Chunk::foreach_block(std::function<void (int, int, int, char)> func) const {
     this->blocks->each([&](int x, int y, int z, char w){
-        func(x + this->_p * CHUNK_SIZE, y, z + this->_q * CHUNK_SIZE, w);
+        func(x + this->p * CHUNK_SIZE, y, z + this->q * CHUNK_SIZE, w);
     });
 }
 
 int Chunk::set_block(int x, int y, int z, char w){
-    return this->blocks->set(x - this->_p * CHUNK_SIZE, y, z - this->_q * CHUNK_SIZE, w);
+    return this->blocks->set(x - this->p * CHUNK_SIZE, y, z - this->q * CHUNK_SIZE, w);
 }
 
 int Chunk::distance(int p, int q) const {
-    int dp = ABS(this->_p - p);
-    int dq = ABS(this->_q - q);
+    int dp = ABS(this->p - p);
+    int dq = ABS(this->q - q);
     return MAX(dp, dq);
-}
-
-int Chunk::p() const {
-    return this->_p;
-}
-
-int Chunk::q() const {
-    return this->_q;
 }
 
 std::tuple<int,int,int> Chunk::count_faces(int p, int q, const ChunkBlocks& blocks, const BigBlockMap &opaque) {
@@ -203,8 +195,8 @@ void Chunk::populate_light_array(int _p, int _q, BigBlockMap &opaque, BigBlockMa
         for (int b = 0; b < 3; b++) {
             auto chunk = neighbors.at(std::make_tuple(_p - (a - 1), _q - (b - 1)));
             if(chunk){
-                int chunk_x_offset = chunk->_p * CHUNK_SIZE;
-                int chunk_z_offset = chunk->_q * CHUNK_SIZE;
+                int chunk_x_offset = chunk->p * CHUNK_SIZE;
+                int chunk_z_offset = chunk->q * CHUNK_SIZE;
                 for(int bx = 0; bx < CHUNK_SIZE; bx++){
                     for(int by = 0; by < CHUNK_HEIGHT; by++) {
                         for (int bz = 0; bz < CHUNK_SIZE; bz++) {
@@ -245,8 +237,8 @@ void Chunk::populate_opaque_array(int _p, int _q, BigBlockMap &opaque, HeightMap
             if(!chunk){
                 continue;
             }
-            int chunk_x_offset = chunk->_p * CHUNK_SIZE;
-            int chunk_z_offset = chunk->_q * CHUNK_SIZE;
+            int chunk_x_offset = chunk->p * CHUNK_SIZE;
+            int chunk_z_offset = chunk->q * CHUNK_SIZE;
             for(int bx = 0; bx < CHUNK_SIZE; bx++){
                 for(int by = 0; by < CHUNK_HEIGHT; by++){
                     for(int bz = 0; bz < CHUNK_SIZE; bz++){

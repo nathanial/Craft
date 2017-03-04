@@ -31,11 +31,10 @@ class Chunk {
 private:
     mutable std::mutex _mesh_mtx;
     mutable std::mutex _block_mtx;
-    const int _p;
-    const int _q; // chunk position
-
     std::shared_ptr<ChunkMesh> _mesh;
+
 public:
+    const int p, q;
     std::unique_ptr<ChunkBlocks> blocks;
 
     Chunk(int p, int q);
@@ -48,8 +47,6 @@ public:
     int get_block(int x, int y, int z) const;
     int get_block_or_zero(int x, int y, int z) const;
     void foreach_block(std::function<void (int, int, int, char)> func) const;
-    int p() const;
-    int q() const;
     int distance(int p, int q) const;
 
 public:
