@@ -360,9 +360,9 @@ ChunkNeighbors find_neighbors(const Chunk& chunk){
 
 void gen_chunk_buffer(Chunk& chunk) {
     auto mesh = chunk.mesh();
-    chunk.set_mesh(
-        Chunk::load(chunk.p, chunk.q, mesh->dirty, mesh->buffer, *chunk.blocks, find_neighbors(chunk))->generate_buffer()->set_dirty(false)
-    );
+    std::shared_ptr<ChunkMesh> newMesh = Chunk::create_mesh(chunk.p, chunk.q, mesh->dirty, mesh->buffer, *chunk.blocks,
+                                                            find_neighbors(chunk))->generate_buffer()->set_dirty(false);
+    chunk.set_mesh(newMesh);
 }
 
 void load_chunk(WorkerItemPtr item) {
@@ -527,7 +527,8 @@ int worker_run(WorkerPtr worker) {
         }
         auto chunk = g->find_chunk(item->p, item->q);
         auto mesh = chunk->mesh();
-        chunk->set_mesh(chunk->load(item->p, item->q, mesh->dirty, mesh->buffer, *chunk->blocks, find_neighbors(*chunk)));
+        chunk->set_mesh(
+                chunk->create_mesh(item->p, item->q, mesh->dirty, mesh->buffer, *chunk->blocks, find_neighbors(*chunk)));
         {
             std::lock_guard<std::mutex> lock(worker->mtx);
             worker->state = WORKER_DONE;

@@ -29,28 +29,35 @@ typedef std::unordered_map<ChunkPosition, std::shared_ptr<Chunk>, ChunkPositionH
 
 class Chunk {
 private:
+    // mesh is threadsafe because ChunkMesh is immutable
     mutable std::mutex _mesh_mtx;
-    mutable std::mutex _block_mtx;
     std::shared_ptr<ChunkMesh> _mesh;
 
 public:
     const int p, q;
+    mutable std::mutex block_mtx;
     std::unique_ptr<ChunkBlocks> blocks;
 
     Chunk(int p, int q);
     ~Chunk();
 
-    int set_block(int x, int y, int z, char w);
+    // THREAD SAFE
     void set_mesh(std::shared_ptr<ChunkMesh> data);
     std::shared_ptr<ChunkMesh> mesh() const;
 
+    int distance(int p, int q) const;
+
+    // CALL WITH _block_mtx
+    int set_block(int x, int y, int z, char w);
     int get_block(int x, int y, int z) const;
     int get_block_or_zero(int x, int y, int z) const;
     void foreach_block(std::function<void (int, int, int, char)> func) const;
-    int distance(int p, int q) const;
 
 public:
-    static std::unique_ptr<ChunkMesh> load(int _p, int _q, bool dirty, GLuint buffer, const ChunkBlocks& blocks, const ChunkNeighbors& neighbors);
+
+    // Make sure the function that's providing "blocks" holds the _block_mtx
+    static std::shared_ptr<ChunkMesh> create_mesh(int _p, int _q, bool dirty, GLuint buffer, const ChunkBlocks &blocks,
+                                                  const ChunkNeighbors &neighbors);
 
 private:
     static void populate_light_array(int _p, int _q, BigBlockMap &opaque, BigBlockMap &light, const ChunkNeighbors& neighbors);
