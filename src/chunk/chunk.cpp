@@ -27,7 +27,7 @@ void light_fill_scanline(BigBlockMap &opaque, BigBlockMap &light, int ox, int oy
 
 Chunk::Chunk(int p, int q) :
     p(p), q(q),
-    blocks(std::make_unique<BlockMap<CHUNK_SIZE, CHUNK_HEIGHT>>())
+    blocks(std::make_shared<BlockMap<CHUNK_SIZE, CHUNK_HEIGHT>>())
 {
     auto render_data = std::make_shared<ChunkMesh>();
     this->_mesh = render_data->set_dirty(true);
@@ -52,7 +52,16 @@ void Chunk::foreach_block(std::function<void (int, int, int, char)> func) const 
 }
 
 int Chunk::set_block(int x, int y, int z, char w){
-    return this->blocks->set(x - this->p * CHUNK_SIZE, y, z - this->q * CHUNK_SIZE, w);
+    std::shared_ptr<ChunkBlocks> newBlocks = this->blocks->copy();
+    int result = newBlocks->set(x - this->p * CHUNK_SIZE, y, z - this->q * CHUNK_SIZE, w);
+    std::lock_guard<std::mutex> lock(this->_blocks_mtx);
+    this->blocks = newBlocks;
+    return result;
+}
+
+void Chunk::set_blocks(const std::shared_ptr<const ChunkBlocks> newBlocks) {
+    std::lock_guard<std::mutex> lock(this->_blocks_mtx);
+    this->blocks = newBlocks;
 }
 
 int Chunk::distance(int p, int q) const {

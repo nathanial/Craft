@@ -43,7 +43,7 @@ public:
         }
         return this->_data[x][y][z];
     }
-    char get_or_default(int x, int y, int z, char _default) {
+    char get_or_default(int x, int y, int z, char _default) const {
         if(x < 0 || x >= WIDTH || y < 0 || y >= HEIGHT|| z < 0 || z >= WIDTH){
             return _default;
         }
@@ -69,6 +69,14 @@ public:
     }
     unsigned int size() {
         return WIDTH * WIDTH * HEIGHT;
+    };
+
+    std::shared_ptr<BlockMap<WIDTH, HEIGHT>> copy() const {
+        auto newMap = std::make_shared<BlockMap<WIDTH,HEIGHT>>();
+        this->each([&](int x, int y, int z, char w){
+           newMap->set(x,y,z,w);
+        });
+        return newMap;
     };
 };
 
