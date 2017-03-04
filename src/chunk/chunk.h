@@ -52,10 +52,6 @@ public:
     int get_block(int x, int y, int z) const;
     int get_block_or_zero(int x, int y, int z) const;
     void foreach_block(std::function<void (int, int, int, char)> func) const;
-
-public:
-
-    // Make sure the function that's providing "blocks" holds the _block_mtx
     static std::shared_ptr<ChunkMesh> create_mesh(int _p, int _q, bool dirty, GLuint buffer, const ChunkBlocks &blocks,
                                                   const ChunkNeighbors &neighbors);
 
