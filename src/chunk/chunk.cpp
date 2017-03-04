@@ -184,7 +184,7 @@ std::unique_ptr<ChunkMesh> Chunk::load(bool dirty, GLuint buffer, const ChunkNei
     auto light = std::make_unique<BigBlockMap>();
     auto highest = std::make_unique<HeightMap<CHUNK_SIZE * 3>>();
 
-    this->populate_opaque_array(*opaque, *highest, neighbors);
+    Chunk::populate_opaque_array(this->p(), this->q(), *opaque, *highest, neighbors);
     Chunk::populate_light_array(this->p(), this->q(), *opaque, *light, neighbors);
 
     int miny, maxy, faces;
@@ -235,13 +235,13 @@ void Chunk::populate_light_array(int _p, int _q, BigBlockMap &opaque, BigBlockMa
     }
 }
 
-void Chunk::populate_opaque_array(BigBlockMap &opaque, HeightMap<48> &highest, const ChunkNeighbors &neighbors) const {
-    int ox = this->_p * CHUNK_SIZE - CHUNK_SIZE;
+void Chunk::populate_opaque_array(int _p, int _q, BigBlockMap &opaque, HeightMap<48> &highest, const ChunkNeighbors &neighbors) {
+    int ox = _p * CHUNK_SIZE - CHUNK_SIZE;
     int oy = -1;
-    int oz = this->_q * CHUNK_SIZE - CHUNK_SIZE;
+    int oz = _q * CHUNK_SIZE - CHUNK_SIZE;
     for (int a = 0; a < 3; a++) {
         for (int b = 0; b < 3; b++) {
-            auto chunk = neighbors.at(std::make_tuple(this->_p + (a - 1), this->_q + (b - 1)));
+            auto chunk = neighbors.at(std::make_tuple(_p + (a - 1), _q + (b - 1)));
             if(!chunk){
                 continue;
             }
