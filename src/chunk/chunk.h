@@ -36,7 +36,6 @@ private:
 
 public:
     const int p, q;
-    mutable std::mutex block_mtx;
     std::unique_ptr<ChunkBlocks> blocks;
 
     Chunk(int p, int q);
@@ -51,7 +50,6 @@ public:
 
     std::shared_ptr<TransientChunk> transient() const;
 
-    int set_block(int x, int y, int z, char w);
     int get_block(int x, int y, int z) const;
     int get_block_or_zero(int x, int y, int z) const;
     void foreach_block(std::function<void (int, int, int, char)> func) const;

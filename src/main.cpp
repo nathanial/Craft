@@ -52,10 +52,10 @@ int get_scale_factor() {
     return result;
 }
 
-void set_dirty_flag(Chunk &chunk) {
+void set_dirty_flag(int p, int q) {
     for (int dp = -1; dp <= 1; dp++) {
         for (int dq = -1; dq <= 1; dq++) {
-            auto other = g->find_chunk(chunk.p + dp, chunk.q + dq);
+            auto other = g->find_chunk(p + dp, q + dq);
             if (other) {
                 other->set_mesh(other->mesh()->set_dirty(true));
             }
@@ -382,7 +382,7 @@ void request_chunk(int p, int q) {
 void create_chunk(int p, int q) {
     GenerateChunkTask gen_chunk(p,q);
     auto chunk = gen_chunk.run().get();
-    set_dirty_flag(*chunk);
+    set_dirty_flag(p, q);
 
     g->add_chunk(chunk);
 
@@ -485,7 +485,7 @@ void ensure_chunks_worker(Player *player, WorkerPtr worker) {
         if (g->chunk_count() < MAX_CHUNKS) {
             GenerateChunkTask gen_chunk(a,b);
             chunk = gen_chunk.run().get();
-            set_dirty_flag(*chunk);
+            set_dirty_flag(p, q);
             g->add_chunk(chunk);
         }
         else {
@@ -541,17 +541,14 @@ int worker_run(WorkerPtr worker) {
 void _set_block(int p, int q, int x, int y, int z, int w, int dirty) {
     printf("Inner Set Block %d,%d,%d,%d,%d\n", p, q, x, y, z);
     auto chunk = g->find_chunk(p, q);
-    if (chunk) {
-        if (chunk->set_block(x, y, z, w)) {
+    g->update_chunk(p,q, [=](TransientChunk& chunk){
+        if (chunk.set_block(x, y, z, w)) {
             if (dirty) {
-                set_dirty_flag(*chunk);
+                set_dirty_flag(p, q);
             }
             db_insert_block(p, q, x, y, z, w);
         }
-    }
-    else {
-        db_insert_block(p, q, x, y, z, w);
-    }
+    });
 }
 
 void set_block(int x, int y, int z, int w) {
@@ -1363,7 +1360,7 @@ void parse_buffer(char *buffer) {
         if (sscanf(line, "R,%d,%d", &kp, &kq) == 2) {
             auto chunk = g->find_chunk(kp, kq);
             if (chunk) {
-                set_dirty_flag(*chunk);
+                set_dirty_flag(kp, kq);
             }
         }
         double elapsed;

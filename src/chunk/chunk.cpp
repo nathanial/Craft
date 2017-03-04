@@ -59,10 +59,6 @@ void Chunk::foreach_block(std::function<void (int, int, int, char)> func) const 
     });
 }
 
-int Chunk::set_block(int x, int y, int z, char w){
-    return this->blocks->set(x - this->p * CHUNK_SIZE, y, z - this->q * CHUNK_SIZE, w);
-}
-
 std::shared_ptr<TransientChunk> Chunk::transient() const {
     auto t = std::make_shared<TransientChunk>(p, q);
     t->blocks = this->blocks->copy();
