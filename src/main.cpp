@@ -527,8 +527,8 @@ int worker_run(WorkerPtr worker) {
         }
         auto chunk = g->find_chunk(item->p, item->q);
         auto mesh = chunk->mesh();
-        chunk->set_mesh(
-                chunk->create_mesh(item->p, item->q, mesh->dirty, mesh->buffer, *chunk->blocks, find_neighbors(*chunk)));
+        auto newMesh = chunk->create_mesh(item->p, item->q, mesh->dirty, mesh->buffer, *chunk->blocks, find_neighbors(*chunk));
+        chunk->set_mesh(newMesh);
         {
             std::lock_guard<std::mutex> lock(worker->mtx);
             worker->state = WORKER_DONE;
