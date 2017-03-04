@@ -1,5 +1,7 @@
 #include "model.h"
 #include "util.h"
+#include "chunk/ChunkMesh.h"
+#include "chunk/TransientChunkMesh.h"
 
 Model::Model(){
     for(int i = 0; i < WORKERS; i++){
@@ -15,6 +17,14 @@ ChunkPtr Model::get_chunk(int p, int q) {
     }
 }
 
+std::shared_ptr<ChunkMesh> Model::get_mesh(int p, int q) {
+    if(this->meshes.count(std::make_tuple(p,q)) <= 0){
+        return nullptr;
+    } else {
+        return this->meshes.at(std::make_tuple(p,q));
+    }
+}
+
 void Model::clear_chunks(){
     this->chunks.clear();
 }
@@ -27,6 +37,43 @@ ChunkPtr Model::find_chunk(int p, int q) {
     return chunk;
 }
 
+std::shared_ptr<ChunkMesh> Model::find_mesh(int p, int q) {
+    auto mesh = this->get_mesh(p,q);
+    if(mesh == nullptr){
+        return nullptr;
+    }
+    return mesh;
+}
+
+
+void Model::update_chunk(int p, int q, std::function<void (TransientChunk&) > func){
+    auto chunk = this->find_chunk(p,q);
+    auto transient = chunk->transient();
+    func(*transient);
+    this->replace_chunk(transient->immutable());
+}
+
+void Model::update_mesh(int p, int q, std::function<void (TransientChunkMesh&) > func){
+    auto mesh = this->find_mesh(p,q);
+    if(mesh){
+        auto transient = mesh->transient();
+        func(*transient);
+        this->replace_mesh(p,q, transient->immutable());
+    } else {
+        TransientChunkMesh transient;
+        func(transient);
+        this->replace_mesh(p,q, transient.immutable());
+    }
+}
+
+void Model::replace_mesh(int p, int q, std::shared_ptr<ChunkMesh> mesh){
+    this->meshes[std::make_tuple(p, q)] = mesh;
+}
+
+void Model::replace_chunk(std::shared_ptr<Chunk> chunk){
+    this->chunks[std::make_tuple(chunk->p, chunk->q)] = chunk;
+}
+
 void Model::each_chunk(std::function<void (Chunk& chunk)> func) {
     for(const auto & kv : this->chunks){
         auto chunk = kv.second;
@@ -36,7 +83,6 @@ void Model::each_chunk(std::function<void (Chunk& chunk)> func) {
         } else {
             func(*chunk);
         }
-
     }
 }
 

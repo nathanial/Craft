@@ -5,7 +5,7 @@
 #include "flatland.h"
 #include "../item.h"
 
-void Flatland::create_chunk(Chunk& chunk, int p, int q) {
+void Flatland::create_chunk(TransientChunk& chunk, int p, int q) {
     for (int dx = 0; dx < CHUNK_SIZE; dx++) {
         for (int dz = 0; dz < CHUNK_SIZE; dz++) {
             int x = p * CHUNK_SIZE + dx;

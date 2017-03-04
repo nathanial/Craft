@@ -1,6 +1,8 @@
 #include <string.h>
 #include "db.h"
 #include "ring.h"
+#include "chunk/TransientChunk.h"
+
 extern "C" {
     #include "sqlite3.h"
 }
@@ -403,7 +405,7 @@ void db_delete_all_signs() {
     sqlite3_exec(db, "delete from sign;", NULL, NULL, NULL);
 }
 
-void db_load_blocks(Chunk& chunk, int p, int q) {
+void db_load_blocks(TransientChunk& chunk, int p, int q) {
     if (!db_enabled) {
         return;
     }

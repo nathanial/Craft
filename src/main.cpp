@@ -52,13 +52,12 @@ int get_scale_factor() {
     return result;
 }
 
-void set_dirty_flag(Chunk &chunk) {
+void set_dirty_flag(int p, int q) {
     for (int dp = -1; dp <= 1; dp++) {
         for (int dq = -1; dq <= 1; dq++) {
-            auto other = g->find_chunk(chunk.p + dp, chunk.q + dq);
-            if (other) {
-                other->set_mesh(other->mesh()->set_dirty(true));
-            }
+            g->update_mesh(p + dp, q + dq, [&](TransientChunkMesh &mesh) {
+                mesh.dirty = true;
+            });
         }
     }
 }
@@ -359,18 +358,20 @@ ChunkNeighbors find_neighbors(const Chunk& chunk){
 }
 
 void gen_chunk_buffer(Chunk& chunk) {
-    auto mesh = chunk.mesh();
-    std::shared_ptr<ChunkMesh> newMesh = Chunk::create_mesh(chunk.p, chunk.q, mesh->dirty, mesh->buffer, *chunk.blocks,
-                                                            find_neighbors(chunk))->generate_buffer()->set_dirty(false);
-    chunk.set_mesh(newMesh);
+    g->update_mesh(chunk.p, chunk.q, [&](TransientChunkMesh& mesh) {
+        Chunk::create_mesh(chunk.p, chunk.q, mesh, *chunk.blocks, find_neighbors(chunk));
+        mesh.generate_buffer();
+        mesh.dirty = false;
+    });
 }
 
 void load_chunk(WorkerItemPtr item) {
     int p = item->p;
     int q = item->q;
-    auto chunk = g->find_chunk(p,q);
-    create_world(*chunk, p, q);
-    db_load_blocks(*chunk, p, q);
+    g->update_chunk(p, q, [=](TransientChunk &chunk){
+        create_world(chunk, p, q);
+        db_load_blocks(chunk, p, q);
+    });
 }
 
 void request_chunk(int p, int q) {
@@ -381,7 +382,7 @@ void request_chunk(int p, int q) {
 void create_chunk(int p, int q) {
     GenerateChunkTask gen_chunk(p,q);
     auto chunk = gen_chunk.run().get();
-    set_dirty_flag(*chunk);
+    set_dirty_flag(p, q);
 
     g->add_chunk(chunk);
 
@@ -405,7 +406,9 @@ void check_workers() {
                 if (item->load) {
                     request_chunk(item->p, item->q);
                 }
-                chunk->set_mesh(chunk->mesh()->generate_buffer());
+                g->update_mesh(item->p, item->q, [&](TransientChunkMesh& mesh){
+                    mesh.generate_buffer();
+                });
             }
             worker->state = WORKER_IDLE;
         }
@@ -422,8 +425,9 @@ void force_chunks(Player *player) {
             int a = p + dp;
             int b = q + dq;
             auto chunk = g->find_chunk(a, b);
+            auto mesh = g->find_mesh(a,b);
             if (chunk) {
-                if (chunk->mesh()->dirty) {
+                if (mesh && mesh->dirty) {
                     gen_chunk_buffer(*chunk);
                 }
             }
@@ -455,14 +459,15 @@ void ensure_chunks_worker(Player *player, WorkerPtr worker) {
                 continue;
             }
             auto chunk = g->find_chunk(a, b);
-            if (chunk && !chunk->mesh()->dirty) {
+            auto mesh = g->find_mesh(a,b);
+            if (chunk && mesh && !mesh->dirty) {
                 continue;
             }
             int distance = MAX(ABS(dp), ABS(dq));
             int invisible = !chunk_visible(planes, a, b, 0, 256);
             int priority = 0;
-            if (chunk) {
-                priority = chunk->mesh()->is_ready_to_draw();
+            if (chunk && mesh) {
+                priority = mesh->is_ready_to_draw();
             }
             int score = (invisible << 24) | (priority << 16) | distance;
             if (score < best_score) {
@@ -484,7 +489,7 @@ void ensure_chunks_worker(Player *player, WorkerPtr worker) {
         if (g->chunk_count() < MAX_CHUNKS) {
             GenerateChunkTask gen_chunk(a,b);
             chunk = gen_chunk.run().get();
-            set_dirty_flag(*chunk);
+            set_dirty_flag(p, q);
             g->add_chunk(chunk);
         }
         else {
@@ -495,7 +500,9 @@ void ensure_chunks_worker(Player *player, WorkerPtr worker) {
     worker->item->p = chunk->p;
     worker->item->q = chunk->q;
     worker->item->load = load;
-    chunk->set_mesh(chunk->mesh()->set_dirty(false));
+    g->update_mesh(chunk->p, chunk->q, [&](TransientChunkMesh &mesh){
+        mesh.dirty = false;
+    });
     worker->state = WORKER_BUSY;
     worker->cnd.notify_all();
 }
@@ -526,9 +533,9 @@ int worker_run(WorkerPtr worker) {
             load_chunk(item);
         }
         auto chunk = g->find_chunk(item->p, item->q);
-        auto mesh = chunk->mesh();
-        auto newMesh = chunk->create_mesh(item->p, item->q, mesh->dirty, mesh->buffer, *chunk->blocks, find_neighbors(*chunk));
-        chunk->set_mesh(newMesh);
+        g->update_mesh(item->p, item->q, [&](TransientChunkMesh &mesh) {
+            chunk->create_mesh(item->p, item->q, mesh, *chunk->blocks, find_neighbors(*chunk));
+        });
         {
             std::lock_guard<std::mutex> lock(worker->mtx);
             worker->state = WORKER_DONE;
@@ -540,17 +547,14 @@ int worker_run(WorkerPtr worker) {
 void _set_block(int p, int q, int x, int y, int z, int w, int dirty) {
     printf("Inner Set Block %d,%d,%d,%d,%d\n", p, q, x, y, z);
     auto chunk = g->find_chunk(p, q);
-    if (chunk) {
-        if (chunk->set_block(x, y, z, w)) {
+    g->update_chunk(p,q, [=](TransientChunk& chunk){
+        if (chunk.set_block(x, y, z, w)) {
             if (dirty) {
-                set_dirty_flag(*chunk);
+                set_dirty_flag(p, q);
             }
             db_insert_block(p, q, x, y, z, w);
         }
-    }
-    else {
-        db_insert_block(p, q, x, y, z, w);
-    }
+    });
 }
 
 void set_block(int x, int y, int z, int w) {
@@ -611,15 +615,19 @@ int render_chunks(Attrib *attrib, Player *player) {
     glUniform1i(attrib->extra4, g->ortho);
     glUniform1f(attrib->timer, time_of_day());
     g->each_chunk([&](Chunk& chunk) {
+        auto mesh = g->find_mesh(chunk.p, chunk.q);
+        if(!mesh){
+            return;
+        }
         if (chunk.distance(p, q) > g->render_radius) {
             return;
         }
         if (!chunk_visible(
-            planes, chunk.p, chunk.q, chunk.mesh()->miny, chunk.mesh()->maxy))
+            planes, chunk.p, chunk.q, mesh->miny, mesh->maxy))
         {
             return;
         }
-        result += chunk.mesh()->draw(attrib);
+        result += mesh->draw(attrib);
     });
     return result;
 }
@@ -1362,7 +1370,7 @@ void parse_buffer(char *buffer) {
         if (sscanf(line, "R,%d,%d", &kp, &kq) == 2) {
             auto chunk = g->find_chunk(kp, kq);
             if (chunk) {
-                set_dirty_flag(*chunk);
+                set_dirty_flag(kp, kq);
             }
         }
         double elapsed;

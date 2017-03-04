@@ -8,6 +8,7 @@
 
 #include <unordered_map>
 #include <tuple>
+#include "../chunk/TransientChunk.h"
 
 typedef std::tuple<int, int, int> BlockPosition;
 
@@ -25,7 +26,7 @@ class TerrainFeature {
 public:
     virtual Blocks create() = 0;
 
-    void add_to_chunk(Chunk &chunk, int x, int y, int z);
+    void add_to_chunk(TransientChunk &chunk, int x, int y, int z);
 };
 
 

@@ -29,12 +29,16 @@ Chunk::Chunk(int p, int q) :
     p(p), q(q),
     blocks(std::make_unique<BlockMap<CHUNK_SIZE, CHUNK_HEIGHT>>())
 {
-    auto render_data = std::make_shared<ChunkMesh>();
-    this->_mesh = render_data->set_dirty(true);
+}
+
+
+Chunk::Chunk(int p, int q, std::unique_ptr<ChunkBlocks> blocks)
+: p(p),q(q), blocks(blocks->copy())
+{
 }
 
 Chunk::~Chunk() {
-    del_buffer(this->mesh()->buffer);
+    // del_buffer(this->mesh()->buffer);
 }
 
 int Chunk::get_block(int x, int y, int z) const {
@@ -51,8 +55,10 @@ void Chunk::foreach_block(std::function<void (int, int, int, char)> func) const 
     });
 }
 
-int Chunk::set_block(int x, int y, int z, char w){
-    return this->blocks->set(x - this->p * CHUNK_SIZE, y, z - this->q * CHUNK_SIZE, w);
+std::shared_ptr<TransientChunk> Chunk::transient() const {
+    auto t = std::make_shared<TransientChunk>(p, q);
+    t->blocks = this->blocks->copy();
+    return t;
 }
 
 int Chunk::distance(int p, int q) const {
@@ -171,8 +177,7 @@ std::vector<GLfloat> Chunk::generate_geometry(int p, int q, const ChunkBlocks &b
 }
 
 
-std::shared_ptr<ChunkMesh> Chunk::create_mesh(int _p, int _q, bool dirty, GLuint buffer, const ChunkBlocks &blocks,
-                                              const ChunkNeighbors &neighbors) {
+void Chunk::create_mesh(int _p, int _q, TransientChunkMesh &mesh, const ChunkBlocks &blocks, const ChunkNeighbors &neighbors) {
     auto opaque = std::make_unique<BigBlockMap>();
     auto light = std::make_unique<BigBlockMap>();
     auto highest = std::make_unique<HeightMap<CHUNK_SIZE * 3>>();
@@ -184,7 +189,10 @@ std::shared_ptr<ChunkMesh> Chunk::create_mesh(int _p, int _q, bool dirty, GLuint
     std::tie(miny, maxy, faces) = Chunk::count_faces(_p, _q, blocks, *opaque);
     auto data = Chunk::generate_geometry(_p, _q, blocks, *opaque, *light, *highest);
 
-    return std::make_shared<ChunkMesh>(miny, maxy, faces, dirty, buffer, data);
+    mesh.miny = miny;
+    mesh.maxy = maxy;
+    mesh.faces = faces;
+    mesh.vertices = data;
 }
 
 void Chunk::populate_light_array(int _p, int _q, BigBlockMap &opaque, BigBlockMap &light, const ChunkNeighbors& neighbors) {
@@ -267,16 +275,6 @@ void Chunk::populate_opaque_array(int _p, int _q, BigBlockMap &opaque, HeightMap
             }
         }
     }
-}
-
-void Chunk::set_mesh(std::shared_ptr<ChunkMesh> render_data) {
-    std::lock_guard<std::mutex> lock_guard(_mesh_mtx);
-    this->_mesh = render_data;
-}
-
-std::shared_ptr<ChunkMesh> Chunk::mesh() const {
-    std::lock_guard<std::mutex> lock_guard(_mesh_mtx);
-    return this->_mesh;
 }
 
 int chunk_visible(arma::mat planes, int p, int q, int miny, int maxy) {

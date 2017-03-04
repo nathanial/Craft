@@ -5,6 +5,7 @@
 #include "../block_map.h"
 #include "../height_map.h"
 #include "../sign.h"
+#include "TransientChunk.h"
 #include <memory>
 #include <mutex>
 #include <vector>
@@ -13,6 +14,7 @@
 class Attrib;
 class ChunkMesh;
 class Chunk;
+class TransientChunkMesh;
 
 typedef BlockMap<CHUNK_SIZE, CHUNK_HEIGHT> ChunkBlocks;
 typedef std::tuple<int, int> ChunkPosition;
@@ -28,35 +30,21 @@ struct ChunkPositionHash : public std::unary_function<ChunkPosition, std::size_t
 typedef std::unordered_map<ChunkPosition, std::shared_ptr<Chunk>, ChunkPositionHash> ChunkNeighbors;
 
 class Chunk {
-private:
-    // mesh is threadsafe because ChunkMesh is immutable
-    mutable std::mutex _mesh_mtx;
-    std::shared_ptr<ChunkMesh> _mesh;
-
 public:
     const int p, q;
-    mutable std::mutex block_mtx;
-    std::unique_ptr<ChunkBlocks> blocks;
+    const std::unique_ptr<const ChunkBlocks> blocks;
 
     Chunk(int p, int q);
+    Chunk(int p, int q, std::unique_ptr<ChunkBlocks> blocks);
     ~Chunk();
 
     // THREAD SAFE
-    void set_mesh(std::shared_ptr<ChunkMesh> data);
-    std::shared_ptr<ChunkMesh> mesh() const;
-
     int distance(int p, int q) const;
-
-    // CALL WITH _block_mtx
-    int set_block(int x, int y, int z, char w);
+    std::shared_ptr<TransientChunk> transient() const;
     int get_block(int x, int y, int z) const;
     int get_block_or_zero(int x, int y, int z) const;
     void foreach_block(std::function<void (int, int, int, char)> func) const;
-
-public:
-
-    // Make sure the function that's providing "blocks" holds the _block_mtx
-    static std::shared_ptr<ChunkMesh> create_mesh(int _p, int _q, bool dirty, GLuint buffer, const ChunkBlocks &blocks,
+    static void create_mesh(int _p, int _q, TransientChunkMesh &mesh, const ChunkBlocks &blocks,
                                                   const ChunkNeighbors &neighbors);
 
 private:
