@@ -9,7 +9,7 @@
 
 class RollingPlanes : public Biome {
 public:
-    void create_chunk(Chunk& chunk, int p, int q) override;
+    void create_chunk(TransientChunk& chunk, int p, int q) override;
 };
 
 #endif //CRAFT_ROLLING_PLANES_H_H

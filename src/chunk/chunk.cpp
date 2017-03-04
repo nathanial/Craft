@@ -33,8 +33,16 @@ Chunk::Chunk(int p, int q) :
     this->_mesh = render_data->set_dirty(true);
 }
 
+
+Chunk::Chunk(int p, int q, std::unique_ptr<ChunkBlocks> blocks)
+: p(p),q(q), blocks(blocks->copy())
+{
+    auto render_data = std::make_shared<ChunkMesh>();
+    this->_mesh = render_data->set_dirty(true);
+}
+
 Chunk::~Chunk() {
-    del_buffer(this->mesh()->buffer);
+    // del_buffer(this->mesh()->buffer);
 }
 
 int Chunk::get_block(int x, int y, int z) const {
@@ -53,6 +61,12 @@ void Chunk::foreach_block(std::function<void (int, int, int, char)> func) const 
 
 int Chunk::set_block(int x, int y, int z, char w){
     return this->blocks->set(x - this->p * CHUNK_SIZE, y, z - this->q * CHUNK_SIZE, w);
+}
+
+std::shared_ptr<TransientChunk> Chunk::transient() const {
+    auto t = std::make_shared<TransientChunk>(p, q);
+    t->blocks = this->blocks->copy();
+    return t;
 }
 
 int Chunk::distance(int p, int q) const {

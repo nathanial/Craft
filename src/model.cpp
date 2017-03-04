@@ -27,6 +27,18 @@ ChunkPtr Model::find_chunk(int p, int q) {
     return chunk;
 }
 
+
+void Model::update_chunk(int p, int q, std::function<void (TransientChunk&) > func){
+    auto chunk = this->find_chunk(p,q);
+    auto transient = chunk->transient();
+    func(*transient);
+    this->replace_chunk(transient->immutable());
+}
+
+void Model::replace_chunk(std::shared_ptr<Chunk> chunk){
+    this->chunks[std::make_tuple(chunk->p, chunk->q)] = chunk;
+}
+
 void Model::each_chunk(std::function<void (Chunk& chunk)> func) {
     for(const auto & kv : this->chunks){
         auto chunk = kv.second;
@@ -36,7 +48,6 @@ void Model::each_chunk(std::function<void (Chunk& chunk)> func) {
         } else {
             func(*chunk);
         }
-
     }
 }
 

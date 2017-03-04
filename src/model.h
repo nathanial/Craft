@@ -12,6 +12,7 @@
 #include <functional>
 #include <tuple>
 #include <vector>
+#include "chunk/TransientChunk.h"
 
 class Block {
 public:
@@ -98,6 +99,8 @@ public:
     ChunkPtr get_chunk(int p, int q);
     void clear_chunks();
     ChunkPtr find_chunk(int p, int q);
+    void replace_chunk(ChunkPtr chunk);
+    void update_chunk(int p, int q, std::function<void (TransientChunk&) > func);
 
     void each_chunk(std::function<void (Chunk& chunk)>);
     void delete_chunks();

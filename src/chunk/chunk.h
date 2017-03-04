@@ -5,6 +5,7 @@
 #include "../block_map.h"
 #include "../height_map.h"
 #include "../sign.h"
+#include "TransientChunk.h"
 #include <memory>
 #include <mutex>
 #include <vector>
@@ -39,6 +40,7 @@ public:
     std::unique_ptr<ChunkBlocks> blocks;
 
     Chunk(int p, int q);
+    Chunk(int p, int q, std::unique_ptr<ChunkBlocks> blocks);
     ~Chunk();
 
     // THREAD SAFE
@@ -47,7 +49,8 @@ public:
 
     int distance(int p, int q) const;
 
-    // CALL WITH _block_mtx
+    std::shared_ptr<TransientChunk> transient() const;
+
     int set_block(int x, int y, int z, char w);
     int get_block(int x, int y, int z) const;
     int get_block_or_zero(int x, int y, int z) const;

@@ -4,6 +4,7 @@
 #include "block_map.h"
 #include "sign.h"
 #include "chunk/chunk.h"
+#include "chunk/TransientChunk.h"
 
 void db_enable();
 void db_disable();
@@ -28,7 +29,7 @@ void db_insert_sign(
 void db_delete_sign(int x, int y, int z, int face);
 void db_delete_signs(int x, int y, int z);
 void db_delete_all_signs();
-void db_load_blocks(Chunk& chunk, int p, int q);
+void db_load_blocks(TransientChunk& chunk, int p, int q);
 void db_load_signs(SignList *list, int p, int q);
 int db_get_key(int p, int q);
 void db_set_key(int p, int q, int key);

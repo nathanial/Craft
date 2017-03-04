@@ -70,6 +70,14 @@ public:
     unsigned int size() const {
         return WIDTH * WIDTH * HEIGHT;
     };
+
+    std::unique_ptr<BlockMap<WIDTH, HEIGHT>> copy() const {
+        auto newCopy = std::make_unique<BlockMap<WIDTH, HEIGHT>>();
+        this->each([&](int x, int y, int z, char w){
+            newCopy->set(x,y,z,w);
+        });
+        return newCopy;
+    };
 };
 
 typedef BlockMap<CHUNK_SIZE * 3, CHUNK_HEIGHT> BigBlockMap;

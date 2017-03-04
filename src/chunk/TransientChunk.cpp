@@ -3,6 +3,7 @@
 //
 
 #include "TransientChunk.h"
+#include "Chunk.h"
 
 TransientChunk::TransientChunk(int p, int q) :
     p(p), q(q),
@@ -22,4 +23,8 @@ void TransientChunk::foreach_block(std::function<void(int, int, int, char)> func
     this->blocks->each([&](int x, int y, int z, char w){
         func(x + this->p * CHUNK_SIZE, y, z + this->q * CHUNK_SIZE, w);
     });
+}
+
+std::shared_ptr<Chunk> TransientChunk::immutable() const {
+    return std::make_shared<Chunk>(p, q, blocks->copy());
 }
