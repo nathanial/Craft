@@ -34,9 +34,10 @@ private:
     const int _p;
     const int _q; // chunk position
 
-    std::unique_ptr<ChunkBlocks> blocks;
     std::shared_ptr<ChunkMesh> _mesh;
 public:
+    std::unique_ptr<ChunkBlocks> blocks;
+
     Chunk(int p, int q);
     ~Chunk();
 
@@ -44,13 +45,15 @@ public:
     void set_mesh(std::shared_ptr<ChunkMesh> data);
     std::shared_ptr<ChunkMesh> mesh() const;
 
-    std::unique_ptr<ChunkMesh> load(bool dirty, GLuint buffer, const ChunkNeighbors& neighbors) const;
     int get_block(int x, int y, int z) const;
     int get_block_or_zero(int x, int y, int z) const;
     void foreach_block(std::function<void (int, int, int, char)> func) const;
     int p() const;
     int q() const;
     int distance(int p, int q) const;
+
+public:
+    static std::unique_ptr<ChunkMesh> load(int _p, int _q, bool dirty, GLuint buffer, const ChunkBlocks& blocks, const ChunkNeighbors& neighbors);
 
 private:
     static void populate_light_array(int _p, int _q, BigBlockMap &opaque, BigBlockMap &light, const ChunkNeighbors& neighbors);

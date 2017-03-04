@@ -179,17 +179,17 @@ std::vector<GLfloat> Chunk::generate_geometry(int p, int q, const ChunkBlocks &b
 }
 
 
-std::unique_ptr<ChunkMesh> Chunk::load(bool dirty, GLuint buffer, const ChunkNeighbors& neighbors) const {
+std::unique_ptr<ChunkMesh> Chunk::load(int _p, int _q, bool dirty, GLuint buffer, const ChunkBlocks& blocks, const ChunkNeighbors& neighbors) {
     auto opaque = std::make_unique<BigBlockMap>();
     auto light = std::make_unique<BigBlockMap>();
     auto highest = std::make_unique<HeightMap<CHUNK_SIZE * 3>>();
 
-    Chunk::populate_opaque_array(this->p(), this->q(), *opaque, *highest, neighbors);
-    Chunk::populate_light_array(this->p(), this->q(), *opaque, *light, neighbors);
+    Chunk::populate_opaque_array(_p, _q, *opaque, *highest, neighbors);
+    Chunk::populate_light_array(_p, _q, *opaque, *light, neighbors);
 
     int miny, maxy, faces;
-    std::tie(miny, maxy, faces) = Chunk::count_faces(_p, _q, *blocks, *opaque);
-    auto data = this->generate_geometry(_p, _q, *blocks, *opaque, *light, *highest);
+    std::tie(miny, maxy, faces) = Chunk::count_faces(_p, _q, blocks, *opaque);
+    auto data = Chunk::generate_geometry(_p, _q, blocks, *opaque, *light, *highest);
 
     return std::make_unique<ChunkMesh>(miny, maxy, faces, dirty, buffer, data);
 }
