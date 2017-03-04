@@ -348,10 +348,22 @@ int player_intersects_block(
     return 0;
 }
 
+ChunkNeighbors find_neighbors(const Chunk& chunk){
+    auto p = chunk.p();
+    auto q = chunk.q();
+    ChunkNeighbors neighbors;
+    for(int dp = -1; dp <= 1; dp++){
+        for(int dq = -1; dq <= 1; dq++){
+            neighbors[std::make_tuple(dp + p,dq + q)] = g->find_chunk(dp+p, dq+q);
+        }
+    }
+    return neighbors;
+}
+
 void gen_chunk_buffer(Chunk& chunk) {
     auto mesh = chunk.mesh();
     chunk.set_mesh(
-            chunk.load(mesh->dirty, mesh->buffer)->generate_buffer()->set_dirty(false)
+            chunk.load(mesh->dirty, mesh->buffer, find_neighbors(chunk))->generate_buffer()->set_dirty(false)
     );
 }
 
@@ -517,7 +529,7 @@ int worker_run(WorkerPtr worker) {
         }
         auto chunk = g->find_chunk(item->p, item->q);
         auto mesh = chunk->mesh();
-        chunk->set_mesh(chunk->load(mesh->dirty, mesh->buffer));
+        chunk->set_mesh(chunk->load(mesh->dirty, mesh->buffer, find_neighbors(*chunk)));
         {
             std::lock_guard<std::mutex> lock(worker->mtx);
             worker->state = WORKER_DONE;

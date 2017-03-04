@@ -8,14 +8,12 @@ extern "C" {
 #include <armadillo>
 #include <queue>
 #include "chunk.h"
-#include "../model.h"
 #include "../util.h"
 #include "../item.h"
 #include "../draw.h"
 #include "../cube.h"
 #include "ChunkMesh.h"
-
-extern Model *g;
+#include "../model.h"
 
 void occlusion(
         char neighbors[27], char lights[27], float shades[27],
@@ -181,13 +179,13 @@ std::vector<GLfloat> Chunk::generate_geometry(int p, int q, const ChunkBlocks &b
 }
 
 
-std::unique_ptr<ChunkMesh> Chunk::load(bool dirty, GLuint buffer) const {
+std::unique_ptr<ChunkMesh> Chunk::load(bool dirty, GLuint buffer, const ChunkNeighbors& neighbors) const {
     auto opaque = std::make_unique<BigBlockMap>();
     auto light = std::make_unique<BigBlockMap>();
     auto highest = std::make_unique<HeightMap<CHUNK_SIZE * 3>>();
 
-    this->populate_opaque_array(*opaque, *highest);
-    this->populate_light_array(*opaque, *light);
+    this->populate_opaque_array(*opaque, *highest, neighbors);
+    this->populate_light_array(*opaque, *light, neighbors);
 
     int miny, maxy, faces;
     std::tie(miny, maxy, faces) = Chunk::count_faces(_p, _q, *blocks, *opaque);
@@ -196,14 +194,14 @@ std::unique_ptr<ChunkMesh> Chunk::load(bool dirty, GLuint buffer) const {
     return std::make_unique<ChunkMesh>(miny, maxy, faces, dirty, buffer, data);
 }
 
-void Chunk::populate_light_array(BigBlockMap &opaque, BigBlockMap &light) const {
+void Chunk::populate_light_array(BigBlockMap &opaque, BigBlockMap &light, const ChunkNeighbors& neighbors) const {
     int ox = this->_p * CHUNK_SIZE - CHUNK_SIZE;
     int oy = -1;
     int oz = this->_q * CHUNK_SIZE - CHUNK_SIZE;
 
     for (int a = 0; a < 3; a++) {
         for (int b = 0; b < 3; b++) {
-            auto chunk = g->find_chunk(_p - (a - 1), _q - (b - 1));
+            auto chunk = neighbors.at(std::make_tuple(_p - (a - 1), _q - (b - 1)));
             if(chunk){
                 int chunk_x_offset = chunk->_p * CHUNK_SIZE;
                 int chunk_z_offset = chunk->_q * CHUNK_SIZE;
@@ -237,13 +235,13 @@ void Chunk::populate_light_array(BigBlockMap &opaque, BigBlockMap &light) const 
     }
 }
 
-void Chunk::populate_opaque_array(BigBlockMap &opaque, HeightMap<48> &highest) const {
+void Chunk::populate_opaque_array(BigBlockMap &opaque, HeightMap<48> &highest, const ChunkNeighbors &neighbors) const {
     int ox = this->_p * CHUNK_SIZE - CHUNK_SIZE;
     int oy = -1;
     int oz = this->_q * CHUNK_SIZE - CHUNK_SIZE;
     for (int a = 0; a < 3; a++) {
         for (int b = 0; b < 3; b++) {
-            auto chunk = g->find_chunk(this->_p + (a - 1), this->_q + (b - 1));
+            auto chunk = neighbors.at(std::make_tuple(this->_p + (a - 1), this->_q + (b - 1)));
             if(!chunk){
                 continue;
             }
@@ -302,7 +300,7 @@ int chunk_visible(arma::mat planes, int p, int q, int miny, int maxy) {
             {x + 0, maxy, z + d},
             {x + d, maxy, z + d}
     };
-    int n = g->ortho ? 4 : 6;
+    int n = 6;
     for (int i = 0; i < n; i++) {
         int in = 0;
         int out = 0;
@@ -329,6 +327,7 @@ int chunk_visible(arma::mat planes, int p, int q, int miny, int maxy) {
     return 1;
 }
 
+extern Model *g;
 int highest_block(float x, float z) {
     int result = -1;
     int nx = roundf(x);
