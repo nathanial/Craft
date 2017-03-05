@@ -13,15 +13,16 @@ class ChunkMesh;
 
 class TransientChunkMesh {
 public:
-    int faces;
-    bool dirty;
-    int miny;
-    int maxy;
-    GLuint buffer;
-    std::vector<GLfloat> vertices;
+    int faces = 0;
+    bool dirty = false;
+    int miny = INT_MAX;
+    int maxy = INT_MIN;
+    GLuint buffer = 0;
+    std::vector<GLfloat> vertices = {};
 
     std::shared_ptr<ChunkMesh> immutable() const;
     void generate_buffer();
+
 
 };
 

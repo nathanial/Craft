@@ -499,7 +499,9 @@ void ensure_chunks_worker(Player *player, WorkerPtr worker) {
     worker->item->p = chunk->p;
     worker->item->q = chunk->q;
     worker->item->load = load;
-    chunk->set_mesh(chunk->mesh()->set_dirty(false));
+    g->update_mesh(chunk->p, chunk->q, [&](TransientChunkMesh &mesh){
+        mesh.dirty = false;
+    });
     worker->state = WORKER_BUSY;
     worker->cnd.notify_all();
 }

@@ -29,16 +29,18 @@ Chunk::Chunk(int p, int q) :
     p(p), q(q),
     blocks(std::make_unique<BlockMap<CHUNK_SIZE, CHUNK_HEIGHT>>())
 {
-    auto render_data = std::make_shared<ChunkMesh>();
-    this->_mesh = render_data->set_dirty(true);
+    TransientChunkMesh mesh;
+    mesh.dirty = true;
+    this->_mesh = mesh.immutable();
 }
 
 
 Chunk::Chunk(int p, int q, std::unique_ptr<ChunkBlocks> blocks)
 : p(p),q(q), blocks(blocks->copy())
 {
-    auto render_data = std::make_shared<ChunkMesh>();
-    this->_mesh = render_data->set_dirty(true);
+    TransientChunkMesh mesh;
+    mesh.dirty = true;
+    this->_mesh = mesh.immutable();
 }
 
 Chunk::~Chunk() {
