@@ -29,18 +29,12 @@ Chunk::Chunk(int p, int q) :
     p(p), q(q),
     blocks(std::make_unique<BlockMap<CHUNK_SIZE, CHUNK_HEIGHT>>())
 {
-    TransientChunkMesh mesh;
-    mesh.dirty = true;
-    this->_mesh = mesh.immutable();
 }
 
 
 Chunk::Chunk(int p, int q, std::unique_ptr<ChunkBlocks> blocks)
 : p(p),q(q), blocks(blocks->copy())
 {
-    TransientChunkMesh mesh;
-    mesh.dirty = true;
-    this->_mesh = mesh.immutable();
 }
 
 Chunk::~Chunk() {
@@ -281,16 +275,6 @@ void Chunk::populate_opaque_array(int _p, int _q, BigBlockMap &opaque, HeightMap
             }
         }
     }
-}
-
-void Chunk::set_mesh(std::shared_ptr<ChunkMesh> render_data) {
-    std::lock_guard<std::mutex> lock_guard(_mesh_mtx);
-    this->_mesh = render_data;
-}
-
-std::shared_ptr<ChunkMesh> Chunk::mesh() const {
-    std::lock_guard<std::mutex> lock_guard(_mesh_mtx);
-    return this->_mesh;
 }
 
 int chunk_visible(arma::mat planes, int p, int q, int miny, int maxy) {

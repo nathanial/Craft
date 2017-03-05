@@ -363,7 +363,6 @@ void gen_chunk_buffer(Chunk& chunk) {
         mesh.generate_buffer();
         mesh.dirty = false;
     });
-    auto mesh = chunk.mesh();
 }
 
 void load_chunk(WorkerItemPtr item) {
@@ -426,8 +425,9 @@ void force_chunks(Player *player) {
             int a = p + dp;
             int b = q + dq;
             auto chunk = g->find_chunk(a, b);
+            auto mesh = g->find_mesh(a,b);
             if (chunk) {
-                if (chunk->mesh()->dirty) {
+                if (mesh && mesh->dirty) {
                     gen_chunk_buffer(*chunk);
                 }
             }
@@ -459,14 +459,15 @@ void ensure_chunks_worker(Player *player, WorkerPtr worker) {
                 continue;
             }
             auto chunk = g->find_chunk(a, b);
-            if (chunk && !chunk->mesh()->dirty) {
+            auto mesh = g->find_mesh(a,b);
+            if (chunk && mesh && !mesh->dirty) {
                 continue;
             }
             int distance = MAX(ABS(dp), ABS(dq));
             int invisible = !chunk_visible(planes, a, b, 0, 256);
             int priority = 0;
-            if (chunk) {
-                priority = chunk->mesh()->is_ready_to_draw();
+            if (chunk && mesh) {
+                priority = mesh->is_ready_to_draw();
             }
             int score = (invisible << 24) | (priority << 16) | distance;
             if (score < best_score) {
@@ -614,15 +615,19 @@ int render_chunks(Attrib *attrib, Player *player) {
     glUniform1i(attrib->extra4, g->ortho);
     glUniform1f(attrib->timer, time_of_day());
     g->each_chunk([&](Chunk& chunk) {
+        auto mesh = g->find_mesh(chunk.p, chunk.q);
+        if(!mesh){
+            return;
+        }
         if (chunk.distance(p, q) > g->render_radius) {
             return;
         }
         if (!chunk_visible(
-            planes, chunk.p, chunk.q, chunk.mesh()->miny, chunk.mesh()->maxy))
+            planes, chunk.p, chunk.q, mesh->miny, mesh->maxy))
         {
             return;
         }
-        result += chunk.mesh()->draw(attrib);
+        result += mesh->draw(attrib);
     });
     return result;
 }

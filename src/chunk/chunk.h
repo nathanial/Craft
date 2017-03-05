@@ -30,11 +30,6 @@ struct ChunkPositionHash : public std::unary_function<ChunkPosition, std::size_t
 typedef std::unordered_map<ChunkPosition, std::shared_ptr<Chunk>, ChunkPositionHash> ChunkNeighbors;
 
 class Chunk {
-private:
-    // mesh is threadsafe because ChunkMesh is immutable
-    mutable std::mutex _mesh_mtx;
-    std::shared_ptr<ChunkMesh> _mesh;
-
 public:
     const int p, q;
     const std::unique_ptr<const ChunkBlocks> blocks;
@@ -44,8 +39,6 @@ public:
     ~Chunk();
 
     // THREAD SAFE
-    void set_mesh(std::shared_ptr<ChunkMesh> data);
-    std::shared_ptr<ChunkMesh> mesh() const;
     int distance(int p, int q) const;
     std::shared_ptr<TransientChunk> transient() const;
     int get_block(int x, int y, int z) const;
