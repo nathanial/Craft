@@ -5,6 +5,7 @@
 #include "ChunkMesh.h"
 #include "../draw.h"
 #include "../util.h"
+#include "./TransientChunkMesh.h"
 
 int ChunkMesh::draw(Attrib *attrib) const {
     if(buffer){
@@ -43,4 +44,17 @@ std::unique_ptr<ChunkMesh> ChunkMesh::set_vertices(const std::vector<GLfloat>& v
 
 bool ChunkMesh::is_ready_to_draw() const {
     return buffer && dirty;
+}
+
+
+
+std::shared_ptr<TransientChunkMesh> ChunkMesh::transient() const {
+    auto transient = std::make_shared<TransientChunkMesh>();
+    transient->dirty = this->dirty;
+    transient->buffer = this->buffer;
+    transient->faces = this->faces;
+    transient->maxy = this->maxy;
+    transient->miny  = this->miny;
+    transient->vertices = this->vertices;
+    return transient;
 }

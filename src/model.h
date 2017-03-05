@@ -13,6 +13,7 @@
 #include <tuple>
 #include <vector>
 #include "chunk/TransientChunk.h"
+#include "chunk/TransientChunkMesh.h"
 
 class Block {
 public:
@@ -101,6 +102,7 @@ public:
     ChunkPtr find_chunk(int p, int q);
     void replace_chunk(ChunkPtr chunk);
     void update_chunk(int p, int q, std::function<void (TransientChunk&) > func);
+    void update_mesh(int p, int q, std::function<void (TransientChunkMesh&) > func);
 
     void each_chunk(std::function<void (Chunk& chunk)>);
     void delete_chunks();

@@ -1,5 +1,6 @@
 #include "model.h"
 #include "util.h"
+#include "chunk/ChunkMesh.h"
 
 Model::Model(){
     for(int i = 0; i < WORKERS; i++){
@@ -33,6 +34,15 @@ void Model::update_chunk(int p, int q, std::function<void (TransientChunk&) > fu
     auto transient = chunk->transient();
     func(*transient);
     this->replace_chunk(transient->immutable());
+}
+
+void Model::update_mesh(int p, int q, std::function<void (TransientChunkMesh&) > func){
+    auto chunk = this->find_chunk(p,q);
+    if(chunk){
+        auto transient = chunk->mesh()->transient();
+        func(*transient);
+        chunk->set_mesh(transient->immutable());
+    }
 }
 
 void Model::replace_chunk(std::shared_ptr<Chunk> chunk){

@@ -10,6 +10,7 @@
 #include <vector>
 
 class Attrib;
+class TransientChunkMesh;
 
 class ChunkMesh {
 public:
@@ -31,6 +32,8 @@ public:
     int draw(Attrib *attrib) const;
 
     bool is_ready_to_draw() const;
+
+    std::shared_ptr<TransientChunkMesh> transient() const;
 };
 
 

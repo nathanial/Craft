@@ -55,10 +55,9 @@ int get_scale_factor() {
 void set_dirty_flag(int p, int q) {
     for (int dp = -1; dp <= 1; dp++) {
         for (int dq = -1; dq <= 1; dq++) {
-            auto other = g->find_chunk(p + dp, q + dq);
-            if (other) {
-                other->set_mesh(other->mesh()->set_dirty(true));
-            }
+            g->update_mesh(p + dp, q + dq, [&](TransientChunkMesh &mesh) {
+                mesh.dirty = true;
+            });
         }
     }
 }
