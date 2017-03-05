@@ -21,6 +21,8 @@ public:
     std::vector<GLfloat> vertices;
 
     std::shared_ptr<ChunkMesh> immutable() const;
+    void generate_buffer();
+
 };
 
 

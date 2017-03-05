@@ -14,6 +14,7 @@
 class Attrib;
 class ChunkMesh;
 class Chunk;
+class TransientChunkMesh;
 
 typedef BlockMap<CHUNK_SIZE, CHUNK_HEIGHT> ChunkBlocks;
 typedef std::tuple<int, int> ChunkPosition;
@@ -50,7 +51,7 @@ public:
     int get_block(int x, int y, int z) const;
     int get_block_or_zero(int x, int y, int z) const;
     void foreach_block(std::function<void (int, int, int, char)> func) const;
-    static std::shared_ptr<ChunkMesh> create_mesh(int _p, int _q, bool dirty, GLuint buffer, const ChunkBlocks &blocks,
+    static void create_mesh(int _p, int _q, TransientChunkMesh &mesh, const ChunkBlocks &blocks,
                                                   const ChunkNeighbors &neighbors);
 
 private:

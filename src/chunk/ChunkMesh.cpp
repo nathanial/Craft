@@ -16,19 +16,6 @@ int ChunkMesh::draw(Attrib *attrib) const {
     }
 }
 
-std::unique_ptr<ChunkMesh> ChunkMesh::generate_buffer() const {
-    if(buffer) {
-        del_buffer(buffer);
-        if(vertices.size() == 0){
-            return set_buffer(0);
-        }
-    }
-    std::vector<GLfloat> emptyVertices;
-    return this->set_buffer(gen_buffer(vertices))
-            ->set_vertices(emptyVertices);
-}
-
-
 std::unique_ptr<ChunkMesh> ChunkMesh::set_dirty(bool dirty) const {
     return std::make_unique<ChunkMesh>(miny, maxy, faces, dirty, buffer, vertices);
 }

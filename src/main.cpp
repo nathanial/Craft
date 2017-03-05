@@ -358,10 +358,12 @@ ChunkNeighbors find_neighbors(const Chunk& chunk){
 }
 
 void gen_chunk_buffer(Chunk& chunk) {
+    g->update_mesh(chunk.p, chunk.q, [&](TransientChunkMesh& mesh) {
+        Chunk::create_mesh(chunk.p, chunk.q, mesh, *chunk.blocks, find_neighbors(chunk));
+        mesh.generate_buffer();
+        mesh.dirty = false;
+    });
     auto mesh = chunk.mesh();
-    std::shared_ptr<ChunkMesh> newMesh = Chunk::create_mesh(chunk.p, chunk.q, mesh->dirty, mesh->buffer, *chunk.blocks,
-                                                            find_neighbors(chunk))->generate_buffer()->set_dirty(false);
-    chunk.set_mesh(newMesh);
 }
 
 void load_chunk(WorkerItemPtr item) {
@@ -405,7 +407,9 @@ void check_workers() {
                 if (item->load) {
                     request_chunk(item->p, item->q);
                 }
-                chunk->set_mesh(chunk->mesh()->generate_buffer());
+                g->update_mesh(item->p, item->q, [&](TransientChunkMesh& mesh){
+                    mesh.generate_buffer();
+                });
             }
             worker->state = WORKER_IDLE;
         }
@@ -526,9 +530,9 @@ int worker_run(WorkerPtr worker) {
             load_chunk(item);
         }
         auto chunk = g->find_chunk(item->p, item->q);
-        auto mesh = chunk->mesh();
-        auto newMesh = chunk->create_mesh(item->p, item->q, mesh->dirty, mesh->buffer, *chunk->blocks, find_neighbors(*chunk));
-        chunk->set_mesh(newMesh);
+        g->update_mesh(item->p, item->q, [&](TransientChunkMesh &mesh) {
+            chunk->create_mesh(item->p, item->q, mesh, *chunk->blocks, find_neighbors(*chunk));
+        });
         {
             std::lock_guard<std::mutex> lock(worker->mtx);
             worker->state = WORKER_DONE;

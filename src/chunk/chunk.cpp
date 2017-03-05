@@ -181,8 +181,7 @@ std::vector<GLfloat> Chunk::generate_geometry(int p, int q, const ChunkBlocks &b
 }
 
 
-std::shared_ptr<ChunkMesh> Chunk::create_mesh(int _p, int _q, bool dirty, GLuint buffer, const ChunkBlocks &blocks,
-                                              const ChunkNeighbors &neighbors) {
+void Chunk::create_mesh(int _p, int _q, TransientChunkMesh &mesh, const ChunkBlocks &blocks, const ChunkNeighbors &neighbors) {
     auto opaque = std::make_unique<BigBlockMap>();
     auto light = std::make_unique<BigBlockMap>();
     auto highest = std::make_unique<HeightMap<CHUNK_SIZE * 3>>();
@@ -194,7 +193,10 @@ std::shared_ptr<ChunkMesh> Chunk::create_mesh(int _p, int _q, bool dirty, GLuint
     std::tie(miny, maxy, faces) = Chunk::count_faces(_p, _q, blocks, *opaque);
     auto data = Chunk::generate_geometry(_p, _q, blocks, *opaque, *light, *highest);
 
-    return std::make_shared<ChunkMesh>(miny, maxy, faces, dirty, buffer, data);
+    mesh.miny = miny;
+    mesh.maxy = maxy;
+    mesh.faces = faces;
+    mesh.vertices = data;
 }
 
 void Chunk::populate_light_array(int _p, int _q, BigBlockMap &opaque, BigBlockMap &light, const ChunkNeighbors& neighbors) {

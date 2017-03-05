@@ -28,7 +28,6 @@ public:
     std::unique_ptr<ChunkMesh> set_dirty(bool dirty) const;
     std::unique_ptr<ChunkMesh> set_buffer(GLuint buffer) const;
     std::unique_ptr<ChunkMesh> set_vertices(const std::vector<GLfloat>& vertices) const;
-    std::unique_ptr<ChunkMesh> generate_buffer() const;
     int draw(Attrib *attrib) const;
 
     bool is_ready_to_draw() const;
