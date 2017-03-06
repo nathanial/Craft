@@ -38,7 +38,6 @@ public:
     Chunk(int p, int q, std::unique_ptr<ChunkBlocks> blocks);
     ~Chunk();
 
-    // THREAD SAFE
     int distance(int p, int q) const;
     std::shared_ptr<TransientChunk> transient() const;
     int get_block(int x, int y, int z) const;
