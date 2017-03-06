@@ -3,7 +3,6 @@ cmake_minimum_required(VERSION 2.8)
 project(craft)
 
 FILE(GLOB SOURCE_FILES src/*.cpp)
-
 add_executable(
     craft
     ${SOURCE_FILES}

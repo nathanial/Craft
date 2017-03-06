@@ -4,14 +4,20 @@
 #include <functional>
 #include <cmath>
 #include <unordered_map>
+#include <vector>
 #include "config.h"
+
+#define BLOCK_INDEX(x, y, z) ((x) * WIDTH * HEIGHT + (y) * WIDTH + (z))
 
 template<unsigned int WIDTH, unsigned int HEIGHT>
 class BlockMap {
 public:
-    char _data[WIDTH][HEIGHT][WIDTH] = {{{0}}};
+    std::vector<char> _data;
 
-    BlockMap() {}
+    BlockMap() {
+        _data.resize(WIDTH * WIDTH * HEIGHT);
+        std::fill(_data.begin(), _data.end(), 0);
+    }
 
     ~BlockMap() {}
 
@@ -27,10 +33,10 @@ public:
         }
 
         int overwrite = 0;
-        if(this->_data[x][y][z] > 0){
+        if(this->_data[BLOCK_INDEX(x,y,z)] > 0){
             overwrite = 1;
         }
-        this->_data[x][y][z] = w;
+        this->_data[BLOCK_INDEX(x,y,z)] = w;
         if(w){
             return 1;
         }
@@ -41,19 +47,19 @@ public:
             printf("Bad Index %d,%d,%d\n", x, y, z);
             throw new std::invalid_argument("Bad Index");
         }
-        return this->_data[x][y][z];
+        return this->_data[BLOCK_INDEX(x,y,z)];
     }
     char get_or_default(int x, int y, int z, char _default) const {
         if(x < 0 || x >= WIDTH || y < 0 || y >= HEIGHT|| z < 0 || z >= WIDTH){
             return _default;
         }
-        return this->_data[x][y][z];
+        return this->_data[BLOCK_INDEX(x,y,z)];
     }
     void each(std::function<void (int, int, int, char)> func) {
         for(int x = 0; x < WIDTH; x++){
             for(int y = 0; y < HEIGHT; y++){
                 for(int z = 0; z < WIDTH; z++){
-                    func(x, y, z, this->_data[x][y][z]);
+                    func(x, y, z, this->_data[BLOCK_INDEX(x,y,z)]);
                 }
             }
         }
@@ -62,7 +68,7 @@ public:
         for(int x = 0; x < WIDTH; x++){
             for(int y = 0; y < HEIGHT; y++){
                 for(int z = 0; z < WIDTH; z++){
-                    func(x, y, z, this->_data[x][y][z]);
+                    func(x, y, z, this->_data[BLOCK_INDEX(x,y,z)]);
                 }
             }
         }

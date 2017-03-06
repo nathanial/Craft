@@ -215,7 +215,7 @@ void Chunk::populate_light_array(int _p, int _q, BigBlockMap &opaque, BigBlockMa
                             int ex = bx + chunk_x_offset;
                             int ey = by;
                             int ez = bz + chunk_z_offset;
-                            int ew = chunk->blocks->_data[bx][by][bz];
+                            int ew = chunk->blocks->get(bx,by,bz);
                             if(ew == 0){
                                 continue;
                             }
@@ -257,7 +257,7 @@ void Chunk::populate_opaque_array(int _p, int _q, BigBlockMap &opaque, HeightMap
                         int ex = bx + chunk_x_offset;
                         int ey = by;
                         int ez = bz + chunk_z_offset;
-                        int ew = chunk->blocks->_data[bx][by][bz];
+                        int ew = chunk->blocks->get(bx,by,bz);
                         if(ew == 0){
                             continue;
                         }
@@ -269,7 +269,7 @@ void Chunk::populate_opaque_array(int _p, int _q, BigBlockMap &opaque, HeightMap
                             continue;
                         }
                         bool is_opaque = !is_transparent(ew) && !is_light(ew);
-                        opaque._data[x][y][z] = is_opaque ;
+                        opaque.set(x,y,z,is_opaque);
                         if (is_opaque) {
                             highest._data[x][z] = MAX(highest._data[x][z], y);
                         }
