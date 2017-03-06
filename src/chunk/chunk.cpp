@@ -31,6 +31,9 @@ Chunk::Chunk(int p, int q) :
 {
 }
 
+Chunk::Chunk(const Chunk &other) : p(other.p), q(other.q), blocks(other.blocks->copy()) {
+
+}
 
 Chunk::Chunk(int p, int q, std::unique_ptr<ChunkBlocks> blocks)
 : p(p),q(q), blocks(blocks->copy())

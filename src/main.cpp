@@ -36,17 +36,15 @@ extern "C" {
 static Model model;
 Model *g = &model;
 
-int main(){
-    caf::actor_system_config cfg;
-    caf::actor_system system{cfg};
-    // create a new actor that calls 'mirror()'
-    auto world_actor = system.spawn(world);
-    // create another actor that calls 'hello_world(mirror_actor)';
-    system.spawn(chunk_creator, world_actor);
-    return 0;
-}
-
-/*
+//int main(){
+//    caf::actor_system_config cfg;
+//    caf::actor_system system{cfg};
+//    // create a new actor that calls 'mirror()'
+//    auto world_actor = system.spawn(world);
+//    // create another actor that calls 'hello_world(mirror_actor)';
+//    system.spawn(chunk_creator, world_actor);
+//    return 0;
+//}
 
 
 float time_of_day() {

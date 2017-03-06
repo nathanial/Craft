@@ -10,6 +10,7 @@
 #include <mutex>
 #include <vector>
 #include <armadillo>
+#include <caf/meta/type_name.hpp>
 
 class Attrib;
 class ChunkMesh;
@@ -34,6 +35,7 @@ public:
     const int p, q;
     const std::unique_ptr<const ChunkBlocks> blocks;
 
+    Chunk(const Chunk &other);
     Chunk(int p, int q);
     Chunk(int p, int q, std::unique_ptr<ChunkBlocks> blocks);
     ~Chunk();
@@ -57,5 +59,10 @@ typedef std::shared_ptr<Chunk> ChunkPtr;
 
 int highest_block(float x, float z);
 int chunk_visible(arma::mat planes, int p, int q, int miny, int maxy);
+
+//template <class Inspector>
+//typename Inspector::result_type inspect(Inspector& f, Chunk& x) {
+//    return f(caf::meta::type_name("Chunk"), x.p, x.q, *x.blocks);
+//}
 
 #endif //CRAFT_CHUNK_H
