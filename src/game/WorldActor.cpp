@@ -3,60 +3,24 @@
 //
 
 #include "WorldActor.h"
-using namespace vgk::game::world;
 
-void WorldActor::start() {
-    running = true;
-    thread = std::thread([&]{
-        while(true){
-            std::unique_lock<std::mutex> lock(request_mtx);
-            if(!running){
-                return;
+caf::behavior world(caf::event_based_actor *self) {
+    return {
+        [=](int p, int q) -> std::string {
+            std::stringstream stream;
+            stream << "Create Chunk: " << p << "," << q;
+            return std::string(stream.str());
+        }
+    };
+}
+
+void chunk_creator(caf::event_based_actor* self, const caf::actor& buddy) {
+    // send "Hello World!" to our buddy ...
+    self->request(buddy, std::chrono::seconds(10), 10, 11).then(
+            // ... wait up to 10s for a response ...
+            [=](const std::string& what) {
+                // ... and print it
+                caf::aout(self) << "Chunk Creator Got Response: " << what << std::endl;
             }
-            request_recv.wait(lock);
-
-            auto &request = requests.front();
-            this->reply(*request);
-            requests.pop_front();
-        }
-    });
-}
-
-void WorldActor::stop(){
-    std::lock_guard<std::mutex> lock(request_mtx);
-    this->running = false;
-}
-
-std::future<Response> WorldActor::request(const Request& request) {
-    std::unique_lock<std::mutex> lock(request_mtx);
-    auto req_res = std::make_shared<WorldRequestResponse>();
-    req_res->request = request;
-    req_res->response = std::promise<Response>();
-    this->requests.push_back(req_res);
-    request_recv.notify_all();
-    return req_res->response.get_future();
-}
-
-void WorldActor::reply(WorldRequestResponse &req_res){
-    auto &request = req_res.request;
-    switch(request.type){
-        case SET_BLOCK: {
-            auto data = request.data.set_block_data;
-            this->set_block(data.x, data.y, data.z, data.value);
-            Response response;
-            response.status = SUCCESS;
-            req_res.response.set_value(response);
-        }
-        break;
-
-        case CREATE_CHUNK:
-        break;
-
-        default:
-        throw "Unknown request type";
-    }
-}
-
-void WorldActor::set_block(int x, int y, int z, char value) {
-    
+    );
 }
