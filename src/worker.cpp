@@ -5,7 +5,6 @@
 #include <caf/all.hpp>
 #include "chunk/chunk.h"
 #include "biomes/mountains.h"
-#include "biomes/flatland.h"
 #include "model.h"
 
 using create_chunk = caf::atom_constant<caf::atom("create")>;
@@ -47,9 +46,7 @@ void build_world(caf::event_based_actor* self, const caf::actor& chunk_creation_
 
                     TransientChunkMesh mesh;
                     Chunk::create_mesh(chunk.p, chunk.q, mesh, *chunk.blocks, find_neighbors(chunk));
-                    std::shared_ptr<ChunkMesh> immutable_mesh = mesh.immutable();
-                    ChunkMesh &der_mesh = *immutable_mesh;
-                    g->replace_mesh(chunk.p, chunk.q, immutable_mesh);
+                    g->replace_mesh(chunk.p, chunk.q, mesh.immutable());
                 }
             );
         }
