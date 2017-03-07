@@ -2,6 +2,7 @@
 // Created by Nathanial Hartman on 3/2/17.
 //
 
+#include <iostream>
 #include "ChunkMesh.h"
 #include "../draw.h"
 #include "../util.h"

@@ -6,6 +6,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <time.h>
+#include <caf/atom.hpp>
 #include "auth.h"
 #include "client.h"
 #include "config.h"
@@ -23,6 +24,7 @@
 #include "player.h"
 #include "height_map.h"
 #include "workers/tasks/generate_chunk_task.h"
+#include "actors/WorldManager.h"
 
 extern "C" {
     #include "noise.h"
@@ -365,204 +367,21 @@ void gen_chunk_buffer(Chunk& chunk) {
     });
 }
 
-void load_chunk(WorkerItemPtr item) {
-    int p = item->p;
-    int q = item->q;
-    g->update_chunk(p, q, [=](TransientChunk &chunk){
-        create_world(chunk, p, q);
-        db_load_blocks(chunk, p, q);
-    });
-}
-
 void request_chunk(int p, int q) {
     int key = db_get_key(p, q);
     client_chunk(p, q, key);
 }
 
-void create_chunk(int p, int q) {
-    GenerateChunkTask gen_chunk(p,q);
-    auto chunk = gen_chunk.run().get();
-    set_dirty_flag(p, q);
-
-    g->add_chunk(chunk);
-
-    auto item = std::make_shared<WorkerItem>();
-    item->p = chunk->p;
-    item->q = chunk->q;
-
-    load_chunk(item);
-    request_chunk(p, q);
-    gen_chunk_buffer(*chunk);
-}
-
-void check_workers() {
-    for (int i = 0; i < WORKERS; i++) {
-        auto worker = g->workers.at(i);
-        std::lock_guard<std::mutex> lock(worker->mtx);
-        if (worker->state == WORKER_DONE) {
-            auto item = worker->item;
-            auto chunk = g->find_chunk(item->p, item->q);
-            if (chunk) {
-                if (item->load) {
-                    request_chunk(item->p, item->q);
-                }
-                g->update_mesh(item->p, item->q, [&](TransientChunkMesh& mesh){
-                    mesh.generate_buffer();
-                });
-            }
-            worker->state = WORKER_IDLE;
-        }
-    }
-}
-
-void force_chunks(Player *player) {
-    State *s = &player->state;
-    int p = chunked(s->x);
-    int q = chunked(s->z);
-    int r = 1;
-    for (int dp = -r; dp <= r; dp++) {
-        for (int dq = -r; dq <= r; dq++) {
-            int a = p + dp;
-            int b = q + dq;
-            auto chunk = g->find_chunk(a, b);
-            auto mesh = g->find_mesh(a,b);
-            if (chunk) {
-                if (mesh && mesh->dirty) {
-                    gen_chunk_buffer(*chunk);
-                }
-            }
-            else if (g->chunk_count() < MAX_CHUNKS) {
-                create_chunk(a, b);
-            }
-        }
-    }
-}
-
-void ensure_chunks_worker(Player *player, WorkerPtr worker) {
-    State *s = &player->state;
-    float matrix[16];
-    copy_matrix(matrix, set_matrix_3d(g->width, g->height, s->x, s->y, s->z, s->rx, s->ry, g->fov, g->ortho, g->render_radius));
-    auto planes = frustum_planes(g->render_radius, matrix);
-    int p = chunked(s->x);
-    int q = chunked(s->z);
-    int r = g->create_radius;
-    int start = 0x0fffffff;
-    int best_score = start;
-    int best_a = 0;
-    int best_b = 0;
-    for (int dp = -r; dp <= r; dp++) {
-        for (int dq = -r; dq <= r; dq++) {
-            int a = p + dp;
-            int b = q + dq;
-            int index = (ABS(a) ^ ABS(b)) % WORKERS;
-            if (index != worker->index) {
-                continue;
-            }
-            auto chunk = g->find_chunk(a, b);
-            auto mesh = g->find_mesh(a,b);
-            if (chunk && mesh && !mesh->dirty) {
-                continue;
-            }
-            int distance = MAX(ABS(dp), ABS(dq));
-            int invisible = !chunk_visible(planes, a, b, 0, 256);
-            int priority = 0;
-            if (chunk && mesh) {
-                priority = mesh->is_ready_to_draw();
-            }
-            int score = (invisible << 24) | (priority << 16) | distance;
-            if (score < best_score) {
-                best_score = score;
-                best_a = a;
-                best_b = b;
-            }
-        }
-    }
-    if (best_score == start) {
-        return;
-    }
-    int a = best_a;
-    int b = best_b;
-    int load = 0;
-    auto chunk = g->find_chunk(a, b);
-    if (!chunk) {
-        load = 1;
-        if (g->chunk_count() < MAX_CHUNKS) {
-            GenerateChunkTask gen_chunk(a,b);
-            chunk = gen_chunk.run().get();
-            set_dirty_flag(p, q);
-            g->add_chunk(chunk);
-        }
-        else {
-            return;
-        }
-    }
-    worker->item = std::make_shared<WorkerItem>();
-    worker->item->p = chunk->p;
-    worker->item->q = chunk->q;
-    worker->item->load = load;
-    g->update_mesh(chunk->p, chunk->q, [&](TransientChunkMesh &mesh){
-        mesh.dirty = false;
-    });
-    worker->state = WORKER_BUSY;
-    worker->cnd.notify_all();
-}
-
-void ensure_chunks(Player *player) {
-    check_workers();
-    force_chunks(player);
-    for (int i = 0; i < WORKERS; i++) {
-        auto worker = g->workers.at(i);
-        std::lock_guard<std::mutex> lock(worker->mtx);
-        if (worker->state == WORKER_IDLE) {
-            ensure_chunks_worker(player, worker);
-        }
-    }
-}
-
-int worker_run(WorkerPtr worker) {
-    int running = 1;
-    while (running) {
-        {
-            std::unique_lock<std::mutex> lock(worker->mtx);
-            while (worker->state != WORKER_BUSY) {
-                worker->cnd.wait(lock);
-            }
-        }
-        auto item = worker->item;
-        if (item->load) {
-            load_chunk(item);
-        }
-        auto chunk = g->find_chunk(item->p, item->q);
-        g->update_mesh(item->p, item->q, [&](TransientChunkMesh &mesh) {
-            chunk->create_mesh(item->p, item->q, mesh, *chunk->blocks, find_neighbors(*chunk));
-        });
-        {
-            std::lock_guard<std::mutex> lock(worker->mtx);
-            worker->state = WORKER_DONE;
-        }
-    }
-    return 0;
-}
-
-void _set_block(int p, int q, int x, int y, int z, int w, int dirty) {
-    printf("Inner Set Block %d,%d,%d,%d,%d\n", p, q, x, y, z);
-    auto chunk = g->find_chunk(p, q);
-    g->update_chunk(p,q, [=](TransientChunk& chunk){
-        if (chunk.set_block(x, y, z, w)) {
-            if (dirty) {
-                set_dirty_flag(p, q);
-            }
-            db_insert_block(p, q, x, y, z, w);
-        }
-    });
-}
-
 void set_block(int x, int y, int z, int w) {
-    int p = chunked(x);
-    int q = chunked(z);
-    printf("Set Block (p:%d,q:%d) (x:%d,y:%d,z:%d)\n", p, q, x, y, z);
-    _set_block(p, q, x, y, z, w, 1);
-    client_block(x, y, z, w);
+    caf::scoped_actor self { *vgk::actors::system };
+    auto wm = vgk::actors::system->registry().get(vgk::actors::world_manager_id::value);
+    self->request(caf::actor_cast<caf::actor>(wm), caf::infinite, vgk::actors::wm_set_block::value, x, y, z, (char)w).receive(
+        [&](bool success){},
+        [&](caf::error error){
+            aout(self) << "Error: set_block" << error << std::endl;
+            exit(0);
+        }
+    );
 }
 
 void record_block(int x, int y, int z, int w) {
@@ -574,13 +393,19 @@ void record_block(int x, int y, int z, int w) {
 }
 
 int get_block(int x, int y, int z) {
-    int p = chunked(x);
-    int q = chunked(z);
-    auto chunk = g->find_chunk(p, q);
-    if (chunk) {
-        return chunk->get_block(x,y,z);
-    }
-    return 0;
+    caf::scoped_actor self { *vgk::actors::system };
+    auto wm = vgk::actors::system->registry().get(vgk::actors::world_manager_id::value);
+    int result = 0;
+    self->request(caf::actor_cast<caf::actor>(wm), caf::infinite, vgk::actors::wm_get_block::value, x, y, z).receive(
+            [&](char block){
+               result = block;
+            },
+            [&](caf::error error){
+                aout(self) << "Error: get_block" << error << std::endl;
+                exit(0);
+            }
+    );
+    return result;
 }
 
 void builder_block(int x, int y, int z, int w) {
@@ -598,7 +423,6 @@ void builder_block(int x, int y, int z, int w) {
 int render_chunks(Attrib *attrib, Player *player) {
     int result = 0;
     State *s = &player->state;
-    ensure_chunks(player);
     int p = chunked(s->x);
     int q = chunked(s->z);
     float light = get_daylight();
@@ -619,14 +443,20 @@ int render_chunks(Attrib *attrib, Player *player) {
         if(!mesh){
             return;
         }
+        if(mesh->buffer == 0){
+            auto transient = mesh->transient();
+            transient->generate_buffer();
+            g->replace_mesh(chunk.p, chunk.q, std::make_shared<ChunkMesh>(transient->immutable()));
+        }
         if (chunk.distance(p, q) > g->render_radius) {
             return;
         }
-        if (!chunk_visible(
-            planes, chunk.p, chunk.q, mesh->miny, mesh->maxy))
-        {
-            return;
-        }
+//        if (!chunk_visible(
+//            planes, chunk.p, chunk.q, mesh->miny, mesh->maxy))
+//        {
+//            std::cout << "Not Visible" << std::endl;
+//            return;
+//        }
         result += mesh->draw(attrib);
     });
     return result;
@@ -1329,20 +1159,11 @@ void parse_buffer(char *buffer) {
         {
             me->id = pid;
             s->x = ux; s->y = uy; s->z = uz; s->rx = urx; s->ry = ury;
-            force_chunks(me);
             if (uy == 0) {
                 s->y = highest_block(s->x, s->z) + 2;
             }
         }
         int bp, bq, bx, by, bz, bw;
-        if (sscanf(line, "B,%d,%d,%d,%d,%d,%d",
-            &bp, &bq, &bx, &by, &bz, &bw) == 6)
-        {
-            _set_block(bp, bq, bx, by, bz, bw, 0);
-            if (player_intersects_block(2, s->x, s->y, s->z, bx, by, bz)) {
-                s->y = highest_block(s->x, s->z) + 2;
-            }
-        }
         float px, py, pz, prx, pry;
         if (sscanf(line, "P,%d,%f,%f,%f,%f,%f",
             &pid, &px, &py, &pz, &prx, &pry) == 6)
@@ -1438,7 +1259,7 @@ int main(int argc, char **argv) {
 
     glfwMakeContextCurrent(g->window);
     glfwSwapInterval(VSYNC);
-    //glfwSetInputMode(g->window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
+    glfwSetInputMode(g->window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
     glfwSetKeyCallback(g->window, on_key);
     glfwSetCharCallback(g->window, on_char);
     glfwSetMouseButtonCallback(g->window, on_mouse_button);
@@ -1552,15 +1373,6 @@ int main(int argc, char **argv) {
     g->create_radius = CREATE_CHUNK_RADIUS;
     g->render_radius = RENDER_CHUNK_RADIUS;
     g->delete_radius = DELETE_CHUNK_RADIUS;
-    g->sign_radius = RENDER_SIGN_RADIUS;
-
-    // INITIALIZE WORKER THREADS
-    for (int i = 0; i < WORKERS; i++) {
-        auto worker = g->workers.at(i);
-        worker->index = i;
-        worker->state = WORKER_IDLE;
-        worker->thrd = std::thread(worker_run, worker);
-    }
 
     // OUTER LOOP //
     int running = 1;
@@ -1602,10 +1414,13 @@ int main(int argc, char **argv) {
 
         // LOAD STATE FROM DATABASE //
         int loaded = db_load_state(&s->x, &s->y, &s->z, &s->rx, &s->ry);
-        force_chunks(me);
         if (!loaded) {
             s->y = highest_block(s->x, s->z) + 2;
         }
+
+        vgk::actors::start();
+
+        printf("After Start Workers");
 
         // BEGIN MAIN LOOP //
         double previous = glfwGetTime();

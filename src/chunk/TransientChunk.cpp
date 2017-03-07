@@ -25,6 +25,6 @@ void TransientChunk::foreach_block(std::function<void(int, int, int, char)> func
     });
 }
 
-std::shared_ptr<Chunk> TransientChunk::immutable() const {
-    return std::make_shared<Chunk>(p, q, blocks->copy());
+Chunk TransientChunk::immutable() const {
+    return Chunk(p, q, blocks->copy());
 }

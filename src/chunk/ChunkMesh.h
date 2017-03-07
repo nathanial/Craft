@@ -8,6 +8,7 @@
 
 #include <GL/glew.h>
 #include <vector>
+#include <caf/allowed_unsafe_message_type.hpp>
 
 class Attrib;
 class TransientChunkMesh;
@@ -32,5 +33,7 @@ public:
     std::shared_ptr<TransientChunkMesh> transient() const;
 };
 
+
+CAF_ALLOW_UNSAFE_MESSAGE_TYPE(ChunkMesh);
 
 #endif //CRAFT_CHUNKRENDERDATA_H

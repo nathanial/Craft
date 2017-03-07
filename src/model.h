@@ -8,10 +8,11 @@
 #include <GL/glew.h>
 #include "chunk/chunk.h"
 #include "config.h"
-#include "worker.h"
+#include "actors/Actors.h"
 #include <functional>
 #include <tuple>
 #include <vector>
+#include <GLFW/glfw3.h>
 #include "chunk/TransientChunk.h"
 #include "chunk/TransientChunkMesh.h"
 
@@ -65,11 +66,9 @@ private:
     std::unordered_map<ChunkPosition, std::shared_ptr<ChunkMesh>, ChunkPositionHash> meshes;
 public:
     GLFWwindow *window;
-    std::vector<WorkerPtr> workers;
     int create_radius;
     int render_radius;
     int delete_radius;
-    int sign_radius;
     Player players[MAX_PLAYERS];
     int player_count;
     int typing;
