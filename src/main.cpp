@@ -415,29 +415,6 @@ void check_workers() {
     }
 }
 
-void force_chunks(Player *player) {
-    State *s = &player->state;
-    int p = chunked(s->x);
-    int q = chunked(s->z);
-    int r = 1;
-    for (int dp = -r; dp <= r; dp++) {
-        for (int dq = -r; dq <= r; dq++) {
-            int a = p + dp;
-            int b = q + dq;
-            auto chunk = g->find_chunk(a, b);
-            auto mesh = g->find_mesh(a,b);
-            if (chunk) {
-                if (mesh && mesh->dirty) {
-                    gen_chunk_buffer(*chunk);
-                }
-            }
-            else if (g->chunk_count() < MAX_CHUNKS) {
-                create_chunk(a, b);
-            }
-        }
-    }
-}
-
 void ensure_chunks_worker(Player *player, WorkerPtr worker) {
     State *s = &player->state;
     float matrix[16];
@@ -509,7 +486,6 @@ void ensure_chunks_worker(Player *player, WorkerPtr worker) {
 
 void ensure_chunks(Player *player) {
     check_workers();
-    force_chunks(player);
     for (int i = 0; i < WORKERS; i++) {
         auto worker = g->workers.at(i);
         std::lock_guard<std::mutex> lock(worker->mtx);
@@ -1329,7 +1305,6 @@ void parse_buffer(char *buffer) {
         {
             me->id = pid;
             s->x = ux; s->y = uy; s->z = uz; s->rx = urx; s->ry = ury;
-            force_chunks(me);
             if (uy == 0) {
                 s->y = highest_block(s->x, s->z) + 2;
             }
@@ -1602,7 +1577,6 @@ int main(int argc, char **argv) {
 
         // LOAD STATE FROM DATABASE //
         int loaded = db_load_state(&s->x, &s->y, &s->z, &s->rx, &s->ry);
-        force_chunks(me);
         if (!loaded) {
             s->y = highest_block(s->x, s->z) + 2;
         }
