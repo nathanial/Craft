@@ -22,7 +22,7 @@ public:
     int get_block_or_zero(int x, int y, int z) const;
     void foreach_block(std::function<void(int, int, int, char)> func) const;
 
-    std::shared_ptr<Chunk> immutable() const;
+    Chunk immutable() const;
 };
 
 

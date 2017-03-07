@@ -47,7 +47,7 @@ void Model::update_chunk(int p, int q, std::function<void (TransientChunk&) > fu
     auto chunk = this->find_chunk(p,q);
     auto transient = chunk->transient();
     func(*transient);
-    this->replace_chunk(transient->immutable());
+    this->replace_chunk(std::make_shared<Chunk>(transient->immutable()));
 }
 
 void Model::update_mesh(int p, int q, std::function<void (TransientChunkMesh&) > func){
@@ -88,6 +88,9 @@ char Model::get_block(int x, int y, int z) {
     int q = chunked(z);
     auto chunk = this->find_chunk(p, q);
     if(!chunk){
+        return 0;
+    }
+    if(y < 0){
         return 0;
     }
     return chunk->get_block(x,y,z);

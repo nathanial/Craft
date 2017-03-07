@@ -330,7 +330,6 @@ int highest_block(float x, float z) {
     int nz = roundf(z);
     int p = chunked(x);
     int q = chunked(z);
-    printf("Highest Block %f %f\n", x, z);
     auto chunk = g->find_chunk(p, q);
     if (chunk) {
         chunk->foreach_block([&](int ex, int ey, int ez, int ew){

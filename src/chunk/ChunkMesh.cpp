@@ -2,6 +2,7 @@
 // Created by Nathanial Hartman on 3/2/17.
 //
 
+#include <iostream>
 #include "ChunkMesh.h"
 #include "../draw.h"
 #include "../util.h"
@@ -12,6 +13,7 @@ int ChunkMesh::draw(Attrib *attrib) const {
         draw_triangles_3d_ao(attrib, buffer, faces * 6);
         return faces;
     } else {
+        std::cout << "No Buffer" << std::endl;
         return 0;
     }
 }

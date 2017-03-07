@@ -20,7 +20,5 @@ void TransientChunkMesh::generate_buffer() {
             this->buffer = 0;
         }
     }
-    std::vector<GLfloat> emptyVertices;
     this->buffer = gen_buffer(vertices);
-    this->vertices = emptyVertices;
 }

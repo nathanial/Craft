@@ -444,14 +444,20 @@ int render_chunks(Attrib *attrib, Player *player) {
         if(!mesh){
             return;
         }
+        if(mesh->buffer == 0){
+            auto transient = mesh->transient();
+            transient->generate_buffer();
+            g->replace_mesh(chunk.p, chunk.q, transient->immutable());
+        }
         if (chunk.distance(p, q) > g->render_radius) {
             return;
         }
-        if (!chunk_visible(
-            planes, chunk.p, chunk.q, mesh->miny, mesh->maxy))
-        {
-            return;
-        }
+//        if (!chunk_visible(
+//            planes, chunk.p, chunk.q, mesh->miny, mesh->maxy))
+//        {
+//            std::cout << "Not Visible" << std::endl;
+//            return;
+//        }
         result += mesh->draw(attrib);
     });
     return result;
