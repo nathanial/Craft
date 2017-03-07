@@ -33,4 +33,6 @@ public:
 
 typedef std::shared_ptr<Worker> WorkerPtr;
 
+void start_workers();
+
 #endif //CRAFT_WORKER_H

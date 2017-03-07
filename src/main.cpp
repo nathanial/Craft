@@ -574,7 +574,6 @@ void builder_block(int x, int y, int z, int w) {
 int render_chunks(Attrib *attrib, Player *player) {
     int result = 0;
     State *s = &player->state;
-    ensure_chunks(player);
     int p = chunked(s->x);
     int q = chunked(s->z);
     float light = get_daylight();
@@ -1580,6 +1579,10 @@ int main(int argc, char **argv) {
         if (!loaded) {
             s->y = highest_block(s->x, s->z) + 2;
         }
+
+        start_workers();
+
+        printf("After Start Workers");
 
         // BEGIN MAIN LOOP //
         double previous = glfwGetTime();

@@ -37,6 +37,11 @@ Chunk::Chunk(int p, int q, std::unique_ptr<ChunkBlocks> blocks)
 {
 }
 
+Chunk::Chunk(const Chunk& other) : p(other.p), q(other.q), blocks(other.blocks->copy()) {
+
+}
+
+
 Chunk::~Chunk() {
     // del_buffer(this->mesh()->buffer);
 }

@@ -10,6 +10,8 @@
 #include <mutex>
 #include <vector>
 #include <armadillo>
+#include <caf/all.hpp>
+
 
 class Attrib;
 class ChunkMesh;
@@ -36,6 +38,7 @@ public:
 
     Chunk(int p, int q);
     Chunk(int p, int q, std::unique_ptr<ChunkBlocks> blocks);
+    Chunk(const Chunk& other);
     ~Chunk();
 
     // THREAD SAFE
@@ -58,5 +61,7 @@ typedef std::shared_ptr<Chunk> ChunkPtr;
 
 int highest_block(float x, float z);
 int chunk_visible(arma::mat planes, int p, int q, int miny, int maxy);
+
+CAF_ALLOW_UNSAFE_MESSAGE_TYPE(Chunk);
 
 #endif //CRAFT_CHUNK_H
