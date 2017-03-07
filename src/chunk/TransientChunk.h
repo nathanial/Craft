@@ -14,7 +14,7 @@ class Chunk;
 class TransientChunk {
 public:
     const int p, q;
-    std::unique_ptr<BlockMap<CHUNK_SIZE, CHUNK_HEIGHT>> blocks;
+    std::vector<char> blocks;
 
     TransientChunk(int p, int q);
     int set_block(int x, int y, int z, char w);

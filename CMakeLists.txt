@@ -3,6 +3,7 @@ cmake_minimum_required(VERSION 2.8)
 project(craft)
 
 FILE(GLOB SOURCE_FILES src/*.cpp)
+set(CMAKE_BUILD_TYPE DEBUG)
 add_executable(
     craft
     ${SOURCE_FILES}
@@ -12,7 +13,7 @@ add_executable(
     deps/sqlite/sqlite3.c
         src/chunk/chunk.h src/chunk/chunk.cpp src/model.h src/draw.cpp src/draw.h src/worker.cpp src/worker.h src/biomes/rolling_planes.cpp src/biomes/rolling_planes.h src/biomes/biome.h src/biomes/mountains.h src/biomes/mountains.cpp src/height_map.h src/workers/tasks/generate_chunk_task.h src/workers/tasks/task.h src/workers/tasks/generate_chunk_task.cpp src/biomes/flatland.cpp src/biomes/flatland.h src/terrain_features/trees/OakTree.cpp src/terrain_features/trees/OakTree.h src/terrain_features/TerrainFeature.cpp src/terrain_features/TerrainFeature.h src/chunk/ChunkMesh.cpp src/chunk/ChunkMesh.h src/chunk/TransientChunk.cpp src/chunk/TransientChunk.h src/chunk/TransientChunkMesh.cpp src/chunk/TransientChunkMesh.h src/game/WorldActor.cpp src/game/WorldActor.h src/game/WorldActor.cpp src/game/WorldActor.h)
 
-set(CMAKE_CXX_FLAGS "-std=c++14 -fpermissive -O3 -Wno-narrowing")
+set(CMAKE_CXX_FLAGS "-std=c++14 -fpermissive -Wno-narrowing -O3")
 set(CMAKE_C_FLAGS -O3)
 
 add_subdirectory(deps/glfw)

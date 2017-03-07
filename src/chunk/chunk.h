@@ -33,11 +33,10 @@ typedef std::unordered_map<ChunkPosition, std::shared_ptr<Chunk>, ChunkPositionH
 class Chunk {
 public:
     const int p, q;
-    const std::unique_ptr<const ChunkBlocks> blocks;
+    const std::vector<char> blocks;
 
     Chunk(const Chunk &other);
-    Chunk(int p, int q);
-    Chunk(int p, int q, std::unique_ptr<ChunkBlocks> blocks);
+    Chunk(int p, int q, const std::vector<char>& blocks);
     ~Chunk();
 
     int distance(int p, int q) const;
@@ -45,13 +44,14 @@ public:
     int get_block(int x, int y, int z) const;
     int get_block_or_zero(int x, int y, int z) const;
     void foreach_block(std::function<void (int, int, int, char)> func) const;
-    static void create_mesh(int _p, int _q, TransientChunkMesh &mesh, const ChunkBlocks &blocks,
+    static void create_mesh(int _p, int _q, TransientChunkMesh &mesh, const std::vector<char> &blocks,
                                                   const ChunkNeighbors &neighbors);
 
 private:
+    static void each(const std::vector<char>& blocks, std::function<void (int, int, int, char)> func);
     static void populate_light_array(int _p, int _q, BigBlockMap &opaque, BigBlockMap &light, const ChunkNeighbors& neighbors);
-    static std::vector<GLfloat> generate_geometry(int p, int q, const ChunkBlocks& blocks, BigBlockMap &opaque, BigBlockMap &light, HeightMap<CHUNK_SIZE * 3> &highest);
-    static std::tuple<int,int,int> count_faces(int p, int q, const ChunkBlocks& blocks, const BigBlockMap &opaque);
+    static std::vector<GLfloat> generate_geometry(int p, int q, const std::vector<char>& blocks, BigBlockMap &opaque, BigBlockMap &light, HeightMap<CHUNK_SIZE * 3> &highest);
+    static std::tuple<int,int,int> count_faces(int p, int q, const std::vector<char>& blocks, const BigBlockMap &opaque);
     static void populate_opaque_array(int _p, int _q, BigBlockMap &opaque, HeightMap<48> &highest, const ChunkNeighbors& neighbors);
 };
 

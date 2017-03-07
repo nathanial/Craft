@@ -7,7 +7,6 @@
 #include <vector>
 #include "config.h"
 
-#define BLOCK_INDEX(x, y, z) ((x) * WIDTH * HEIGHT + (y) * WIDTH + (z))
 
 template<unsigned int WIDTH, unsigned int HEIGHT>
 class BlockMap {
@@ -43,7 +42,7 @@ public:
         return overwrite;
     }
     char get(int x, int y, int z) const {
-        if(x < 0 || x >= WIDTH || y < 0 || y >= HEIGHT|| z < 0 || z >= WIDTH){
+        if(x < 0 || x >= WIDTH || y < 0 || y >= HEIGHT || z < 0 || z >= WIDTH){
             printf("Bad Index %d,%d,%d\n", x, y, z);
             throw new std::invalid_argument("Bad Index");
         }
@@ -84,6 +83,11 @@ public:
         });
         return newCopy;
     };
+
+private:
+    static inline int BLOCK_INDEX(int x, int y, int z){
+        return x * WIDTH * HEIGHT + y * WIDTH + z;
+    }
 };
 
 typedef BlockMap<CHUNK_SIZE * 3, CHUNK_HEIGHT> BigBlockMap;

@@ -15,6 +15,20 @@ extern "C" {
 #include "ChunkMesh.h"
 #include "../model.h"
 
+
+static int BLOCK_INDEX(int x, int y, int z){
+    if(x > CHUNK_SIZE){
+        throw "X > CHUNK_SIZE";
+    }
+    if(y > CHUNK_HEIGHT){
+        throw "Y > CHUNK_HEIGHT";
+    }
+    if(z > CHUNK_SIZE) {
+        throw "Z > CHUNK_SIZE";
+    }
+    return x * CHUNK_SIZE * CHUNK_HEIGHT + y * CHUNK_SIZE + z;
+}
+
 void occlusion(
         char neighbors[27], char lights[27], float shades[27],
         float ao[6][4], float light[6][4]);
@@ -25,18 +39,12 @@ void scanline_iterate(BigBlockMap &light, BigBlockMap &opaque, std::deque<std::t
 
 void light_fill_scanline(BigBlockMap &opaque, BigBlockMap &light, int ox, int oy ,int oz, int ow);
 
-Chunk::Chunk(int p, int q) :
-    p(p), q(q),
-    blocks(std::make_unique<BlockMap<CHUNK_SIZE, CHUNK_HEIGHT>>())
-{
-}
-
-Chunk::Chunk(const Chunk &other) : p(other.p), q(other.q), blocks(other.blocks->copy()) {
+Chunk::Chunk(const Chunk &other) : p(other.p), q(other.q), blocks(other.blocks) {
 
 }
 
-Chunk::Chunk(int p, int q, std::unique_ptr<ChunkBlocks> blocks)
-: p(p),q(q), blocks(blocks->copy())
+Chunk::Chunk(int p, int q, const std::vector<char>& blocks)
+: p(p),q(q), blocks(blocks)
 {
 }
 
@@ -45,22 +53,31 @@ Chunk::~Chunk() {
 }
 
 int Chunk::get_block(int x, int y, int z) const {
-    return this->blocks->get(x - this->p * CHUNK_SIZE, y, z - this->q * CHUNK_SIZE);
+    return this->blocks[BLOCK_INDEX(x - this->p * CHUNK_SIZE, y, z - this->q * CHUNK_SIZE)];
 }
 
 int Chunk::get_block_or_zero(int x, int y, int z) const {
-    return this->blocks->get_or_default(x - this->p * CHUNK_SIZE, y, z - this->q * CHUNK_SIZE, 0);
+    int index = BLOCK_INDEX(x - this->p * CHUNK_SIZE, y, z - this->q * CHUNK_SIZE);
+    if(index >= this->blocks.size()){
+        return 0;
+    }
+    return this->blocks[index];
 }
 
 void Chunk::foreach_block(std::function<void (int, int, int, char)> func) const {
-    this->blocks->each([&](int x, int y, int z, char w){
-        func(x + this->p * CHUNK_SIZE, y, z + this->q * CHUNK_SIZE, w);
-    });
+    for(int x = 0; x < CHUNK_SIZE; x++){
+        for(int y = 0; y < CHUNK_HEIGHT; y++){
+            for(int z = 0; z < CHUNK_SIZE; z++){
+                char w = this->blocks[BLOCK_INDEX(x,y,z)];
+                func(x + this->p * CHUNK_SIZE, y, z + this->q * CHUNK_SIZE, w);
+            }
+        }
+    }
 }
 
 std::shared_ptr<TransientChunk> Chunk::transient() const {
     auto t = std::make_shared<TransientChunk>(p, q);
-    t->blocks = this->blocks->copy();
+    t->blocks = this->blocks;
     return t;
 }
 
@@ -70,7 +87,7 @@ int Chunk::distance(int p, int q) const {
     return MAX(dp, dq);
 }
 
-std::tuple<int,int,int> Chunk::count_faces(int p, int q, const ChunkBlocks& blocks, const BigBlockMap &opaque) {
+std::tuple<int,int,int> Chunk::count_faces(int p, int q, const std::vector<char>& blocks, const BigBlockMap &opaque) {
     int ox = p * CHUNK_SIZE - CHUNK_SIZE;
     int oy = -1;
     int oz = q * CHUNK_SIZE - CHUNK_SIZE;
@@ -78,7 +95,7 @@ std::tuple<int,int,int> Chunk::count_faces(int p, int q, const ChunkBlocks& bloc
     int miny = 256;
     int maxy = 0;
     int faces = 0;
-    blocks.each([&](int ex, int ey, int ez, int ew) {
+    Chunk::each(blocks, [&](int ex, int ey, int ez, int ew){
         if (ew <= 0) {
             return;
         }
@@ -107,14 +124,25 @@ std::tuple<int,int,int> Chunk::count_faces(int p, int q, const ChunkBlocks& bloc
     return std::make_tuple(miny,maxy,faces);
 };
 
-std::vector<GLfloat> Chunk::generate_geometry(int p, int q, const ChunkBlocks &blocks,  BigBlockMap &opaque, BigBlockMap &light, HeightMap<CHUNK_SIZE * 3> &highest) {
+void Chunk::each(const std::vector<char> &blocks, std::function<void (int, int, int, char)> func) {
+    for(int x = 0; x < CHUNK_SIZE; x++){
+        for(int y = 0; y < CHUNK_HEIGHT; y++){
+            for(int z = 0; z < CHUNK_SIZE; z++){
+                char w = blocks[BLOCK_INDEX(x,y,z)];
+                func(x,y,z, w);
+            }
+        }
+    }
+}
+
+std::vector<GLfloat> Chunk::generate_geometry(int p, int q, const std::vector<char> &blocks,  BigBlockMap &opaque, BigBlockMap &light, HeightMap<CHUNK_SIZE * 3> &highest) {
     int ox = p * CHUNK_SIZE - CHUNK_SIZE;
     int oy = -1;
     int oz = q * CHUNK_SIZE - CHUNK_SIZE;
 
     std::vector<GLfloat> data;
     int offset = 0;
-    blocks.each([&](int ex, int ey, int ez, int ew) {
+    Chunk::each(blocks, [&](int ex, int ey, int ez, char ew) {
         if (ew <= 0) {
             return;
         }
@@ -170,8 +198,7 @@ std::vector<GLfloat> Chunk::generate_geometry(int p, int q, const ChunkBlocks &b
             }
             float rotation = simplex2(ex, ez, 4, 0.5, 2) * 360;
             add_all(data, make_plant(min_ao, max_light, ex, ey, ez, 0.5, ew, rotation));
-        }
-        else {
+        } else {
             add_all(data, make_cube(ao, light, f1, f2, f3, f4, f5, f6, ex, ey, ez, 0.5, ew));
         }
         offset += total * 60;
@@ -180,7 +207,7 @@ std::vector<GLfloat> Chunk::generate_geometry(int p, int q, const ChunkBlocks &b
 }
 
 
-void Chunk::create_mesh(int _p, int _q, TransientChunkMesh &mesh, const ChunkBlocks &blocks, const ChunkNeighbors &neighbors) {
+void Chunk::create_mesh(int _p, int _q, TransientChunkMesh &mesh, const std::vector<char> &blocks, const ChunkNeighbors &neighbors) {
     auto opaque = std::make_unique<BigBlockMap>();
     auto light = std::make_unique<BigBlockMap>();
     auto highest = std::make_unique<HeightMap<CHUNK_SIZE * 3>>();
@@ -215,7 +242,7 @@ void Chunk::populate_light_array(int _p, int _q, BigBlockMap &opaque, BigBlockMa
                             int ex = bx + chunk_x_offset;
                             int ey = by;
                             int ez = bz + chunk_z_offset;
-                            int ew = chunk->blocks->get(bx,by,bz);
+                            int ew = chunk->blocks[BLOCK_INDEX(bx,by,bz)];
                             if(ew == 0){
                                 continue;
                             }
@@ -257,7 +284,7 @@ void Chunk::populate_opaque_array(int _p, int _q, BigBlockMap &opaque, HeightMap
                         int ex = bx + chunk_x_offset;
                         int ey = by;
                         int ez = bz + chunk_z_offset;
-                        int ew = chunk->blocks->get(bx,by,bz);
+                        int ew = chunk->blocks[BLOCK_INDEX(bx,by,bz)];
                         if(ew == 0){
                             continue;
                         }
