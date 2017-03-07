@@ -3,7 +3,6 @@
 //
 
 #include <caf/all.hpp>
-#include <string>
 #include "chunk/chunk.h"
 
 using create_chunk = caf::atom_constant<caf::atom("create")>;
