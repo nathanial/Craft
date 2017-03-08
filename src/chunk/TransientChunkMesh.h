@@ -20,7 +20,7 @@ public:
     GLuint buffer = 0;
     std::vector<GLfloat> vertices = {};
 
-    std::shared_ptr<ChunkMesh> immutable() const;
+    ChunkMesh immutable() const;
     void generate_buffer();
 
 

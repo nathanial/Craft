@@ -10,7 +10,7 @@
 #include <mutex>
 #include <vector>
 #include <armadillo>
-#include <caf/all.hpp>
+#include <caf/allowed_unsafe_message_type.hpp>
 
 
 class Attrib;

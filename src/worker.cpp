@@ -6,6 +6,7 @@
 #include "chunk/chunk.h"
 #include "biomes/mountains.h"
 #include "model.h"
+#include "chunk/ChunkMesh.h"
 
 using create_chunk = caf::atom_constant<caf::atom("create")>;
 
@@ -21,7 +22,7 @@ static ChunkNeighbors find_neighbors(const Chunk& chunk){
     return neighbors;
 }
 
-caf::behavior chunk_actor(caf::event_based_actor* self) {
+caf::behavior chunk_builder(caf::event_based_actor* self) {
     // return the (initial) actor behavior
     return {
             // a handler for messages containing a single string
@@ -35,18 +36,30 @@ caf::behavior chunk_actor(caf::event_based_actor* self) {
     };
 }
 
-void build_world(caf::event_based_actor* self, const caf::actor& chunk_creation_actor) {
+caf::behavior chunk_mesher(caf::event_based_actor* self) {
+    return {
+      [=](const Chunk& chunk) -> ChunkMesh {
+          TransientChunkMesh mesh;
+          Chunk::create_mesh(chunk.p, chunk.q, mesh, *chunk.blocks, find_neighbors(chunk));
+          return mesh.immutable();
+      }
+    };
+}
+
+
+void build_world(caf::event_based_actor* self, const caf::actor& chunk_builder, const caf::actor& chunk_mesher) {
     for(int p = -10; p < 10; p++){
         for(int q = -10; q < 10; q++){
-            self->request(chunk_creation_actor, std::chrono::seconds(10), create_chunk::value, p, q).then(
+            self->request(chunk_builder, std::chrono::seconds(10), create_chunk::value, p, q).then(
                 [=](const Chunk& chunk) {
                     // ... and print it
                     caf::aout(self) << "Created Chunk " << chunk.p << "," << chunk.q << std::endl;
                     g->replace_chunk(std::make_shared<Chunk>(chunk));
-
-                    TransientChunkMesh mesh;
-                    Chunk::create_mesh(chunk.p, chunk.q, mesh, *chunk.blocks, find_neighbors(chunk));
-                    g->replace_mesh(chunk.p, chunk.q, mesh.immutable());
+                    self->request(chunk_mesher, std::chrono::seconds(10), chunk).then(
+                            [=](const ChunkMesh& mesh) {
+                                g->replace_mesh(p,q, std::make_shared<ChunkMesh>(mesh));
+                            }
+                    );
                 }
             );
         }
@@ -57,5 +70,5 @@ void build_world(caf::event_based_actor* self, const caf::actor& chunk_creation_
 void start_workers(){
     static caf::actor_system_config cfg;
     static caf::actor_system system{cfg};
-    system.spawn<caf::detached>(build_world, system.spawn(chunk_actor));
+    system.spawn<caf::detached>(build_world, system.spawn(chunk_builder), system.spawn(chunk_mesher));
 }

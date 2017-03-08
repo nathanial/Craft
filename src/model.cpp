@@ -55,11 +55,11 @@ void Model::update_mesh(int p, int q, std::function<void (TransientChunkMesh&) >
     if(mesh){
         auto transient = mesh->transient();
         func(*transient);
-        this->replace_mesh(p,q, transient->immutable());
+        this->replace_mesh(p,q, std::make_shared<ChunkMesh>(transient->immutable()));
     } else {
         TransientChunkMesh transient;
         func(transient);
-        this->replace_mesh(p,q, transient.immutable());
+        this->replace_mesh(p,q, std::make_shared<ChunkMesh>(transient.immutable()));
     }
 }
 

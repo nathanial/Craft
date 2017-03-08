@@ -447,7 +447,7 @@ int render_chunks(Attrib *attrib, Player *player) {
         if(mesh->buffer == 0){
             auto transient = mesh->transient();
             transient->generate_buffer();
-            g->replace_mesh(chunk.p, chunk.q, transient->immutable());
+            g->replace_mesh(chunk.p, chunk.q, std::make_shared<ChunkMesh>(transient->immutable()));
         }
         if (chunk.distance(p, q) > g->render_radius) {
             return;

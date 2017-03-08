@@ -7,8 +7,8 @@
 #include "../util.h"
 
 
-std::shared_ptr<ChunkMesh> TransientChunkMesh::immutable() const {
-    return std::make_shared<ChunkMesh>(
+ChunkMesh TransientChunkMesh::immutable() const {
+    return ChunkMesh(
         miny, maxy, faces, dirty, buffer, vertices
     );
 }
