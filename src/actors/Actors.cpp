@@ -3,14 +3,19 @@
 //
 
 #include <caf/all.hpp>
-#include "chunk/chunk.h"
-#include "biomes/mountains.h"
-#include "model.h"
-#include "chunk/ChunkMesh.h"
+#include "../chunk/chunk.h"
+#include "../biomes/mountains.h"
+#include "../model.h"
+#include "../chunk/ChunkMesh.h"
+#include "./Actors.h"
 
-using create_chunk = caf::atom_constant<caf::atom("create")>;
+
+using namespace vgk;
+using namespace vgk::actors;
 
 extern Model *g;
+
+using create_chunk = caf::atom_constant<caf::atom("create")>;
 
 static ChunkNeighbors find_neighbors(const Chunk& chunk){
     ChunkNeighbors neighbors;
@@ -47,7 +52,10 @@ caf::behavior chunk_mesher(caf::event_based_actor* self) {
 }
 
 
-void build_world(caf::event_based_actor* self, const caf::actor& chunk_builder, const caf::actor& chunk_mesher) {
+void build_world(caf::event_based_actor* self) {
+    auto chunk_builder = caf::actor_cast<caf::actor>(vgk::actors::system.registry().get(chunk_builder_id::value));
+    auto chunk_mesher = caf::actor_cast<caf::actor>(vgk::actors::system.registry().get(chunk_mesher_id::value));
+
     for(int p = -10; p < 10; p++){
         for(int q = -10; q < 10; q++){
             self->request(chunk_builder, std::chrono::seconds(10), create_chunk::value, p, q).then(
@@ -67,8 +75,14 @@ void build_world(caf::event_based_actor* self, const caf::actor& chunk_builder, 
 }
 
 
-void start_workers(){
-    static caf::actor_system_config cfg;
-    static caf::actor_system system{cfg};
-    system.spawn<caf::detached>(build_world, system.spawn(chunk_builder), system.spawn(chunk_mesher));
+void vgk::actors::start(){
+    auto chunk_builder_actor = vgk::actors::system.spawn(chunk_builder);
+    auto chunk_mesher_actor = vgk::actors::system.spawn(chunk_mesher);
+
+    vgk::actors::system.registry().put(chunk_builder_id::value,
+                                       caf::actor_cast<caf::strong_actor_ptr>(chunk_builder_actor));
+    vgk::actors::system.registry().put(chunk_mesher_id::value,
+                                       caf::actor_cast<caf::strong_actor_ptr>(chunk_mesher_actor));
+
+    vgk::actors::system.spawn<caf::detached>(build_world);
 }

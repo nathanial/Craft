@@ -1427,7 +1427,7 @@ int main(int argc, char **argv) {
             s->y = highest_block(s->x, s->z) + 2;
         }
 
-        start_workers();
+        vgk::actors::start();
 
         printf("After Start Workers");
 

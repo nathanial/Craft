@@ -8,7 +8,7 @@
 #include <GL/glew.h>
 #include "chunk/chunk.h"
 #include "config.h"
-#include "worker.h"
+#include "actors/Actors.h"
 #include <functional>
 #include <tuple>
 #include <vector>
