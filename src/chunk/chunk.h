@@ -29,7 +29,7 @@ struct ChunkPositionHash : public std::unary_function<ChunkPosition, std::size_t
     }
 };
 
-typedef std::unordered_map<ChunkPosition, std::shared_ptr<Chunk>, ChunkPositionHash> ChunkNeighbors;
+using ChunkNeighbors = std::unordered_map<ChunkPosition, std::shared_ptr<Chunk>, ChunkPositionHash>;
 
 class Chunk {
 public:
@@ -57,11 +57,13 @@ private:
     static void populate_opaque_array(int _p, int _q, BigBlockMap &opaque, HeightMap<48> &highest, const ChunkNeighbors& neighbors);
 };
 
-typedef std::shared_ptr<Chunk> ChunkPtr;
+using ChunkPtr = std::shared_ptr<Chunk>;
 
 int highest_block(float x, float z);
 int chunk_visible(arma::mat planes, int p, int q, int miny, int maxy);
 
 CAF_ALLOW_UNSAFE_MESSAGE_TYPE(Chunk);
+CAF_ALLOW_UNSAFE_MESSAGE_TYPE(ChunkPtr);
+CAF_ALLOW_UNSAFE_MESSAGE_TYPE(ChunkNeighbors);
 
 #endif //CRAFT_CHUNK_H

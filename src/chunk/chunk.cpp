@@ -29,16 +29,18 @@ Chunk::Chunk(int p, int q) :
     p(p), q(q),
     blocks(std::make_unique<BlockMap<CHUNK_SIZE, CHUNK_HEIGHT>>())
 {
+    printf("Chunk Constructed %d, %d\n", p, q);
 }
 
 
 Chunk::Chunk(int p, int q, std::unique_ptr<ChunkBlocks> blocks)
 : p(p),q(q), blocks(blocks->copy())
 {
+    printf("Chunk Constructed with blocks %d, %d\n", p, q);
 }
 
 Chunk::Chunk(const Chunk& other) : p(other.p), q(other.q), blocks(other.blocks->copy()) {
-
+    printf("Chunk Copied %d, %d\n", p, q);
 }
 
 
