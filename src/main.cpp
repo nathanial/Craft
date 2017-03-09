@@ -440,11 +440,6 @@ void login() {
     }
 }
 
-void copy() {
-    memcpy(&g->copy0, &g->block0, sizeof(Block));
-    memcpy(&g->copy1, &g->block1, sizeof(Block));
-}
-
 void parse_command(const char *buffer, int forward) {
     char username[128] = {0};
     char token[128] = {0};
@@ -504,51 +499,6 @@ void parse_command(const char *buffer, int forward) {
     }
     else if (strcmp(buffer, "/paste") == 0) {
         paste();
-    }
-    else if (strcmp(buffer, "/tree") == 0) {
-        tree(&g->block0);
-    }
-    else if (sscanf(buffer, "/array %d %d %d", &xc, &yc, &zc) == 3) {
-        array(&g->block1, &g->block0, xc, yc, zc);
-    }
-    else if (sscanf(buffer, "/array %d", &count) == 1) {
-        array(&g->block1, &g->block0, count, count, count);
-    }
-    else if (strcmp(buffer, "/fcube") == 0) {
-        cube(&g->block0, &g->block1, 1);
-    }
-    else if (strcmp(buffer, "/cube") == 0) {
-        cube(&g->block0, &g->block1, 0);
-    }
-    else if (sscanf(buffer, "/fsphere %d", &radius) == 1) {
-        sphere(&g->block0, radius, 1, 0, 0, 0);
-    }
-    else if (sscanf(buffer, "/sphere %d", &radius) == 1) {
-        sphere(&g->block0, radius, 0, 0, 0, 0);
-    }
-    else if (sscanf(buffer, "/fcirclex %d", &radius) == 1) {
-        sphere(&g->block0, radius, 1, 1, 0, 0);
-    }
-    else if (sscanf(buffer, "/circlex %d", &radius) == 1) {
-        sphere(&g->block0, radius, 0, 1, 0, 0);
-    }
-    else if (sscanf(buffer, "/fcircley %d", &radius) == 1) {
-        sphere(&g->block0, radius, 1, 0, 1, 0);
-    }
-    else if (sscanf(buffer, "/circley %d", &radius) == 1) {
-        sphere(&g->block0, radius, 0, 0, 1, 0);
-    }
-    else if (sscanf(buffer, "/fcirclez %d", &radius) == 1) {
-        sphere(&g->block0, radius, 1, 0, 0, 1);
-    }
-    else if (sscanf(buffer, "/circlez %d", &radius) == 1) {
-        sphere(&g->block0, radius, 0, 0, 0, 1);
-    }
-    else if (sscanf(buffer, "/fcylinder %d", &radius) == 1) {
-        cylinder(&g->block0, &g->block1, radius, 1);
-    }
-    else if (sscanf(buffer, "/cylinder %d", &radius) == 1) {
-        cylinder(&g->block0, &g->block1, radius, 0);
     }
     else if (forward) {
         client_talk(buffer);
@@ -1278,7 +1228,6 @@ int main(int argc, char **argv) {
         client_stop();
         client_disable();
         del_buffer(sky_buffer);
-        g->delete_all_chunks();
         delete_all_players();
     }
 
