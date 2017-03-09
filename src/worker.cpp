@@ -66,5 +66,8 @@ void build_world(caf::event_based_actor* self,
 
 
 void start_workers(){
-    vgk::system.spawn<caf::detached>(build_world, vgk::system.spawn(chunk_builder), vgk::system.spawn(chunk_mesher), vgk::system.spawn<ChunkManager>());
+    vgk::system.registry().put(vgk::actors::chunk_builder::value, vgk::system.spawn(chunk_builder));
+    vgk::system.registry().put(vgk::actors::chunk_mesher::value, vgk::system.spawn(chunk_mesher));
+    vgk::system.registry().put(vgk::actors::chunk_manager::value, vgk::system.spawn<ChunkManager>());
+    vgk::system.spawn<caf::detached>(build_world);
 }

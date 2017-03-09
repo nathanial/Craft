@@ -29,6 +29,7 @@ extern "C" {
 }
 
 #include "./chunk/ChunkMesh.h"
+#include "actors/ChunkManager.h"
 
 static Model model;
 Model *g = &model;
@@ -50,16 +51,6 @@ int get_scale_factor() {
     result = MAX(1, result);
     result = MIN(2, result);
     return result;
-}
-
-void set_dirty_flag(int p, int q) {
-    for (int dp = -1; dp <= 1; dp++) {
-        for (int dq = -1; dq <= 1; dq++) {
-            g->update_mesh(p + dp, q + dq, [&](TransientChunkMesh &mesh) {
-                mesh.dirty = true;
-            });
-        }
-    }
 }
 
 GLuint gen_crosshair_buffer() {
@@ -235,100 +226,9 @@ Player *player_crosshair(Player *player) {
 }
 
 
-int _hit_test(
-    Chunk& chunk, float max_distance, int previous,
-    float x, float y, float z,
-    float vx, float vy, float vz,
-    int *hx, int *hy, int *hz)
-{
-    int m = 32;
-    int px = 0;
-    int py = 0;
-    int pz = 0;
-    for (int i = 0; i < max_distance * m; i++) {
-        int nx = roundf(x);
-        int ny = roundf(y);
-        int nz = roundf(z);
-        if (nx != px || ny != py || nz != pz) {
-            int hw = chunk.get_block_or_zero(nx, ny, nz);
-            if (hw > 0) {
-                if (previous) {
-                    *hx = px; *hy = py; *hz = pz;
-                }
-                else {
-                    *hx = nx; *hy = ny; *hz = nz;
-                }
-                return hw;
-            }
-            px = nx; py = ny; pz = nz;
-        }
-        x += vx / m; y += vy / m; z += vz / m;
-    }
-    return 0;
-}
 
-int hit_test(
-    int previous, float x, float y, float z, float rx, float ry,
-    int *bx, int *by, int *bz)
-{
-    int result = 0;
-    float best = 0;
-    int p = chunked(x);
-    int q = chunked(z);
-    float vx, vy, vz;
-    get_sight_vector(rx, ry, &vx, &vy, &vz);
-    g->each_chunk([&](Chunk& chunk){
-        if (chunk.distance(p, q) > 1) {
-            return;
-        }
-        int hx, hy, hz;
-        int hw = _hit_test(chunk, 8, previous,
-                           x, y, z, vx, vy, vz, &hx, &hy, &hz);
-        if (hw > 0) {
-            float d = sqrtf(
-                    powf(hx - x, 2) + powf(hy - y, 2) + powf(hz - z, 2));
-            if (best == 0 || d < best) {
-                best = d;
-                *bx = hx; *by = hy; *bz = hz;
-                result = hw;
-            }
-        }
-    });
-    return result;
-}
 
-int hit_test_face(Player *player, int *x, int *y, int *z, int *face) {
-    State *s = &player->state;
-    int w = hit_test(0, s->x, s->y, s->z, s->rx, s->ry, x, y, z);
-    if (is_obstacle(w)) {
-        int hx, hy, hz;
-        hit_test(1, s->x, s->y, s->z, s->rx, s->ry, &hx, &hy, &hz);
-        int dx = hx - *x;
-        int dy = hy - *y;
-        int dz = hz - *z;
-        if (dx == -1 && dy == 0 && dz == 0) {
-            *face = 0; return 1;
-        }
-        if (dx == 1 && dy == 0 && dz == 0) {
-            *face = 1; return 1;
-        }
-        if (dx == 0 && dy == 0 && dz == -1) {
-            *face = 2; return 1;
-        }
-        if (dx == 0 && dy == 0 && dz == 1) {
-            *face = 3; return 1;
-        }
-        if (dx == 0 && dy == 1 && dz == 0) {
-            int degrees = roundf(DEGREES(atan2f(s->x - hx, s->z - hz)));
-            if (degrees < 0) {
-                degrees += 360;
-            }
-            int top = ((degrees + 45) / 90) % 4;
-            *face = 4 + top; return 1;
-        }
-    }
-    return 0;
-}
+
 
 
 int player_intersects_block(
@@ -347,40 +247,11 @@ int player_intersects_block(
     return 0;
 }
 
-ChunkNeighbors find_neighbors(const Chunk& chunk){
-    ChunkNeighbors neighbors;
-    for(int dp = -1; dp <= 1; dp++){
-        for(int dq = -1; dq <= 1; dq++){
-            neighbors[std::make_tuple(dp + chunk.p, dq + chunk.q)] = g->find_chunk(dp + chunk.p, dq + chunk.q);
-        }
-    }
-    return neighbors;
-}
-
-void gen_chunk_buffer(Chunk& chunk) {
-    g->update_mesh(chunk.p, chunk.q, [&](TransientChunkMesh& mesh) {
-        Chunk::create_mesh(chunk.p, chunk.q, mesh, *chunk.blocks, find_neighbors(chunk));
-        mesh.generate_buffer();
-        mesh.dirty = false;
-    });
-}
-
-void request_chunk(int p, int q) {
-    int key = db_get_key(p, q);
-    client_chunk(p, q, key);
-}
-
 void _set_block(int p, int q, int x, int y, int z, int w, int dirty) {
     printf("Inner Set Block %d,%d,%d,%d,%d\n", p, q, x, y, z);
-    auto chunk = g->find_chunk(p, q);
-    g->update_chunk(p,q, [=](TransientChunk& chunk){
-        if (chunk.set_block(x, y, z, w)) {
-            if (dirty) {
-                set_dirty_flag(p, q);
-            }
-            db_insert_block(p, q, x, y, z, w);
-        }
-    });
+    caf::scoped_actor self { vgk::system };
+    auto chunk_manager = vgk::system.registry().get(vgk::actors::chunk_manager::value);
+    self->send(chunk_manager, chunk_manager_set_block::value, x, y, z, w);
 }
 
 void set_block(int x, int y, int z, int w) {
@@ -399,27 +270,6 @@ void record_block(int x, int y, int z, int w) {
     g->block0.w = w;
 }
 
-int get_block(int x, int y, int z) {
-    int p = chunked(x);
-    int q = chunked(z);
-    auto chunk = g->find_chunk(p, q);
-    if (chunk) {
-        return chunk->get_block(x,y,z);
-    }
-    return 0;
-}
-
-void builder_block(int x, int y, int z, int w) {
-    if (y <= 0 || y >= 256) {
-        return;
-    }
-    if (is_destructable(get_block(x, y, z))) {
-        set_block(x, y, z, 0);
-    }
-    if (w) {
-        set_block(x, y, z, w);
-    }
-}
 
 int render_chunks(Attrib *attrib, Player *player) {
     int result = 0;
@@ -593,188 +443,6 @@ void login() {
 void copy() {
     memcpy(&g->copy0, &g->block0, sizeof(Block));
     memcpy(&g->copy1, &g->block1, sizeof(Block));
-}
-
-void paste() {
-    Block *c1 = &g->copy1;
-    Block *c2 = &g->copy0;
-    Block *p1 = &g->block1;
-    Block *p2 = &g->block0;
-    int scx = SIGN(c2->x - c1->x);
-    int scz = SIGN(c2->z - c1->z);
-    int spx = SIGN(p2->x - p1->x);
-    int spz = SIGN(p2->z - p1->z);
-    int oy = p1->y - c1->y;
-    int dx = ABS(c2->x - c1->x);
-    int dz = ABS(c2->z - c1->z);
-    for (int y = 0; y < 256; y++) {
-        for (int x = 0; x <= dx; x++) {
-            for (int z = 0; z <= dz; z++) {
-                int w = get_block(c1->x + x * scx, y, c1->z + z * scz);
-                builder_block(p1->x + x * spx, y + oy, p1->z + z * spz, w);
-            }
-        }
-    }
-}
-
-void array(Block *b1, Block *b2, int xc, int yc, int zc) {
-    if (b1->w != b2->w) {
-        return;
-    }
-    int w = b1->w;
-    int dx = b2->x - b1->x;
-    int dy = b2->y - b1->y;
-    int dz = b2->z - b1->z;
-    xc = dx ? xc : 1;
-    yc = dy ? yc : 1;
-    zc = dz ? zc : 1;
-    for (int i = 0; i < xc; i++) {
-        int x = b1->x + dx * i;
-        for (int j = 0; j < yc; j++) {
-            int y = b1->y + dy * j;
-            for (int k = 0; k < zc; k++) {
-                int z = b1->z + dz * k;
-                builder_block(x, y, z, w);
-            }
-        }
-    }
-}
-
-void cube(Block *b1, Block *b2, int fill) {
-    if (b1->w != b2->w) {
-        return;
-    }
-    int w = b1->w;
-    int x1 = MIN(b1->x, b2->x);
-    int y1 = MIN(b1->y, b2->y);
-    int z1 = MIN(b1->z, b2->z);
-    int x2 = MAX(b1->x, b2->x);
-    int y2 = MAX(b1->y, b2->y);
-    int z2 = MAX(b1->z, b2->z);
-    int a = (x1 == x2) + (y1 == y2) + (z1 == z2);
-    for (int x = x1; x <= x2; x++) {
-        for (int y = y1; y <= y2; y++) {
-            for (int z = z1; z <= z2; z++) {
-                if (!fill) {
-                    int n = 0;
-                    n += x == x1 || x == x2;
-                    n += y == y1 || y == y2;
-                    n += z == z1 || z == z2;
-                    if (n <= a) {
-                        continue;
-                    }
-                }
-                builder_block(x, y, z, w);
-            }
-        }
-    }
-}
-
-void sphere(Block *center, int radius, int fill, int fx, int fy, int fz) {
-    static const float offsets[8][3] = {
-        {-0.5, -0.5, -0.5},
-        {-0.5, -0.5, 0.5},
-        {-0.5, 0.5, -0.5},
-        {-0.5, 0.5, 0.5},
-        {0.5, -0.5, -0.5},
-        {0.5, -0.5, 0.5},
-        {0.5, 0.5, -0.5},
-        {0.5, 0.5, 0.5}
-    };
-    int cx = center->x;
-    int cy = center->y;
-    int cz = center->z;
-    int w = center->w;
-    for (int x = cx - radius; x <= cx + radius; x++) {
-        if (fx && x != cx) {
-            continue;
-        }
-        for (int y = cy - radius; y <= cy + radius; y++) {
-            if (fy && y != cy) {
-                continue;
-            }
-            for (int z = cz - radius; z <= cz + radius; z++) {
-                if (fz && z != cz) {
-                    continue;
-                }
-                int inside = 0;
-                int outside = fill;
-                for (int i = 0; i < 8; i++) {
-                    float dx = x + offsets[i][0] - cx;
-                    float dy = y + offsets[i][1] - cy;
-                    float dz = z + offsets[i][2] - cz;
-                    float d = sqrtf(dx * dx + dy * dy + dz * dz);
-                    if (d < radius) {
-                        inside = 1;
-                    }
-                    else {
-                        outside = 1;
-                    }
-                }
-                if (inside && outside) {
-                    builder_block(x, y, z, w);
-                }
-            }
-        }
-    }
-}
-
-void cylinder(Block *b1, Block *b2, int radius, int fill) {
-    if (b1->w != b2->w) {
-        return;
-    }
-    int w = b1->w;
-    int x1 = MIN(b1->x, b2->x);
-    int y1 = MIN(b1->y, b2->y);
-    int z1 = MIN(b1->z, b2->z);
-    int x2 = MAX(b1->x, b2->x);
-    int y2 = MAX(b1->y, b2->y);
-    int z2 = MAX(b1->z, b2->z);
-    int fx = x1 != x2;
-    int fy = y1 != y2;
-    int fz = z1 != z2;
-    if (fx + fy + fz != 1) {
-        return;
-    }
-    Block block = {x1, y1, z1, w};
-    if (fx) {
-        for (int x = x1; x <= x2; x++) {
-            block.x = x;
-            sphere(&block, radius, fill, 1, 0, 0);
-        }
-    }
-    if (fy) {
-        for (int y = y1; y <= y2; y++) {
-            block.y = y;
-            sphere(&block, radius, fill, 0, 1, 0);
-        }
-    }
-    if (fz) {
-        for (int z = z1; z <= z2; z++) {
-            block.z = z;
-            sphere(&block, radius, fill, 0, 0, 1);
-        }
-    }
-}
-
-void tree(Block *block) {
-    int bx = block->x;
-    int by = block->y;
-    int bz = block->z;
-    for (int y = by + 3; y < by + 8; y++) {
-        for (int dx = -3; dx <= 3; dx++) {
-            for (int dz = -3; dz <= 3; dz++) {
-                int dy = y - (by + 4);
-                int d = (dx * dx) + (dy * dy) + (dz * dz);
-                if (d < 11) {
-                    builder_block(bx + dx, y, bz + dz, 15);
-                }
-            }
-        }
-    }
-    for (int y = by; y < by + 7; y++) {
-        builder_block(bx, y, bz, 5);
-    }
 }
 
 void parse_command(const char *buffer, int forward) {
