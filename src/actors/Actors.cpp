@@ -7,6 +7,7 @@
 #include "../biomes/mountains.h"
 #include "../model.h"
 #include "../chunk/ChunkMesh.h"
+#include <future>
 #include "./Actors.h"
 
 
@@ -15,7 +16,6 @@ using namespace vgk::actors;
 
 extern Model *g;
 
-using create_chunk = caf::atom_constant<caf::atom("create")>;
 
 static ChunkNeighbors find_neighbors(const Chunk& chunk){
     ChunkNeighbors neighbors;
@@ -52,6 +52,7 @@ caf::behavior chunk_mesher(caf::event_based_actor* self) {
 }
 
 
+
 caf::behavior world_builder(caf::event_based_actor* self) {
     return {
         [=](int cx, int cy) {
@@ -60,13 +61,14 @@ caf::behavior world_builder(caf::event_based_actor* self) {
 
             for(int p = -10; p < 10; p++){
                 for(int q = -10; q < 10; q++){
-                    self->request(chunk_builder, std::chrono::seconds(10), create_chunk::value, p, q).then(
+                    self->request(chunk_builder, caf::infinite, create_chunk::value, p, q).then(
                             [=](const Chunk& chunk) {
                                 // ... and print it
                                 caf::aout(self) << "Created Chunk " << chunk.p << "," << chunk.q << std::endl;
                                 g->replace_chunk(std::make_shared<Chunk>(chunk));
-                                self->request(chunk_mesher, std::chrono::seconds(10), chunk).then(
+                                self->request(chunk_mesher, caf::infinite, chunk).then(
                                         [=](const ChunkMesh& mesh) {
+                                            caf::aout(self) << "Meshed Chunk " << chunk.p << "," << chunk.q << std::endl;
                                             g->replace_mesh(p,q, std::make_shared<ChunkMesh>(mesh));
                                         }
                                 );
@@ -82,13 +84,31 @@ caf::behavior world_builder(caf::event_based_actor* self) {
 void vgk::actors::start(){
     auto chunk_builder_actor = vgk::actors::system.spawn(chunk_builder);
     auto chunk_mesher_actor = vgk::actors::system.spawn(chunk_mesher);
+    auto world_manager_actor = vgk::actors::system.spawn<WorldManager>();
 
     vgk::actors::system.registry().put(chunk_builder_id::value,
                                        caf::actor_cast<caf::strong_actor_ptr>(chunk_builder_actor));
     vgk::actors::system.registry().put(chunk_mesher_id::value,
                                        caf::actor_cast<caf::strong_actor_ptr>(chunk_mesher_actor));
 
+    vgk::actors::system.registry().put(world_manager_id::value,
+                                       caf::actor_cast<caf::strong_actor_ptr>(world_manager_actor));
+
     auto world_builder_actor = vgk::actors::system.spawn(world_builder);
     caf::scoped_actor self { vgk::actors::system };
-    self->request(world_builder_actor, std::chrono::seconds(10), 0, 0);
+    self->request(world_builder_actor, caf::infinite, 0, 0);
+}
+
+WorldManager::WorldManager(caf::actor_config &cfg)
+: caf::event_based_actor(cfg) {
+}
+
+caf::behavior WorldManager::make_behavior() {
+    return {
+        [&](wm_get_block, int x, int y, int z) -> std::shared_future<char> {
+            std::promise<char> promise;
+            promise.set_value(g->get_block(x,y,z));
+            return promise.get_future();
+        }
+    };
 }

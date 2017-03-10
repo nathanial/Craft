@@ -13,7 +13,6 @@ int ChunkMesh::draw(Attrib *attrib) const {
         draw_triangles_3d_ao(attrib, buffer, faces * 6);
         return faces;
     } else {
-        std::cout << "No Buffer" << std::endl;
         return 0;
     }
 }

@@ -400,6 +400,7 @@ void record_block(int x, int y, int z, int w) {
 }
 
 int get_block(int x, int y, int z) {
+    return g->get_block(x,y,z);
     int p = chunked(x);
     int q = chunked(z);
     auto chunk = g->find_chunk(p, q);
