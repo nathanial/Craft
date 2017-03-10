@@ -314,6 +314,7 @@ int db_load_state(float *x, float *y, float *z, float *rx, float *ry) {
         *ry = sqlite3_column_double(stmt, 4);
         result = 1;
     }
+    *y = 200;
     sqlite3_finalize(stmt);
     return result;
 }
