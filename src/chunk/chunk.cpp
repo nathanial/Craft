@@ -325,7 +325,7 @@ int chunk_visible(arma::mat planes, int p, int q, int miny, int maxy) {
 
 extern Model *g;
 int highest_block(float x, float z) {
-    int result = 200;
+    int result = -1;
     int nx = roundf(x);
     int nz = roundf(z);
     int p = chunked(x);

@@ -59,23 +59,28 @@ caf::behavior world_builder(caf::event_based_actor* self) {
             auto chunk_builder = caf::actor_cast<caf::actor>(vgk::actors::system.registry().get(chunk_builder_id::value));
             auto chunk_mesher = caf::actor_cast<caf::actor>(vgk::actors::system.registry().get(chunk_mesher_id::value));
 
+            auto result = self->make_response_promise<int>();
             for(int p = -10; p < 10; p++){
                 for(int q = -10; q < 10; q++){
                     self->request(chunk_builder, caf::infinite, create_chunk::value, p, q).then(
-                            [=](const Chunk& chunk) {
+                            [=](const Chunk& chunk) mutable {
                                 // ... and print it
                                 caf::aout(self) << "Created Chunk " << chunk.p << "," << chunk.q << std::endl;
                                 g->replace_chunk(std::make_shared<Chunk>(chunk));
                                 self->request(chunk_mesher, caf::infinite, chunk).then(
-                                        [=](const ChunkMesh& mesh) {
+                                        [=](const ChunkMesh& mesh) mutable {
                                             caf::aout(self) << "Meshed Chunk " << chunk.p << "," << chunk.q << std::endl;
                                             g->replace_mesh(p,q, std::make_shared<ChunkMesh>(mesh));
+                                            if(p == 9 && q == 9){
+                                                result.deliver(0);
+                                            }
                                         }
                                 );
                             }
                     );
                 }
             }
+            return result;
         }
     };
 }
@@ -96,7 +101,15 @@ void vgk::actors::start(){
 
     auto world_builder_actor = vgk::actors::system.spawn(world_builder);
     caf::scoped_actor self { vgk::actors::system };
-    self->request(world_builder_actor, caf::infinite, 0, 0);
+    self->request(world_builder_actor, caf::infinite, 0, 0).receive(
+        [&](int result){
+            std::cout << "GOT RESULT" << std::endl;
+        },
+        [&](caf::error error){
+            std::cout << "Error" << std::endl;
+        }
+    );
+    std::cout << "over" << std::endl;
 }
 
 WorldManager::WorldManager(caf::actor_config &cfg)
