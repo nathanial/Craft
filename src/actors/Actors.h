@@ -10,8 +10,8 @@
 
 namespace vgk {
     namespace actors {
-        static caf::actor_system_config cfg;
-        static caf::actor_system system{cfg};
+        extern caf::actor_system_config cfg;
+        extern caf::actor_system * system;
 
         using chunk_builder_id = caf::atom_constant<caf::atom("cbaid")>;
         using chunk_mesher_id = caf::atom_constant<caf::atom("cmaid")>;
@@ -19,6 +19,8 @@ namespace vgk {
 
         using create_chunk = caf::atom_constant<caf::atom("create")>;
         using wm_get_block = caf::atom_constant<caf::atom("wm_gb")>;
+
+        using load_nearby_chunks = caf::atom_constant<caf::atom("wblnc")>;
 
         void start();
 

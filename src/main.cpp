@@ -400,14 +400,19 @@ void record_block(int x, int y, int z, int w) {
 }
 
 int get_block(int x, int y, int z) {
-    return g->get_block(x,y,z);
-    int p = chunked(x);
-    int q = chunked(z);
-    auto chunk = g->find_chunk(p, q);
-    if (chunk) {
-        return chunk->get_block(x,y,z);
-    }
-    return 0;
+    caf::scoped_actor self { *vgk::actors::system };
+    auto wm = vgk::actors::system->registry().get(vgk::actors::world_manager_id::value);
+    int result = 0;
+    self->request(caf::actor_cast<caf::actor>(wm), caf::infinite, vgk::actors::wm_get_block::value, x, y, z).receive(
+            [&](char block){
+               result = block;
+            },
+            [&](caf::error error){
+                aout(self) << "Error: get_block" << error << std::endl;
+                exit(0);
+            }
+    );
+    return result;
 }
 
 void builder_block(int x, int y, int z, int w) {
