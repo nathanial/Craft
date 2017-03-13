@@ -9,7 +9,7 @@
 #include "../chunk/ChunkMesh.h"
 #include <future>
 #include "./Actors.h"
-
+#include "WorldManager.h"
 
 using namespace vgk;
 using namespace vgk::actors;
@@ -112,14 +112,3 @@ void vgk::actors::start(){
     );
 }
 
-WorldManager::WorldManager(caf::actor_config &cfg)
-: caf::event_based_actor(cfg) {
-}
-
-caf::behavior WorldManager::make_behavior() {
-    return {
-        [&](wm_get_block, int x, int y, int z) {
-            return g->get_block(x,y,z);
-        }
-    };
-}

@@ -6,6 +6,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <time.h>
+#include <caf/atom.hpp>
 #include "auth.h"
 #include "client.h"
 #include "config.h"
@@ -23,6 +24,7 @@
 #include "player.h"
 #include "height_map.h"
 #include "workers/tasks/generate_chunk_task.h"
+#include "actors/WorldManager.h"
 
 extern "C" {
     #include "noise.h"
@@ -370,25 +372,16 @@ void request_chunk(int p, int q) {
     client_chunk(p, q, key);
 }
 
-void _set_block(int p, int q, int x, int y, int z, int w, int dirty) {
-    printf("Inner Set Block %d,%d,%d,%d,%d\n", p, q, x, y, z);
-    auto chunk = g->find_chunk(p, q);
-    g->update_chunk(p,q, [=](TransientChunk& chunk){
-        if (chunk.set_block(x, y, z, w)) {
-            if (dirty) {
-                set_dirty_flag(p, q);
-            }
-            db_insert_block(p, q, x, y, z, w);
-        }
-    });
-}
-
 void set_block(int x, int y, int z, int w) {
-    int p = chunked(x);
-    int q = chunked(z);
-    printf("Set Block (p:%d,q:%d) (x:%d,y:%d,z:%d)\n", p, q, x, y, z);
-    _set_block(p, q, x, y, z, w, 1);
-    client_block(x, y, z, w);
+    caf::scoped_actor self { *vgk::actors::system };
+    auto wm = vgk::actors::system->registry().get(vgk::actors::world_manager_id::value);
+    self->request(caf::actor_cast<caf::actor>(wm), caf::infinite, vgk::actors::wm_set_block::value, x, y, z, (char)w).receive(
+        [&](bool success){},
+        [&](caf::error error){
+            aout(self) << "Error: set_block" << error << std::endl;
+            exit(0);
+        }
+    );
 }
 
 void record_block(int x, int y, int z, int w) {
@@ -1171,14 +1164,6 @@ void parse_buffer(char *buffer) {
             }
         }
         int bp, bq, bx, by, bz, bw;
-        if (sscanf(line, "B,%d,%d,%d,%d,%d,%d",
-            &bp, &bq, &bx, &by, &bz, &bw) == 6)
-        {
-            _set_block(bp, bq, bx, by, bz, bw, 0);
-            if (player_intersects_block(2, s->x, s->y, s->z, bx, by, bz)) {
-                s->y = highest_block(s->x, s->z) + 2;
-            }
-        }
         float px, py, pz, prx, pry;
         if (sscanf(line, "P,%d,%f,%f,%f,%f,%f",
             &pid, &px, &py, &pz, &prx, &pry) == 6)
@@ -1274,7 +1259,7 @@ int main(int argc, char **argv) {
 
     glfwMakeContextCurrent(g->window);
     glfwSwapInterval(VSYNC);
-    //glfwSetInputMode(g->window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
+    glfwSetInputMode(g->window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
     glfwSetKeyCallback(g->window, on_key);
     glfwSetCharCallback(g->window, on_char);
     glfwSetMouseButtonCallback(g->window, on_mouse_button);
