@@ -70,7 +70,6 @@ public:
     int delete_radius;
     Player players[MAX_PLAYERS];
     int player_count;
-    int typing;
     char typing_buffer[MAX_TEXT_LENGTH];
     int message_index;
     int width;
@@ -82,12 +81,9 @@ public:
     int scale;
     int ortho;
     float fov;
-    int suppress_char;
     int mode;
     int mode_changed;
     char db_path[MAX_PATH_LENGTH];
-    char server_addr[MAX_ADDR_LENGTH];
-    int server_port;
     int day_length;
     int time_changed;
 

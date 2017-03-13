@@ -38,9 +38,6 @@
 #define CRAFT_KEY_ITEM_PREV 'R'
 #define CRAFT_KEY_ZOOM GLFW_KEY_LEFT_SHIFT
 #define CRAFT_KEY_ORTHO 'F'
-#define CRAFT_KEY_CHAT 't'
-#define CRAFT_KEY_COMMAND '/'
-#define CRAFT_KEY_SIGN '`'
 
 // advanced parameters
 #define CREATE_CHUNK_RADIUS 40

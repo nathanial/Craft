@@ -580,112 +580,50 @@ void on_key(GLFWwindow *window, int key, int scancode, int action, int mods) {
         return;
     }
     if (key == GLFW_KEY_BACKSPACE) {
-        if (g->typing) {
-            int n = strlen(g->typing_buffer);
-            if (n > 0) {
-                g->typing_buffer[n - 1] = '\0';
-            }
+        int n = strlen(g->typing_buffer);
+        if (n > 0) {
+            g->typing_buffer[n - 1] = '\0';
         }
     }
     if (action != GLFW_PRESS) {
         return;
     }
     if (key == GLFW_KEY_ESCAPE) {
-        if (g->typing) {
-            g->typing = 0;
-        }
-        else if (exclusive) {
+        if (exclusive) {
             glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_NORMAL);
         }
     }
     if (key == GLFW_KEY_ENTER) {
-        if (g->typing) {
-            if (mods & GLFW_MOD_SHIFT) {
-                int n = strlen(g->typing_buffer);
-                if (n < MAX_TEXT_LENGTH - 1) {
-                    g->typing_buffer[n] = '\r';
-                    g->typing_buffer[n + 1] = '\0';
-                }
-            }
-            else {
-                g->typing = 0;
-            }
+        if (control) {
+            on_right_click();
         }
         else {
-            if (control) {
-                on_right_click();
-            }
-            else {
-                on_left_click();
-            }
+            on_left_click();
         }
     }
-    if (control && key == 'V') {
-        const char *buffer = glfwGetClipboardString(window);
-        if (g->typing) {
-            g->suppress_char = 1;
-            strncat(g->typing_buffer, buffer,
-                MAX_TEXT_LENGTH - strlen(g->typing_buffer) - 1);
+    if (key == CRAFT_KEY_FLY) {
+        g->flying = !g->flying;
+    }
+    if (key >= '1' && key <= '9') {
+        g->item_index = key - '1';
+    }
+    if (key == '0') {
+        g->item_index = 9;
+    }
+    if (key == CRAFT_KEY_ITEM_NEXT) {
+        g->item_index = (g->item_index + 1) % item_count;
+    }
+    if (key == CRAFT_KEY_ITEM_PREV) {
+        g->item_index--;
+        if (g->item_index < 0) {
+            g->item_index = item_count - 1;
         }
     }
-    if (!g->typing) {
-        if (key == CRAFT_KEY_FLY) {
-            g->flying = !g->flying;
-        }
-        if (key >= '1' && key <= '9') {
-            g->item_index = key - '1';
-        }
-        if (key == '0') {
-            g->item_index = 9;
-        }
-        if (key == CRAFT_KEY_ITEM_NEXT) {
-            g->item_index = (g->item_index + 1) % item_count;
-        }
-        if (key == CRAFT_KEY_ITEM_PREV) {
-            g->item_index--;
-            if (g->item_index < 0) {
-                g->item_index = item_count - 1;
-            }
-        }
-        if (key == CRAFT_KEY_OBSERVE) {
-            g->observe1 = (g->observe1 + 1) % g->player_count;
-        }
-        if (key == CRAFT_KEY_OBSERVE_INSET) {
-            g->observe2 = (g->observe2 + 1) % g->player_count;
-        }
+    if (key == CRAFT_KEY_OBSERVE) {
+        g->observe1 = (g->observe1 + 1) % g->player_count;
     }
-}
-
-void on_char(GLFWwindow *window, unsigned int u) {
-    if (g->suppress_char) {
-        g->suppress_char = 0;
-        return;
-    }
-    if (g->typing) {
-        if (u >= 32 && u < 128) {
-            char c = (char)u;
-            int n = strlen(g->typing_buffer);
-            if (n < MAX_TEXT_LENGTH - 1) {
-                g->typing_buffer[n] = c;
-                g->typing_buffer[n + 1] = '\0';
-            }
-        }
-    }
-    else {
-        if (u == CRAFT_KEY_CHAT) {
-            g->typing = 1;
-            g->typing_buffer[0] = '\0';
-        }
-        if (u == CRAFT_KEY_COMMAND) {
-            g->typing = 1;
-            g->typing_buffer[0] = '/';
-            g->typing_buffer[1] = '\0';
-        }
-        if (u == CRAFT_KEY_SIGN) {
-            g->typing = 1;
-            g->typing_buffer[0] = CRAFT_KEY_SIGN;
-            g->typing_buffer[1] = '\0';
-        }
+    if (key == CRAFT_KEY_OBSERVE_INSET) {
+        g->observe2 = (g->observe2 + 1) % g->player_count;
     }
 }
 
@@ -869,7 +807,6 @@ void reset_model() {
     g->flying = 0;
     g->item_index = 0;
     memset(g->typing_buffer, 0, sizeof(char) * MAX_TEXT_LENGTH);
-    g->typing = 0;
     g->message_index = 0;
     g->day_length = DAY_LENGTH;
     glfwSetTime(g->day_length / 3.0);
@@ -896,7 +833,6 @@ int main(int argc, char **argv) {
     glfwSwapInterval(VSYNC);
     glfwSetInputMode(g->window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
     glfwSetKeyCallback(g->window, on_key);
-    glfwSetCharCallback(g->window, on_char);
     glfwSetMouseButtonCallback(g->window, on_mouse_button);
     glfwSetScrollCallback(g->window, on_scroll);
     glfwWindowHint(GLFW_SAMPLES, 4);
@@ -1123,11 +1059,6 @@ int main(int argc, char **argv) {
                     chunked(s->x), chunked(s->z), s->x, s->y, s->z,
                     g->player_count, g->chunk_count(),
                     face_count * 2, hour, am_pm, fps.fps);
-                render_text(&text_attrib, ALIGN_LEFT, tx, ty, ts, text_buffer);
-                ty -= ts * 2;
-            }
-            if (g->typing) {
-                snprintf(text_buffer, 1024, "> %s", g->typing_buffer);
                 render_text(&text_attrib, ALIGN_LEFT, tx, ty, ts, text_buffer);
                 ty -= ts * 2;
             }
