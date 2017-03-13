@@ -749,16 +749,9 @@ int main(int argc, char **argv) {
     // OUTER LOOP //
     int running = 1;
     while (running) {
-        // DATABASE INITIALIZATION //
-        db_enable();
-        if (db_init(g->db_path)) {
-            return -1;
-        }
-
         // LOCAL VARIABLES //
         reset_model();
         FPS fps = {0, 0, 0};
-        double last_commit = glfwGetTime();
         double last_update = glfwGetTime();
         GLuint sky_buffer = gen_sky_buffer();
 
@@ -768,13 +761,10 @@ int main(int argc, char **argv) {
         me->name[0] = '\0';
         me->buffer = 0;
 
-        // LOAD STATE FROM DATABASE //
-        int loaded = db_load_state(&s->x, &s->y, &s->z, &s->rx, &s->ry);
-        if (!loaded) {
-            s->y = highest_block(s->x, s->z) + 2;
-        }
 
         vgk::actors::start();
+
+        s->y = highest_block(s->x, s->z) + 2;
 
         printf("After Start Workers");
 
@@ -798,12 +788,6 @@ int main(int argc, char **argv) {
 
             // HANDLE MOVEMENT //
             handle_movement(dt);
-
-            // FLUSH DATABASE //
-            if (now - last_commit > COMMIT_INTERVAL) {
-                last_commit = now;
-                db_commit();
-            }
 
             // SEND POSITION TO SERVER //
             if (now - last_update > 0.1) {
@@ -863,10 +847,6 @@ int main(int argc, char **argv) {
             }
         }
 
-        // SHUTDOWN //
-        db_save_state(s->x, s->y, s->z, s->rx, s->ry);
-        db_close();
-        db_disable();
         del_buffer(sky_buffer);
         g->delete_all_chunks();
     }
