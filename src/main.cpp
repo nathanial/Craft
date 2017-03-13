@@ -329,7 +329,7 @@ int render_chunks(Attrib *attrib, Player *player) {
     int q = chunked(s->z);
     float light = get_daylight();
     float matrix[16];
-    copy_matrix(matrix, set_matrix_3d(g->width, g->height, s->x, s->y, s->z, s->rx, s->ry, g->fov, g->ortho, g->render_radius));
+    copy_matrix(matrix, set_matrix_3d(g->width, g->height, s->x, s->y, s->z, s->rx, s->ry, g->fov, false, g->render_radius));
     auto planes = frustum_planes(g->render_radius, matrix);
     glUseProgram(attrib->program);
     glUniformMatrix4fv(attrib->matrix, 1, GL_FALSE, matrix);
@@ -338,7 +338,7 @@ int render_chunks(Attrib *attrib, Player *player) {
     glUniform1i(attrib->extra1, 2);
     glUniform1f(attrib->extra2, light);
     glUniform1f(attrib->extra3, g->render_radius * CHUNK_SIZE);
-    glUniform1i(attrib->extra4, g->ortho);
+    glUniform1i(attrib->extra4, false);
     glUniform1f(attrib->timer, time_of_day());
     g->each_chunk([&](Chunk& chunk) {
         auto mesh = g->find_mesh(chunk.p, chunk.q);
@@ -378,7 +378,7 @@ void render_sky(Attrib *attrib, Player *player, GLuint buffer) {
 void render_wireframe(Attrib *attrib, Player *player) {
     State *s = &player->state;
     float matrix[16];
-    copy_matrix(matrix, set_matrix_3d(g->width, g->height, s->x, s->y, s->z, s->rx, s->ry, g->fov, g->ortho, g->render_radius));
+    copy_matrix(matrix, set_matrix_3d(g->width, g->height, s->x, s->y, s->z, s->rx, s->ry, g->fov, false, g->render_radius));
     int hx, hy, hz;
     int hw = hit_test(0, s->x, s->y, s->z, s->rx, s->ry, &hx, &hy, &hz);
     if (is_obstacle(hw)) {
@@ -740,8 +740,6 @@ int main(int argc, char **argv) {
     sky_attrib.matrix = glGetUniformLocation(program, "matrix");
     sky_attrib.sampler = glGetUniformLocation(program, "sampler");
     sky_attrib.timer = glGetUniformLocation(program, "timer");
-
-    snprintf(g->db_path, MAX_PATH_LENGTH, "%s", DB_PATH);
 
     g->render_radius = RENDER_CHUNK_RADIUS;
     g->delete_radius = DELETE_CHUNK_RADIUS;

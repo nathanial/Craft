@@ -34,7 +34,6 @@
 #define CRAFT_KEY_ITEM_NEXT 'E'
 #define CRAFT_KEY_ITEM_PREV 'R'
 #define CRAFT_KEY_ZOOM GLFW_KEY_LEFT_SHIFT
-#define CRAFT_KEY_ORTHO 'F'
 
 // advanced parameters
 #define CREATE_CHUNK_RADIUS 40

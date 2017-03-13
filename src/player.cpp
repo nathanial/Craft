@@ -52,7 +52,6 @@ void handle_movement(double dt) {
     int sz = 0;
     int sx = 0;
     float m = dt * 1.0;
-    g->ortho = glfwGetKey(g->window, CRAFT_KEY_ORTHO) ? 64 : 0;
     g->fov = glfwGetKey(g->window, CRAFT_KEY_ZOOM) ? 15 : 65;
     if (glfwGetKey(g->window, CRAFT_KEY_FORWARD)) sz--;
     if (glfwGetKey(g->window, CRAFT_KEY_BACKWARD)) sz++;

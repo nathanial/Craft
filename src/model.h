@@ -74,9 +74,7 @@ public:
     int flying;
     int item_index;
     int scale;
-    int ortho;
     float fov;
-    char db_path[MAX_PATH_LENGTH];
     int day_length;
 
     ChunkPtr get_chunk(int p, int q);
