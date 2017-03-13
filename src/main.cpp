@@ -6,7 +6,6 @@
 #include <string.h>
 #include <time.h>
 #include <caf/atom.hpp>
-#include "auth.h"
 #include "config.h"
 #include "cube.h"
 #include "item.h"
@@ -58,10 +57,6 @@ void set_dirty_flag(int p, int q) {
             });
         }
     }
-}
-
-GLuint gen_wireframe_buffer(float x, float y, float z, float n) {
-    return gen_buffer(make_cube_wireframe(x, y, z, n));
 }
 
 GLuint gen_sky_buffer() {
@@ -256,16 +251,6 @@ int player_intersects_block(
         }
     }
     return 0;
-}
-
-ChunkNeighbors find_neighbors(const Chunk& chunk){
-    ChunkNeighbors neighbors;
-    for(int dp = -1; dp <= 1; dp++){
-        for(int dq = -1; dq <= 1; dq++){
-            neighbors[std::make_tuple(dp + chunk.p, dq + chunk.q)] = g->find_chunk(dp + chunk.p, dq + chunk.q);
-        }
-    }
-    return neighbors;
 }
 
 void set_block(int x, int y, int z, int w) {
