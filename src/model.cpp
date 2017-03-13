@@ -130,10 +130,3 @@ void Model::delete_all_chunks() {
 int Model::chunk_count() const {
     return static_cast<int>(this->chunks.size());
 }
-
-void Model::add_chunk(ChunkPtr chunk) {
-    if(chunk == nullptr){
-        throw "Couldn't Make Shared Ptr";
-    }
-    this->chunks[std::make_tuple(chunk->p, chunk->q)] = chunk;
-}

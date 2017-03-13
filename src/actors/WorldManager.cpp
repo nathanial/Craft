@@ -42,6 +42,9 @@ caf::behavior WorldManager::make_behavior() {
             for(int dp = -1; dp <= 1; dp++){
                 for(int dq = -1; dq <= 1; dq++){
                     auto chunk = g->find_chunk(p+dp, q+dq);
+                    if(!chunk){
+                        continue;
+                    }
                     this->request(chunk_mesher, caf::infinite, *chunk).await(
                         [=](const ChunkMesh& mesh) mutable {
                             g->replace_mesh(p+dp,q+dq, std::make_shared<ChunkMesh>(mesh));

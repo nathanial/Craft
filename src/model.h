@@ -66,7 +66,6 @@ private:
     std::unordered_map<ChunkPosition, std::shared_ptr<ChunkMesh>, ChunkPositionHash> meshes;
 public:
     GLFWwindow *window;
-    int create_radius;
     int render_radius;
     int delete_radius;
     Player players[MAX_PLAYERS];
@@ -92,10 +91,6 @@ public:
     int server_port;
     int day_length;
     int time_changed;
-    Block block0;
-    Block block1;
-    Block copy0;
-    Block copy1;
 
     ChunkPtr get_chunk(int p, int q);
     std::shared_ptr<ChunkMesh> get_mesh(int p, int q);
@@ -112,7 +107,6 @@ public:
     void delete_all_chunks();
 
     int chunk_count() const;
-    void add_chunk(ChunkPtr chunk);
 
     char get_block(int x, int y, int z);
 
