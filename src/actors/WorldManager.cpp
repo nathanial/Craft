@@ -15,6 +15,16 @@ extern Model *g;
 
 static void set_dirty_flag(int p, int q);
 
+static ChunkNeighbors find_neighbors(const Chunk& chunk){
+    ChunkNeighbors neighbors;
+    for(int dp = -1; dp <= 1; dp++){
+        for(int dq = -1; dq <= 1; dq++){
+            neighbors[std::make_tuple(dp + chunk.p, dq + chunk.q)] = g->find_chunk(dp + chunk.p, dq + chunk.q);
+        }
+    }
+    return neighbors;
+}
+
 WorldManager::WorldManager(caf::actor_config &cfg)
         : caf::event_based_actor(cfg) {
 }
@@ -25,7 +35,6 @@ caf::behavior WorldManager::make_behavior() {
             return g->get_block(x,y,z);
         },
         [&] (wm_set_block, int x, int y, int z, char w){
-            auto chunk_mesher = caf::actor_cast<caf::actor>(vgk::actors::system->registry().get(chunk_mesher_id::value));
             auto p = chunked(x);
             auto q = chunked(z);
             auto chunk = g->find_chunk(p, q);
@@ -35,25 +44,18 @@ caf::behavior WorldManager::make_behavior() {
                     set_dirty_flag(p, q);
                 }
             });
-
-            auto result = this->make_response_promise<bool>();
             for(int dp = -1; dp <= 1; dp++){
                 for(int dq = -1; dq <= 1; dq++){
                     auto chunk = g->find_chunk(p+dp, q+dq);
                     if(!chunk){
                         continue;
                     }
-                    this->request(chunk_mesher, caf::infinite, *chunk).await(
-                        [=](const ChunkMesh& mesh) mutable {
-                            g->replace_mesh(p+dp,q+dq, std::make_shared<ChunkMesh>(mesh));
-                            if(dp == 1 && dq == 1){
-                                result.deliver(true);
-                            }
-                        }
-                    );
+                    TransientChunkMesh mesh;
+                    Chunk::create_mesh(chunk->p, chunk->q, mesh, *chunk->blocks, find_neighbors(*chunk));
+                    g->replace_mesh(p+dp,q+dq, std::make_shared<ChunkMesh>(mesh.immutable()));
                 }
             }
-            return result;
+            return true;
         }
     };
 }

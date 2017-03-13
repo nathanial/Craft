@@ -43,21 +43,10 @@ caf::behavior chunk_builder(caf::event_based_actor* self) {
     };
 }
 
-caf::behavior chunk_mesher(caf::event_based_actor* self) {
-    return {
-      [=](const Chunk& chunk) -> ChunkMesh {
-          TransientChunkMesh mesh;
-          Chunk::create_mesh(chunk.p, chunk.q, mesh, *chunk.blocks, find_neighbors(chunk));
-          return mesh.immutable();
-      }
-    };
-}
-
 caf::behavior world_builder(caf::event_based_actor* self) {
     return {
         [=](load_nearby_chunks) {
             auto chunk_builder = caf::actor_cast<caf::actor>(vgk::actors::system->registry().get(chunk_builder_id::value));
-            auto chunk_mesher = caf::actor_cast<caf::actor>(vgk::actors::system->registry().get(chunk_mesher_id::value));
 
             auto result = self->make_response_promise<int>();
             for(int p = -10; p < 10; p++){
@@ -67,15 +56,12 @@ caf::behavior world_builder(caf::event_based_actor* self) {
                                 // ... and print it
                                 caf::aout(self) << "Created Chunk " << chunk.p << "," << chunk.q << std::endl;
                                 g->replace_chunk(std::make_shared<Chunk>(chunk));
-                                self->request(chunk_mesher, caf::infinite, chunk).then(
-                                        [=](const ChunkMesh& mesh) mutable {
-                                            caf::aout(self) << "Meshed Chunk " << chunk.p << "," << chunk.q << std::endl;
-                                            g->replace_mesh(p,q, std::make_shared<ChunkMesh>(mesh));
-                                            if(p == 9 && q == 9){
-                                                result.deliver(0);
-                                            }
-                                        }
-                                );
+                                TransientChunkMesh mesh;
+                                Chunk::create_mesh(chunk.p, chunk.q, mesh, *chunk.blocks, find_neighbors(chunk));
+                                g->replace_mesh(p,q, std::make_shared<ChunkMesh>(mesh.immutable()));
+                                if(p == 9 && q == 9){
+                                    result.deliver(0);
+                                }
                             }
                     );
                 }
@@ -90,15 +76,12 @@ void vgk::actors::start(){
     vgk::actors::system = new caf::actor_system { vgk::actors::cfg };
 
     auto chunk_builder_actor = vgk::actors::system->spawn(chunk_builder);
-    auto chunk_mesher_actor = vgk::actors::system->spawn(chunk_mesher);
     auto world_manager_actor = vgk::actors::system->spawn<WorldManager>();
 
     auto actor_ptr = caf::actor_cast<caf::strong_actor_ptr>(world_manager_actor);
 
     vgk::actors::system->registry().put(chunk_builder_id::value,
                                        caf::actor_cast<caf::strong_actor_ptr>(chunk_builder_actor));
-    vgk::actors::system->registry().put(chunk_mesher_id::value,
-                                       caf::actor_cast<caf::strong_actor_ptr>(chunk_mesher_actor));
 
     vgk::actors::system->registry().put(world_manager_id::value,actor_ptr);
 

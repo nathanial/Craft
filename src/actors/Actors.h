@@ -14,7 +14,6 @@ namespace vgk {
         extern caf::actor_system * system;
 
         using chunk_builder_id = caf::atom_constant<caf::atom("cbaid")>;
-        using chunk_mesher_id = caf::atom_constant<caf::atom("cmaid")>;
         using world_manager_id = caf::atom_constant<caf::atom("wmid")>;
 
         using create_chunk = caf::atom_constant<caf::atom("create")>;
