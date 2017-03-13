@@ -118,16 +118,6 @@ GLuint gen_text_buffer(float x, float y, float n, char *text) {
     return gen_faces(4, length, data);
 }
 
-Player *find_player(int id) {
-    for (int i = 0; i < g->player_count; i++) {
-        Player *player = g->players + i;
-        if (player->id == id) {
-            return player;
-        }
-    }
-    return 0;
-}
-
 void update_player(Player *player,
     float x, float y, float z, float rx, float ry, int interpolate)
 {
@@ -169,72 +159,6 @@ void interpolate_player(Player *player) {
         s1->ry + (s2->ry - s1->ry) * p,
         0);
 }
-
-void delete_player(int id) {
-    Player *player = find_player(id);
-    if (!player) {
-        return;
-    }
-    int count = g->player_count;
-    del_buffer(player->buffer);
-    Player *other = g->players + (--count);
-    memcpy(player, other, sizeof(Player));
-    g->player_count = count;
-}
-
-void delete_all_players() {
-    for (int i = 0; i < g->player_count; i++) {
-        Player *player = g->players + i;
-        del_buffer(player->buffer);
-    }
-    g->player_count = 0;
-}
-
-float player_player_distance(Player *p1, Player *p2) {
-    State *s1 = &p1->state;
-    State *s2 = &p2->state;
-    float x = s2->x - s1->x;
-    float y = s2->y - s1->y;
-    float z = s2->z - s1->z;
-    return sqrtf(x * x + y * y + z * z);
-}
-
-float player_crosshair_distance(Player *p1, Player *p2) {
-    State *s1 = &p1->state;
-    State *s2 = &p2->state;
-    float d = player_player_distance(p1, p2);
-    float vx, vy, vz;
-    get_sight_vector(s1->rx, s1->ry, &vx, &vy, &vz);
-    vx *= d; vy *= d; vz *= d;
-    float px, py, pz;
-    px = s1->x + vx; py = s1->y + vy; pz = s1->z + vz;
-    float x = s2->x - px;
-    float y = s2->y - py;
-    float z = s2->z - pz;
-    return sqrtf(x * x + y * y + z * z);
-}
-
-Player *player_crosshair(Player *player) {
-    Player *result = 0;
-    float threshold = RADIANS(5);
-    float best = 0;
-    for (int i = 0; i < g->player_count; i++) {
-        Player *other = g->players + i;
-        if (other == player) {
-            continue;
-        }
-        float p = player_crosshair_distance(player, other);
-        float d = player_player_distance(player, other);
-        if (d < 96 && p / d < threshold) {
-            if (best == 0 || d < best) {
-                best = d;
-                result = other;
-            }
-        }
-    }
-    return result;
-}
-
 
 int _hit_test(
     Chunk& chunk, float max_distance, int previous,
@@ -440,24 +364,6 @@ int render_chunks(Attrib *attrib, Player *player) {
     return result;
 }
 
-
-void render_players(Attrib *attrib, Player *player) {
-    State *s = &player->state;
-    float matrix[16];
-    copy_matrix(matrix, set_matrix_3d(g->width, g->height, s->x, s->y, s->z, s->rx, s->ry, g->fov, g->ortho, g->render_radius));
-    glUseProgram(attrib->program);
-    glUniformMatrix4fv(attrib->matrix, 1, GL_FALSE, matrix);
-    glUniform3f(attrib->camera, s->x, s->y, s->z);
-    glUniform1i(attrib->sampler, 0);
-    glUniform1f(attrib->timer, time_of_day());
-    for (int i = 0; i < g->player_count; i++) {
-        Player *other = g->players + i;
-        if (other != player) {
-            draw_player(attrib, other);
-        }
-    }
-}
-
 void render_sky(Attrib *attrib, Player *player, GLuint buffer) {
     State *s = &player->state;
     float matrix[16];
@@ -538,7 +444,7 @@ void render_text(
 }
 
 void on_left_click() {
-    State *s = &g->players->state;
+    State *s = &g->player.state;
     int hx, hy, hz;
     int hw = hit_test(0, s->x, s->y, s->z, s->rx, s->ry, &hx, &hy, &hz);
     if (hy > 0 && hy < 256 && is_destructable(hw)) {
@@ -550,7 +456,7 @@ void on_left_click() {
 }
 
 void on_right_click() {
-    State *s = &g->players->state;
+    State *s = &g->player.state;
     int hx, hy, hz;
     int hw = hit_test(1, s->x, s->y, s->z, s->rx, s->ry, &hx, &hy, &hz);
     if (hy > 0 && hy < 256 && is_obstacle(hw)) {
@@ -561,7 +467,7 @@ void on_right_click() {
 }
 
 void on_middle_click() {
-    State *s = &g->players->state;
+    State *s = &g->player.state;
     int hx, hy, hz;
     int hw = hit_test(0, s->x, s->y, s->z, s->rx, s->ry, &hx, &hy, &hz);
     for (int i = 0; i < item_count; i++) {
@@ -578,12 +484,6 @@ void on_key(GLFWwindow *window, int key, int scancode, int action, int mods) {
         glfwGetInputMode(window, GLFW_CURSOR) == GLFW_CURSOR_DISABLED;
     if (action == GLFW_RELEASE) {
         return;
-    }
-    if (key == GLFW_KEY_BACKSPACE) {
-        int n = strlen(g->typing_buffer);
-        if (n > 0) {
-            g->typing_buffer[n - 1] = '\0';
-        }
     }
     if (action != GLFW_PRESS) {
         return;
@@ -618,12 +518,6 @@ void on_key(GLFWwindow *window, int key, int scancode, int action, int mods) {
         if (g->item_index < 0) {
             g->item_index = item_count - 1;
         }
-    }
-    if (key == CRAFT_KEY_OBSERVE) {
-        g->observe1 = (g->observe1 + 1) % g->player_count;
-    }
-    if (key == CRAFT_KEY_OBSERVE_INSET) {
-        g->observe2 = (g->observe2 + 1) % g->player_count;
     }
 }
 
@@ -695,7 +589,7 @@ void handle_mouse_input() {
         glfwGetInputMode(g->window, GLFW_CURSOR) == GLFW_CURSOR_DISABLED;
     static double px = 0;
     static double py = 0;
-    State *s = &g->players->state;
+    State *s = &g->player.state;
     if (exclusive && (px || py)) {
         double mx, my;
         glfwGetCursorPos(g->window, &mx, &my);
@@ -724,90 +618,10 @@ void handle_mouse_input() {
 }
 
 
-void parse_buffer(char *buffer) {
-    Player *me = g->players;
-    State *s = &g->players->state;
-    char *key;
-    char *line = tokenize(buffer, "\n", &key);
-    while (line) {
-        int pid;
-        float ux, uy, uz, urx, ury;
-        if (sscanf(line, "U,%d,%f,%f,%f,%f,%f",
-            &pid, &ux, &uy, &uz, &urx, &ury) == 6)
-        {
-            me->id = pid;
-            s->x = ux; s->y = uy; s->z = uz; s->rx = urx; s->ry = ury;
-            if (uy == 0) {
-                s->y = highest_block(s->x, s->z) + 2;
-            }
-        }
-        int bp, bq, bx, by, bz, bw;
-        float px, py, pz, prx, pry;
-        if (sscanf(line, "P,%d,%f,%f,%f,%f,%f",
-            &pid, &px, &py, &pz, &prx, &pry) == 6)
-        {
-            Player *player = find_player(pid);
-            if (!player && g->player_count < MAX_PLAYERS) {
-                player = g->players + g->player_count;
-                g->player_count++;
-                player->id = pid;
-                player->buffer = 0;
-                snprintf(player->name, MAX_NAME_LENGTH, "player%d", pid);
-                update_player(player, px, py, pz, prx, pry, 1); // twice
-            }
-            if (player) {
-                update_player(player, px, py, pz, prx, pry, 1);
-            }
-        }
-        if (sscanf(line, "D,%d", &pid) == 1) {
-            delete_player(pid);
-        }
-        int kp, kq, kk;
-        if (sscanf(line, "K,%d,%d,%d", &kp, &kq, &kk) == 3) {
-            db_set_key(kp, kq, kk);
-        }
-        if (sscanf(line, "R,%d,%d", &kp, &kq) == 2) {
-            auto chunk = g->find_chunk(kp, kq);
-            if (chunk) {
-                set_dirty_flag(kp, kq);
-            }
-        }
-        double elapsed;
-        int day_length;
-        if (sscanf(line, "E,%lf,%d", &elapsed, &day_length) == 2) {
-            glfwSetTime(fmod(elapsed, day_length));
-            g->day_length = day_length;
-            g->time_changed = 1;
-        }
-        char format[64];
-        snprintf(
-            format, sizeof(format), "N,%%d,%%%ds", MAX_NAME_LENGTH - 1);
-        char name[MAX_NAME_LENGTH];
-        if (sscanf(line, format, &pid, name) == 2) {
-            Player *player = find_player(pid);
-            if (player) {
-                strncpy(player->name, name, MAX_NAME_LENGTH);
-            }
-        }
-        snprintf(
-            format, sizeof(format),
-            "S,%%d,%%d,%%d,%%d,%%d,%%d,%%%d[^\n]", MAX_SIGN_LENGTH - 1);
-        int face;
-        char text[MAX_SIGN_LENGTH] = {0};
-        line = tokenize(NULL, "\n", &key);
-    }
-}
-
 void reset_model() {
     g->clear_chunks();
-    memset(g->players, 0, sizeof(Player) * MAX_PLAYERS);
-    g->player_count = 0;
-    g->observe1 = 0;
-    g->observe2 = 0;
     g->flying = 0;
     g->item_index = 0;
-    memset(g->typing_buffer, 0, sizeof(char) * MAX_TEXT_LENGTH);
-    g->message_index = 0;
     g->day_length = DAY_LENGTH;
     glfwSetTime(g->day_length / 3.0);
     g->time_changed = 1;
@@ -956,12 +770,11 @@ int main(int argc, char **argv) {
         double last_update = glfwGetTime();
         GLuint sky_buffer = gen_sky_buffer();
 
-        Player *me = g->players;
-        State *s = &g->players->state;
+        Player *me = &g->player;
+        State *s = &g->player.state;
         me->id = 0;
         me->name[0] = '\0';
         me->buffer = 0;
-        g->player_count = 1;
 
         // LOAD STATE FROM DATABASE //
         int loaded = db_load_state(&s->x, &s->y, &s->z, &s->rx, &s->ry);
@@ -1013,15 +826,10 @@ int main(int argc, char **argv) {
             }
 
             // PREPARE TO RENDER //
-            g->observe1 = g->observe1 % g->player_count;
-            g->observe2 = g->observe2 % g->player_count;
             g->delete_chunks();
             del_buffer(me->buffer);
             me->buffer = gen_player_buffer(s->x, s->y, s->z, s->rx, s->ry);
-            for (int i = 1; i < g->player_count; i++) {
-                interpolate_player(g->players + i);
-            }
-            Player *player = g->players + g->observe1;
+            Player *player = &g->player;
 
             // RENDER 3-D SCENE //
             glClear(GL_COLOR_BUFFER_BIT);
@@ -1029,7 +837,6 @@ int main(int argc, char **argv) {
             render_sky(&sky_attrib, player, sky_buffer);
             glClear(GL_DEPTH_BUFFER_BIT);
             int face_count = render_chunks(&block_attrib, player);
-            render_players(&block_attrib, player);
             if (SHOW_WIREFRAME) {
                 render_wireframe(&line_attrib, player);
             }
@@ -1056,57 +863,10 @@ int main(int argc, char **argv) {
                 snprintf(
                     text_buffer, 1024,
                     "(%d, %d) (%.2f, %.2f, %.2f) [%d, %d, %d] %d%cm %dfps",
-                    chunked(s->x), chunked(s->z), s->x, s->y, s->z,
-                    g->player_count, g->chunk_count(),
+                    chunked(s->x), chunked(s->z), s->x, s->y, s->z, 1, g->chunk_count(),
                     face_count * 2, hour, am_pm, fps.fps);
                 render_text(&text_attrib, ALIGN_LEFT, tx, ty, ts, text_buffer);
                 ty -= ts * 2;
-            }
-            if (SHOW_PLAYER_NAMES) {
-                if (player != me) {
-                    render_text(&text_attrib, ALIGN_CENTER,
-                        g->width / 2, ts, ts, player->name);
-                }
-                Player *other = player_crosshair(player);
-                if (other) {
-                    render_text(&text_attrib, ALIGN_CENTER,
-                        g->width / 2, g->height / 2 - ts - 24, ts,
-                        other->name);
-                }
-            }
-
-            // RENDER PICTURE IN PICTURE //
-            if (g->observe2) {
-                player = g->players + g->observe2;
-
-                int pw = 256 * g->scale;
-                int ph = 256 * g->scale;
-                int offset = 32 * g->scale;
-                int pad = 3 * g->scale;
-                int sw = pw + pad * 2;
-                int sh = ph + pad * 2;
-
-                glEnable(GL_SCISSOR_TEST);
-                glScissor(g->width - sw - offset + pad, offset - pad, sw, sh);
-                glClear(GL_COLOR_BUFFER_BIT);
-                glDisable(GL_SCISSOR_TEST);
-                glClear(GL_DEPTH_BUFFER_BIT);
-                glViewport(g->width - pw - offset, offset, pw, ph);
-
-                g->width = pw;
-                g->height = ph;
-                g->ortho = 0;
-                g->fov = 65;
-
-                render_sky(&sky_attrib, player, sky_buffer);
-                glClear(GL_DEPTH_BUFFER_BIT);
-                render_chunks(&block_attrib, player);
-                render_players(&block_attrib, player);
-                glClear(GL_DEPTH_BUFFER_BIT);
-                if (SHOW_PLAYER_NAMES) {
-                    render_text(&text_attrib, ALIGN_CENTER,
-                        pw / 2, ts, ts, player->name);
-                }
             }
 
             // SWAP AND POLL //
@@ -1128,7 +888,6 @@ int main(int argc, char **argv) {
         db_disable();
         del_buffer(sky_buffer);
         g->delete_all_chunks();
-        delete_all_players();
     }
 
     glfwTerminate();

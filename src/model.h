@@ -68,14 +68,9 @@ public:
     GLFWwindow *window;
     int render_radius;
     int delete_radius;
-    Player players[MAX_PLAYERS];
-    int player_count;
-    char typing_buffer[MAX_TEXT_LENGTH];
-    int message_index;
+    Player player;
     int width;
     int height;
-    int observe1;
-    int observe2;
     int flying;
     int item_index;
     int scale;

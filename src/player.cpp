@@ -48,7 +48,7 @@ int collide(int height, float *x, float *y, float *z) {
 
 void handle_movement(double dt) {
     static float dy = 0;
-    State *s = &g->players->state;
+    State *s = &g->player.state;
     int sz = 0;
     int sx = 0;
     float m = dt * 1.0;
