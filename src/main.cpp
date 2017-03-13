@@ -624,7 +624,6 @@ void reset_model() {
     g->item_index = 0;
     g->day_length = DAY_LENGTH;
     glfwSetTime(g->day_length / 3.0);
-    g->time_changed = 1;
 }
 
 int main(int argc, char **argv) {
@@ -742,7 +741,6 @@ int main(int argc, char **argv) {
     sky_attrib.sampler = glGetUniformLocation(program, "sampler");
     sky_attrib.timer = glGetUniformLocation(program, "timer");
 
-    g->mode = MODE_OFFLINE;
     snprintf(g->db_path, MAX_PATH_LENGTH, "%s", DB_PATH);
 
     g->render_radius = RENDER_CHUNK_RADIUS;
@@ -752,15 +750,9 @@ int main(int argc, char **argv) {
     int running = 1;
     while (running) {
         // DATABASE INITIALIZATION //
-        if (g->mode == MODE_OFFLINE || USE_CACHE) {
-            db_enable();
-            if (db_init(g->db_path)) {
-                return -1;
-            }
-            if (g->mode == MODE_ONLINE) {
-                // TODO: support proper caching of signs (handle deletions)
-                db_delete_all_signs();
-            }
+        db_enable();
+        if (db_init(g->db_path)) {
+            return -1;
         }
 
         // LOCAL VARIABLES //
@@ -794,13 +786,6 @@ int main(int argc, char **argv) {
             glfwGetFramebufferSize(g->window, &g->width, &g->height);
             glViewport(0, 0, g->width, g->height);
 
-            // FRAME RATE //
-            if (g->time_changed) {
-                g->time_changed = 0;
-                last_commit = glfwGetTime();
-                last_update = glfwGetTime();
-                memset(&fps, 0, sizeof(fps));
-            }
             update_fps(&fps);
             double now = glfwGetTime();
             double dt = now - previous;
@@ -874,10 +859,6 @@ int main(int argc, char **argv) {
             glfwPollEvents();
             if (glfwWindowShouldClose(g->window)) {
                 running = 0;
-                break;
-            }
-            if (g->mode_changed) {
-                g->mode_changed = 0;
                 break;
             }
         }

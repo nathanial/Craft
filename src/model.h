@@ -76,11 +76,8 @@ public:
     int scale;
     int ortho;
     float fov;
-    int mode;
-    int mode_changed;
     char db_path[MAX_PATH_LENGTH];
     int day_length;
-    int time_changed;
 
     ChunkPtr get_chunk(int p, int q);
     std::shared_ptr<ChunkMesh> get_mesh(int p, int q);
