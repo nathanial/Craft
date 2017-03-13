@@ -2,7 +2,6 @@
 #include <GLFW/glfw3.h>
 #include <curl/curl.h>
 #include <math.h>
-#include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 #include <time.h>
@@ -10,11 +9,9 @@
 #include "auth.h"
 #include "config.h"
 #include "cube.h"
-#include "db.h"
 #include "item.h"
 #include "block_map.h"
 #include "matrix.h"
-#include "sign.h"
 #include "util.h"
 #include "world.h"
 #include "chunk/chunk.h"
@@ -362,24 +359,6 @@ void render_sky(Attrib *attrib, Player *player, GLuint buffer) {
     glUniform1i(attrib->sampler, 2);
     glUniform1f(attrib->timer, time_of_day());
     draw_triangles_3d(attrib, buffer, 512 * 3);
-}
-
-void render_wireframe(Attrib *attrib, Player *player) {
-    State *s = &player->state;
-    float matrix[16];
-    copy_matrix(matrix, set_matrix_3d(g->width, g->height, s->x, s->y, s->z, s->rx, s->ry, g->fov, false, g->render_radius));
-    int hx, hy, hz;
-    int hw = hit_test(0, s->x, s->y, s->z, s->rx, s->ry, &hx, &hy, &hz);
-    if (is_obstacle(hw)) {
-        glUseProgram(attrib->program);
-        glLineWidth(1);
-        glEnable(GL_COLOR_LOGIC_OP);
-        glUniformMatrix4fv(attrib->matrix, 1, GL_FALSE, matrix);
-        GLuint wireframe_buffer = gen_wireframe_buffer(hx, hy, hz, 0.53);
-        draw_lines(attrib, wireframe_buffer, 3, 24);
-        del_buffer(wireframe_buffer);
-        glDisable(GL_COLOR_LOGIC_OP);
-    }
 }
 
 void render_item(Attrib *attrib) {
@@ -780,9 +759,6 @@ int main(int argc, char **argv) {
             render_sky(&sky_attrib, player, sky_buffer);
             glClear(GL_DEPTH_BUFFER_BIT);
             int face_count = render_chunks(&block_attrib, player);
-            if (SHOW_WIREFRAME) {
-                render_wireframe(&line_attrib, player);
-            }
 
             // RENDER HUD //
             glClear(GL_DEPTH_BUFFER_BIT);

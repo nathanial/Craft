@@ -4,7 +4,6 @@
 #include <GL/glew.h>
 #include "../block_map.h"
 #include "../height_map.h"
-#include "../sign.h"
 #include "TransientChunk.h"
 #include <memory>
 #include <mutex>
