@@ -73,7 +73,6 @@ public:
     int typing;
     char typing_buffer[MAX_TEXT_LENGTH];
     int message_index;
-    char messages[MAX_MESSAGES][MAX_TEXT_LENGTH];
     int width;
     int height;
     int observe1;

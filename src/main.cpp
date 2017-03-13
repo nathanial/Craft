@@ -537,13 +537,6 @@ void render_text(
     del_buffer(buffer);
 }
 
-void add_message(const char *text) {
-    printf("%s\n", text);
-    snprintf(
-        g->messages[g->message_index], MAX_TEXT_LENGTH, "%s", text);
-    g->message_index = (g->message_index + 1) % MAX_MESSAGES;
-}
-
 void on_left_click() {
     State *s = &g->players->state;
     int hx, hy, hz;
@@ -848,10 +841,6 @@ void parse_buffer(char *buffer) {
             g->day_length = day_length;
             g->time_changed = 1;
         }
-        if (line[0] == 'T' && line[1] == ',') {
-            char *text = line + 2;
-            add_message(text);
-        }
         char format[64];
         snprintf(
             format, sizeof(format), "N,%%d,%%%ds", MAX_NAME_LENGTH - 1);
@@ -881,7 +870,6 @@ void reset_model() {
     g->item_index = 0;
     memset(g->typing_buffer, 0, sizeof(char) * MAX_TEXT_LENGTH);
     g->typing = 0;
-    memset(g->messages, 0, sizeof(char) * MAX_MESSAGES * MAX_TEXT_LENGTH);
     g->message_index = 0;
     g->day_length = DAY_LENGTH;
     glfwSetTime(g->day_length / 3.0);
@@ -1137,16 +1125,6 @@ int main(int argc, char **argv) {
                     face_count * 2, hour, am_pm, fps.fps);
                 render_text(&text_attrib, ALIGN_LEFT, tx, ty, ts, text_buffer);
                 ty -= ts * 2;
-            }
-            if (SHOW_CHAT_TEXT) {
-                for (int i = 0; i < MAX_MESSAGES; i++) {
-                    int index = (g->message_index + i) % MAX_MESSAGES;
-                    if (strlen(g->messages[index])) {
-                        render_text(&text_attrib, ALIGN_LEFT, tx, ty, ts,
-                            g->messages[index]);
-                        ty -= ts * 2;
-                    }
-                }
             }
             if (g->typing) {
                 snprintf(text_buffer, 1024, "> %s", g->typing_buffer);
