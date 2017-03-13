@@ -5,7 +5,6 @@
 #include "WorldManager.h"
 #include "../model.h"
 #include "../util.h"
-#include "../db.h"
 #include "./Actors.h"
 #include "../chunk/ChunkMesh.h"
 
@@ -34,7 +33,6 @@ caf::behavior WorldManager::make_behavior() {
                 if (chunk.get_block(x,y,z) != w) {
                     chunk.set_block(x, y, z, w);
                     set_dirty_flag(p, q);
-                    db_insert_block(p, q, x, y, z, w);
                 }
             });
 

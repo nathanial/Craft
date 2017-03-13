@@ -97,9 +97,9 @@ char Model::get_block(int x, int y, int z) {
 }
 
 void Model::delete_chunks(){
-    State *s1 = &this->players->state;
-    State *s2 = &(this->players + this->observe1)->state;
-    State *s3 = &(this->players + this->observe2)->state;
+    State *s1 = &this->player.state;
+    State *s2 = &this->player.state;
+    State *s3 = &this->player.state;
     State *states[3] = {s1, s2, s3};
     std::vector<ChunkPosition> deletion_list;
     this->each_chunk([&](Chunk& chunk){

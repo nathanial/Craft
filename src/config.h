@@ -21,10 +21,7 @@
 #define SHOW_TREES 1
 #define SHOW_ITEM 1
 #define SHOW_CROSSHAIRS 1
-#define SHOW_WIREFRAME 0
 #define SHOW_INFO_TEXT 1
-#define SHOW_CHAT_TEXT 1
-#define SHOW_PLAYER_NAMES 1
 
 // key bindings
 #define CRAFT_KEY_FORWARD 'W'
@@ -33,15 +30,9 @@
 #define CRAFT_KEY_RIGHT 'D'
 #define CRAFT_KEY_JUMP GLFW_KEY_SPACE
 #define CRAFT_KEY_FLY GLFW_KEY_TAB
-#define CRAFT_KEY_OBSERVE 'O'
-#define CRAFT_KEY_OBSERVE_INSET 'P'
 #define CRAFT_KEY_ITEM_NEXT 'E'
 #define CRAFT_KEY_ITEM_PREV 'R'
 #define CRAFT_KEY_ZOOM GLFW_KEY_LEFT_SHIFT
-#define CRAFT_KEY_ORTHO 'F'
-#define CRAFT_KEY_CHAT 't'
-#define CRAFT_KEY_COMMAND '/'
-#define CRAFT_KEY_SIGN '`'
 
 // advanced parameters
 #define CREATE_CHUNK_RADIUS 40
@@ -63,9 +54,6 @@
 #define ALIGN_LEFT 0
 #define ALIGN_CENTER 1
 #define ALIGN_RIGHT 2
-
-#define MODE_OFFLINE 0
-#define MODE_ONLINE 1
 
 #define WORKER_IDLE 0
 #define WORKER_BUSY 1

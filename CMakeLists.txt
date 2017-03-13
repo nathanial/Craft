@@ -12,7 +12,6 @@ add_executable(
     deps/glew/src/glew.c
         deps/lodepng/lodepng.cpp
     deps/noise/noise.c
-    deps/sqlite/sqlite3.c
         src/chunk/chunk.h src/chunk/chunk.cpp src/model.h src/draw.cpp src/draw.h src/actors/Actors.cpp src/actors/Actors.h src/biomes/rolling_planes.cpp src/biomes/rolling_planes.h src/biomes/biome.h src/biomes/mountains.h src/biomes/mountains.cpp src/height_map.h src/workers/tasks/generate_chunk_task.h src/workers/tasks/task.h src/workers/tasks/generate_chunk_task.cpp src/biomes/flatland.cpp src/biomes/flatland.h src/terrain_features/trees/OakTree.cpp src/terrain_features/trees/OakTree.h src/terrain_features/TerrainFeature.cpp src/terrain_features/TerrainFeature.h src/chunk/ChunkMesh.cpp src/chunk/ChunkMesh.h src/chunk/TransientChunk.cpp src/chunk/TransientChunk.h src/chunk/TransientChunkMesh.cpp src/chunk/TransientChunkMesh.h src/actors/WorldManager.cpp src/actors/WorldManager.h)
 
 set(CMAKE_CXX_FLAGS "-std=c++14 -fpermissive -Wno-narrowing -O3")
