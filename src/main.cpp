@@ -63,17 +63,6 @@ void set_dirty_flag(int p, int q) {
     }
 }
 
-GLuint gen_crosshair_buffer() {
-    int x = g->width / 2;
-    int y = g->height / 2;
-    int p = 10 * g->scale;
-    float data[] = {
-        x, y - p, x, y + p,
-        x - p, y, x + p, y
-    };
-    return gen_buffer(sizeof(data), data);
-}
-
 GLuint gen_wireframe_buffer(float x, float y, float z, float n) {
     return gen_buffer(make_cube_wireframe(x, y, z, n));
 }
@@ -391,19 +380,6 @@ void render_wireframe(Attrib *attrib, Player *player) {
         del_buffer(wireframe_buffer);
         glDisable(GL_COLOR_LOGIC_OP);
     }
-}
-
-void render_crosshairs(Attrib *attrib) {
-    float matrix[16];
-    copy_matrix(matrix, set_matrix_2d(g->width, g->height));
-    glUseProgram(attrib->program);
-    glLineWidth(4 * g->scale);
-    glEnable(GL_COLOR_LOGIC_OP);
-    glUniformMatrix4fv(attrib->matrix, 1, GL_FALSE, matrix);
-    GLuint crosshair_buffer = gen_crosshair_buffer();
-    draw_lines(attrib, crosshair_buffer, 2, 4);
-    del_buffer(crosshair_buffer);
-    glDisable(GL_COLOR_LOGIC_OP);
 }
 
 void render_item(Attrib *attrib) {
@@ -810,9 +786,6 @@ int main(int argc, char **argv) {
 
             // RENDER HUD //
             glClear(GL_DEPTH_BUFFER_BIT);
-            if (SHOW_CROSSHAIRS) {
-                render_crosshairs(&line_attrib);
-            }
             if (SHOW_ITEM) {
                 render_item(&block_attrib);
             }
