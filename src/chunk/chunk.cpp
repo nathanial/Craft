@@ -14,6 +14,10 @@ extern "C" {
 #include "../cube.h"
 #include "ChunkMesh.h"
 #include "../model.h"
+#include "../actors/WorldManager.h"
+
+using namespace vgk;
+using namespace vgk::actors;
 
 void occlusion(
         char neighbors[27], char lights[27], float shades[27],
@@ -330,7 +334,8 @@ int highest_block(float x, float z) {
     int nz = roundf(z);
     int p = chunked(x);
     int q = chunked(z);
-    auto chunk = g->find_chunk(p, q);
+    auto chunk_and_mesh = WorldManager::find(p, q);
+    auto chunk = std::get<0>(chunk_and_mesh);
     if (chunk) {
         chunk->foreach_block([&](int ex, int ey, int ez, int ew){
             if (is_obstacle(ew) && ex == nx && ez == nz) {

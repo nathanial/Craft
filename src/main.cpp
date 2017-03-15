@@ -52,16 +52,6 @@ int get_scale_factor() {
     return result;
 }
 
-void set_dirty_flag(int p, int q) {
-    for (int dp = -1; dp <= 1; dp++) {
-        for (int dq = -1; dq <= 1; dq++) {
-            g->update_mesh(p + dp, q + dq, [&](TransientChunkMesh &mesh) {
-                mesh.dirty = true;
-            });
-        }
-    }
-}
-
 GLuint gen_sky_buffer() {
     return gen_buffer(make_sphere(1, 3));
 }
@@ -168,12 +158,17 @@ int hit_test(
     int q = chunked(z);
     float vx, vy, vz;
     get_sight_vector(rx, ry, &vx, &vy, &vz);
-    g->each_chunk([&](Chunk& chunk){
-        if (chunk.distance(p, q) > 1) {
-            return;
+    auto all_chunks_and_meshes = WorldManager::all_chunks();
+    for(auto &chunk_and_mesh : all_chunks_and_meshes){
+        auto chunk = std::get<0>(chunk_and_mesh);
+        if(!chunk){
+            continue;
+        }
+        if (chunk->distance(p, q) > 1) {
+            continue;
         }
         int hx, hy, hz;
-        int hw = _hit_test(chunk, 8, previous,
+        int hw = _hit_test(*chunk, 8, previous,
                            x, y, z, vx, vy, vz, &hx, &hy, &hz);
         if (hw > 0) {
             float d = sqrtf(
@@ -184,7 +179,7 @@ int hit_test(
                 result = hw;
             }
         }
-    });
+    }
     return result;
 }
 
@@ -222,27 +217,24 @@ int render_chunks(Attrib *attrib, Player *player) {
     glUniform1f(attrib->extra3, g->render_radius * CHUNK_SIZE);
     glUniform1i(attrib->extra4, false);
     glUniform1f(attrib->timer, time_of_day());
-    g->each_chunk([&](Chunk& chunk) {
-        auto mesh = g->find_mesh(chunk.p, chunk.q);
-        if(!mesh){
-            return;
+
+    auto all_chunks_and_meshes = WorldManager::all_chunks();
+    for(auto &chunk_and_mesh : all_chunks_and_meshes){
+        auto chunk = std::get<0>(chunk_and_mesh);
+        auto mesh = std::get<1>(chunk_and_mesh);
+        if(!mesh || !chunk){
+            continue;
         }
-        if(mesh->buffer == 0){
-            auto transient = mesh->transient();
-            transient->generate_buffer();
-            g->replace_mesh(chunk.p, chunk.q, std::make_shared<ChunkMesh>(transient->immutable()));
-            mesh = g->find_mesh(chunk.p, chunk.q);
-        }
-        if (chunk.distance(p, q) > g->render_radius) {
-            return;
+        if (chunk->distance(p, q) > g->render_radius) {
+            continue;
         }
         if (!chunk_visible(
-            planes, chunk.p, chunk.q, mesh->miny, mesh->maxy))
+            planes, chunk->p, chunk->q, mesh->miny, mesh->maxy))
         {
-            return;
+            continue;
         }
         result += mesh->draw(attrib);
-    });
+    }
     return result;
 }
 
@@ -470,7 +462,6 @@ void handle_mouse_input() {
 
 
 void reset_model() {
-    g->clear_chunks();
     g->flying = 0;
     g->item_index = 0;
     g->day_length = DAY_LENGTH;
@@ -644,7 +635,6 @@ int main(int argc, char **argv) {
             }
 
             // PREPARE TO RENDER //
-            g->delete_chunks();
             del_buffer(me->buffer);
             me->buffer = gen_player_buffer(s->x, s->y, s->z, s->rx, s->ry);
             Player *player = &g->player;
@@ -675,7 +665,7 @@ int main(int argc, char **argv) {
                 snprintf(
                     text_buffer, 1024,
                     "(%d, %d) (%.2f, %.2f, %.2f) [%d, %d, %d] %d%cm %dfps",
-                    chunked(s->x), chunked(s->z), s->x, s->y, s->z, 1, g->chunk_count(),
+                    chunked(s->x), chunked(s->z), s->x, s->y, s->z, 1, WorldManager::chunk_count(),
                     face_count * 2, hour, am_pm, fps.fps);
                 render_text(&text_attrib, ALIGN_LEFT, tx, ty, ts, text_buffer);
                 ty -= ts * 2;
@@ -691,7 +681,6 @@ int main(int argc, char **argv) {
         }
 
         del_buffer(sky_buffer);
-        g->delete_all_chunks();
     }
 
     glfwTerminate();

@@ -20,7 +20,8 @@ namespace vgk {
         using wm_find_chunk_and_mesh = caf::atom_constant<caf::atom("wm_fcam")>;
         using wm_find_neighbors = caf::atom_constant<caf::atom("wm_fn")>;
         using wm_update = caf::atom_constant<caf::atom("wm_u")>;
-
+        using wm_count_chunks = caf::atom_constant<caf::atom("wm_cc")>;
+        using wm_all_chunks = caf::atom_constant<caf::atom("wm_ac")>;
 
         class WorldManager : public caf::event_based_actor {
         private:
@@ -36,6 +37,12 @@ namespace vgk {
 
             static char get_block(int x, int y, int z);
             static void set_block(int x, int y, int z, char w);
+
+            static int chunk_count();
+
+            static std::vector<ChunkAndMesh> all_chunks();
+
+            static void load_world();
         };
 
 
