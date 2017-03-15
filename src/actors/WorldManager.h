@@ -11,6 +11,7 @@
 using ChunkMeshPtr = std::shared_ptr<ChunkMesh>;
 using ChunkAndMesh = std::tuple<ChunkPtr, ChunkMeshPtr>;
 using ChunkAndMeshMap = std::unordered_map<ChunkPosition, ChunkAndMesh, ChunkPositionHash>;
+using ChunksAndMeshes = std::vector<ChunkAndMesh>;
 
 namespace vgk {
     namespace actors {
@@ -28,6 +29,15 @@ namespace vgk {
         private:
             ChunkAndMeshMap chunks;
 
+            char internal_get_block(int x, int y, int z);
+            void internal_set_block(int x, int y, int z, char w);
+            ChunkAndMesh internal_find_chunk_and_mesh(int p, int q);
+            ChunkNeighbors internal_find_neighbors(int p, int q);
+            void internal_update(int p, int q, const ChunkAndMesh& chunk_and_mesh);
+            int internal_count_chunks();
+            ChunksAndMeshes internal_all_chunks();
+            void internal_load_world();
+
         public:
             WorldManager(caf::actor_config& cfg);
             caf::behavior make_behavior() override;
@@ -41,7 +51,7 @@ namespace vgk {
 
             static int chunk_count();
 
-            static std::vector<ChunkAndMesh> all_chunks();
+            static ChunksAndMeshes all_chunks();
 
             static void load_world();
         };
@@ -50,8 +60,11 @@ namespace vgk {
     }
 }
 
+CAF_ALLOW_UNSAFE_MESSAGE_TYPE(ChunkPtr);
+CAF_ALLOW_UNSAFE_MESSAGE_TYPE(ChunkMeshPtr);
 CAF_ALLOW_UNSAFE_MESSAGE_TYPE(ChunkAndMesh);
 CAF_ALLOW_UNSAFE_MESSAGE_TYPE(ChunkNeighbors);
+CAF_ALLOW_UNSAFE_MESSAGE_TYPE(ChunksAndMeshes);
 
 
 

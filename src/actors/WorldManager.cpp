@@ -20,28 +20,28 @@ WorldManager::WorldManager(caf::actor_config &cfg)
 caf::behavior WorldManager::make_behavior() {
     return {
         [&](wm_get_block, int x, int y, int z) {
-            throw "Not Implemented";
+            return this->internal_get_block(x,y,z);
         },
         [&](wm_set_block, int x, int y, int z, char w){
-            throw "Not Implemented";
+            this->internal_set_block(x,y,z,w);
         },
         [&](wm_find_chunk_and_mesh, int p, int q){
-            throw "Not Implemented";
+            return this->internal_find_chunk_and_mesh(p,q);
         },
         [&](wm_find_neighbors, int p, int q) {
-            throw "Not Implemented";
+            return this->internal_find_neighbors(p,q);
         },
         [&](wm_update, int p, int q, const ChunkAndMesh& chunk_and_mesh){
-            throw "Not Implemented";
+            this->internal_update(p,q,chunk_and_mesh);
         },
         [&](wm_count_chunks) {
-            throw "Not Implemented";
+            return this->internal_count_chunks();
         },
         [&](wm_all_chunks) {
-            throw "Not Implemented";
+            return this->internal_all_chunks();
         },
         [&](wm_load_world) {
-            throw "Not Implemented";
+            return this->internal_load_world();
         }
     };
 }
@@ -195,4 +195,36 @@ void WorldManager::load_world() {
             exit(0);
         }
     );
+}
+
+char WorldManager::internal_get_block(int x, int y, int z) {
+    throw "Not Implemented";
+}
+
+void WorldManager::internal_set_block(int x, int y, int z, char w) {
+    throw "Not Implemented";
+}
+
+ChunkAndMesh WorldManager::internal_find_chunk_and_mesh(int p, int q) {
+    throw "Not Implemented";
+}
+
+ChunkNeighbors WorldManager::internal_find_neighbors(int p, int q) {
+    throw "Not Implemented";
+}
+
+void WorldManager::internal_update(int p, int q, const ChunkAndMesh& chunk_and_mesh) {
+    throw "Not Implemented";
+}
+
+int WorldManager::internal_count_chunks() {
+    throw "Not Implemented";
+}
+
+ChunksAndMeshes WorldManager::internal_all_chunks() {
+    throw "Not Implemented";
+}
+
+void WorldManager::internal_load_world() {
+    throw "Not Implemented";
 }
