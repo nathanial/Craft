@@ -13,8 +13,6 @@ using namespace actors;
 
 extern Model *g;
 
-static void set_dirty_flag(int p, int q);
-
 WorldManager::WorldManager(caf::actor_config &cfg)
         : caf::event_based_actor(cfg) {
 }
@@ -24,7 +22,25 @@ caf::behavior WorldManager::make_behavior() {
         [&](wm_get_block, int x, int y, int z) {
             throw "Not Implemented";
         },
-        [&] (wm_set_block, int x, int y, int z, char w){
+        [&](wm_set_block, int x, int y, int z, char w){
+            throw "Not Implemented";
+        },
+        [&](wm_find_chunk_and_mesh, int p, int q){
+            throw "Not Implemented";
+        },
+        [&](wm_find_neighbors, int p, int q) {
+            throw "Not Implemented";
+        },
+        [&](wm_update, int p, int q, const ChunkAndMesh& chunk_and_mesh){
+            throw "Not Implemented";
+        },
+        [&](wm_count_chunks) {
+            throw "Not Implemented";
+        },
+        [&](wm_all_chunks) {
+            throw "Not Implemented";
+        },
+        [&](wm_load_world) {
             throw "Not Implemented";
         }
     };
