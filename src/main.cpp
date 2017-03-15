@@ -19,7 +19,7 @@
 #include "player.h"
 #include "height_map.h"
 #include "workers/tasks/generate_chunk_task.h"
-#include "actors/WorldManager.h"
+#include "actors/World.h"
 
 extern "C" {
     #include "noise.h"
@@ -29,6 +29,9 @@ extern "C" {
 
 static Model model;
 Model *g = &model;
+
+using namespace vgk;
+using namespace vgk::actors;
 
 float time_of_day() {
     return 12.0;
@@ -47,16 +50,6 @@ int get_scale_factor() {
     result = MAX(1, result);
     result = MIN(2, result);
     return result;
-}
-
-void set_dirty_flag(int p, int q) {
-    for (int dp = -1; dp <= 1; dp++) {
-        for (int dq = -1; dq <= 1; dq++) {
-            g->update_mesh(p + dp, q + dq, [&](TransientChunkMesh &mesh) {
-                mesh.dirty = true;
-            });
-        }
-    }
 }
 
 GLuint gen_sky_buffer() {
@@ -123,24 +116,6 @@ void update_player(Player *player,
     }
 }
 
-void interpolate_player(Player *player) {
-    State *s1 = &player->state1;
-    State *s2 = &player->state2;
-    float t1 = s2->t - s1->t;
-    float t2 = glfwGetTime() - s2->t;
-    t1 = MIN(t1, 1);
-    t1 = MAX(t1, 0.1);
-    float p = MIN(t2 / t1, 1);
-    update_player(
-        player,
-        s1->x + (s2->x - s1->x) * p,
-        s1->y + (s2->y - s1->y) * p,
-        s1->z + (s2->z - s1->z) * p,
-        s1->rx + (s2->rx - s1->rx) * p,
-        s1->ry + (s2->ry - s1->ry) * p,
-        0);
-}
-
 int _hit_test(
     Chunk& chunk, float max_distance, int previous,
     float x, float y, float z,
@@ -183,12 +158,17 @@ int hit_test(
     int q = chunked(z);
     float vx, vy, vz;
     get_sight_vector(rx, ry, &vx, &vy, &vz);
-    g->each_chunk([&](Chunk& chunk){
-        if (chunk.distance(p, q) > 1) {
-            return;
+    auto all_chunks_and_meshes = World::all_chunks();
+    for(auto &chunk_and_mesh : all_chunks_and_meshes){
+        auto chunk = chunk_and_mesh->chunk;
+        if(!chunk){
+            continue;
+        }
+        if (chunk->distance(p, q) > 1) {
+            continue;
         }
         int hx, hy, hz;
-        int hw = _hit_test(chunk, 8, previous,
+        int hw = _hit_test(*chunk, 8, previous,
                            x, y, z, vx, vy, vz, &hx, &hy, &hz);
         if (hw > 0) {
             float d = sqrtf(
@@ -199,43 +179,9 @@ int hit_test(
                 result = hw;
             }
         }
-    });
+    }
     return result;
 }
-
-int hit_test_face(Player *player, int *x, int *y, int *z, int *face) {
-    State *s = &player->state;
-    int w = hit_test(0, s->x, s->y, s->z, s->rx, s->ry, x, y, z);
-    if (is_obstacle(w)) {
-        int hx, hy, hz;
-        hit_test(1, s->x, s->y, s->z, s->rx, s->ry, &hx, &hy, &hz);
-        int dx = hx - *x;
-        int dy = hy - *y;
-        int dz = hz - *z;
-        if (dx == -1 && dy == 0 && dz == 0) {
-            *face = 0; return 1;
-        }
-        if (dx == 1 && dy == 0 && dz == 0) {
-            *face = 1; return 1;
-        }
-        if (dx == 0 && dy == 0 && dz == -1) {
-            *face = 2; return 1;
-        }
-        if (dx == 0 && dy == 0 && dz == 1) {
-            *face = 3; return 1;
-        }
-        if (dx == 0 && dy == 1 && dz == 0) {
-            int degrees = roundf(DEGREES(atan2f(s->x - hx, s->z - hz)));
-            if (degrees < 0) {
-                degrees += 360;
-            }
-            int top = ((degrees + 45) / 90) % 4;
-            *face = 4 + top; return 1;
-        }
-    }
-    return 0;
-}
-
 
 int player_intersects_block(
     int height,
@@ -251,46 +197,6 @@ int player_intersects_block(
         }
     }
     return 0;
-}
-
-void set_block(int x, int y, int z, int w) {
-    caf::scoped_actor self { *vgk::actors::system };
-    auto wm = vgk::actors::system->registry().get(vgk::actors::world_manager_id::value);
-    self->request(caf::actor_cast<caf::actor>(wm), caf::infinite, vgk::actors::wm_set_block::value, x, y, z, (char)w).receive(
-        [&](bool success){},
-        [&](caf::error error){
-            aout(self) << "Error: set_block" << error << std::endl;
-            exit(0);
-        }
-    );
-}
-
-int get_block(int x, int y, int z) {
-    caf::scoped_actor self { *vgk::actors::system };
-    auto wm = vgk::actors::system->registry().get(vgk::actors::world_manager_id::value);
-    int result = 0;
-    self->request(caf::actor_cast<caf::actor>(wm), caf::infinite, vgk::actors::wm_get_block::value, x, y, z).receive(
-            [&](char block){
-               result = block;
-            },
-            [&](caf::error error){
-                aout(self) << "Error: get_block" << error << std::endl;
-                exit(0);
-            }
-    );
-    return result;
-}
-
-void builder_block(int x, int y, int z, int w) {
-    if (y <= 0 || y >= 256) {
-        return;
-    }
-    if (is_destructable(get_block(x, y, z))) {
-        set_block(x, y, z, 0);
-    }
-    if (w) {
-        set_block(x, y, z, w);
-    }
 }
 
 int render_chunks(Attrib *attrib, Player *player) {
@@ -311,27 +217,38 @@ int render_chunks(Attrib *attrib, Player *player) {
     glUniform1f(attrib->extra3, g->render_radius * CHUNK_SIZE);
     glUniform1i(attrib->extra4, false);
     glUniform1f(attrib->timer, time_of_day());
-    g->each_chunk([&](Chunk& chunk) {
-        auto mesh = g->find_mesh(chunk.p, chunk.q);
-        if(!mesh){
-            return;
+
+    auto visual_chunks = World::all_chunks();
+    for(auto &vchunk : visual_chunks){
+        if(!vchunk){
+            continue;
         }
-        if(mesh->buffer == 0){
-            auto transient = mesh->transient();
-            transient->generate_buffer();
-            g->replace_mesh(chunk.p, chunk.q, std::make_shared<ChunkMesh>(transient->immutable()));
-            mesh = g->find_mesh(chunk.p, chunk.q);
+        auto chunk = vchunk->chunk;
+        auto mesh = vchunk->mesh;
+        if(chunk && !mesh){
+            std::cout << "No Mesh (" << chunk->p << "," << chunk->q << ")" << std::endl;
         }
-        if (chunk.distance(p, q) > g->render_radius) {
-            return;
+        if(!mesh || !chunk){
+            continue;
+        }
+        if (chunk->distance(p, q) > g->render_radius) {
+            continue;
         }
         if (!chunk_visible(
-            planes, chunk.p, chunk.q, mesh->miny, mesh->maxy))
+            planes, chunk->p, chunk->q, mesh->miny, mesh->maxy))
         {
-            return;
+            continue;
         }
-        result += mesh->draw(attrib);
-    });
+
+        if(!mesh->buffer){
+            auto transient = mesh->transient();
+            transient->generate_buffer();
+            World::update(chunk->p, chunk->q, VisualChunk(chunk, std::make_shared<ChunkMesh>(transient->immutable())));
+            result += World::find(chunk->p, chunk->q)->mesh->draw(attrib);
+        } else {
+            result += mesh->draw(attrib);
+        }
+    }
     return result;
 }
 
@@ -388,9 +305,9 @@ void on_left_click() {
     int hx, hy, hz;
     int hw = hit_test(0, s->x, s->y, s->z, s->rx, s->ry, &hx, &hy, &hz);
     if (hy > 0 && hy < 256 && is_destructable(hw)) {
-        set_block(hx, hy, hz, 0);
-        if (is_plant(get_block(hx, hy + 1, hz))) {
-            set_block(hx, hy + 1, hz, 0);
+        World::set_block(hx, hy, hz, 0);
+        if (is_plant(World::get_block(hx, hy + 1, hz))) {
+            World::set_block(hx, hy + 1, hz, 0);
         }
     }
 }
@@ -401,7 +318,7 @@ void on_right_click() {
     int hw = hit_test(1, s->x, s->y, s->z, s->rx, s->ry, &hx, &hy, &hz);
     if (hy > 0 && hy < 256 && is_obstacle(hw)) {
         if (!player_intersects_block(2, s->x, s->y, s->z, hx, hy, hz)) {
-            set_block(hx, hy, hz, items[g->item_index]);
+            World::set_block(hx, hy, hz, items[g->item_index]);
         }
     }
 }
@@ -559,7 +476,6 @@ void handle_mouse_input() {
 
 
 void reset_model() {
-    g->clear_chunks();
     g->flying = 0;
     g->item_index = 0;
     g->day_length = DAY_LENGTH;
@@ -733,7 +649,6 @@ int main(int argc, char **argv) {
             }
 
             // PREPARE TO RENDER //
-            g->delete_chunks();
             del_buffer(me->buffer);
             me->buffer = gen_player_buffer(s->x, s->y, s->z, s->rx, s->ry);
             Player *player = &g->player;
@@ -764,7 +679,7 @@ int main(int argc, char **argv) {
                 snprintf(
                     text_buffer, 1024,
                     "(%d, %d) (%.2f, %.2f, %.2f) [%d, %d, %d] %d%cm %dfps",
-                    chunked(s->x), chunked(s->z), s->x, s->y, s->z, 1, g->chunk_count(),
+                    chunked(s->x), chunked(s->z), s->x, s->y, s->z, 1, World::chunk_count(),
                     face_count * 2, hour, am_pm, fps.fps);
                 render_text(&text_attrib, ALIGN_LEFT, tx, ty, ts, text_buffer);
                 ty -= ts * 2;
@@ -780,7 +695,6 @@ int main(int argc, char **argv) {
         }
 
         del_buffer(sky_buffer);
-        g->delete_all_chunks();
     }
 
     glfwTerminate();

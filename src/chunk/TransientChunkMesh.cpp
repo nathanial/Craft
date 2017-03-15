@@ -9,7 +9,7 @@
 
 ChunkMesh TransientChunkMesh::immutable() const {
     return ChunkMesh(
-        miny, maxy, faces, dirty, buffer, vertices
+        miny, maxy, faces, buffer, vertices
     );
 }
 
