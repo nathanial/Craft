@@ -9,23 +9,31 @@
 #include "../chunk/chunk.h"
 
 using ChunkMeshPtr = std::shared_ptr<ChunkMesh>;
-using ChunkAndMesh = std::tuple<ChunkPtr, ChunkMeshPtr>;
-using ChunkAndMeshMap = std::unordered_map<ChunkPosition, ChunkAndMesh, ChunkPositionHash>;
+
+class ChunkAndMesh {
+public:
+    ChunkPtr chunk;
+    ChunkMeshPtr mesh;
+    ChunkAndMesh() : chunk(nullptr), mesh(nullptr) {}
+    ChunkAndMesh(const ChunkPtr chunk, const ChunkMeshPtr mesh) : chunk(chunk), mesh(mesh) {}
+};
+
 using ChunksAndMeshes = std::vector<ChunkAndMesh>;
+using ChunkAndMeshMap = std::unordered_map<ChunkPosition, ChunkAndMesh, ChunkPositionHash>;
 
 namespace vgk {
     namespace actors {
 
-        using wm_get_block = caf::atom_constant<caf::atom("wm_gb")>;
-        using wm_set_block = caf::atom_constant<caf::atom("wm_sb")>;
-        using wm_find_chunk_and_mesh = caf::atom_constant<caf::atom("wm_fcam")>;
-        using wm_find_neighbors = caf::atom_constant<caf::atom("wm_fn")>;
-        using wm_update = caf::atom_constant<caf::atom("wm_u")>;
-        using wm_count_chunks = caf::atom_constant<caf::atom("wm_cc")>;
-        using wm_all_chunks = caf::atom_constant<caf::atom("wm_ac")>;
-        using wm_load_world = caf::atom_constant<caf::atom("wm_lw")>;
+        using wm_get_block = caf::atom_constant<caf::atom("wmgb")>;
+        using wm_set_block = caf::atom_constant<caf::atom("wmsb")>;
+        using wm_find_chunk_and_mesh = caf::atom_constant<caf::atom("wmfcam")>;
+        using wm_find_neighbors = caf::atom_constant<caf::atom("wmfn")>;
+        using wm_update = caf::atom_constant<caf::atom("wmu")>;
+        using wm_count_chunks = caf::atom_constant<caf::atom("wmcc")>;
+        using wm_all_chunks = caf::atom_constant<caf::atom("wmac")>;
+        using wm_load_world = caf::atom_constant<caf::atom("wmlw")>;
 
-        class WorldManager : public caf::event_based_actor {
+        class World : public caf::event_based_actor {
         private:
             ChunkAndMeshMap chunks;
 
@@ -39,7 +47,7 @@ namespace vgk {
             void internal_load_world();
 
         public:
-            WorldManager(caf::actor_config& cfg);
+            World(caf::actor_config& cfg);
             caf::behavior make_behavior() override;
 
             static ChunkAndMesh find(int p, int q);

@@ -9,7 +9,7 @@
 #include "../chunk/ChunkMesh.h"
 #include <future>
 #include "./Actors.h"
-#include "WorldManager.h"
+#include "World.h"
 
 using namespace vgk;
 using namespace vgk::actors;
@@ -48,7 +48,7 @@ void vgk::actors::start(){
 
     auto chunk_builder_actor = vgk::actors::system->spawn(chunk_builder);
     auto chunk_mesher_actor = vgk::actors::system->spawn(chunk_mesher);
-    auto world_manager_actor = vgk::actors::system->spawn<WorldManager>();
+    auto world_manager_actor = vgk::actors::system->spawn<World>();
 
     auto actor_ptr = caf::actor_cast<caf::strong_actor_ptr>(world_manager_actor);
 
@@ -59,6 +59,6 @@ void vgk::actors::start(){
 
     vgk::actors::system->registry().put(world_manager_id::value,actor_ptr);
 
-    WorldManager::load_world();
+    World::load_world();
 }
 

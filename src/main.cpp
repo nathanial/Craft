@@ -19,7 +19,7 @@
 #include "player.h"
 #include "height_map.h"
 #include "workers/tasks/generate_chunk_task.h"
-#include "actors/WorldManager.h"
+#include "actors/World.h"
 
 extern "C" {
     #include "noise.h"
@@ -158,9 +158,9 @@ int hit_test(
     int q = chunked(z);
     float vx, vy, vz;
     get_sight_vector(rx, ry, &vx, &vy, &vz);
-    auto all_chunks_and_meshes = WorldManager::all_chunks();
+    auto all_chunks_and_meshes = World::all_chunks();
     for(auto &chunk_and_mesh : all_chunks_and_meshes){
-        auto chunk = std::get<0>(chunk_and_mesh);
+        auto chunk = chunk_and_mesh.chunk;
         if(!chunk){
             continue;
         }
@@ -218,10 +218,10 @@ int render_chunks(Attrib *attrib, Player *player) {
     glUniform1i(attrib->extra4, false);
     glUniform1f(attrib->timer, time_of_day());
 
-    auto all_chunks_and_meshes = WorldManager::all_chunks();
+    auto all_chunks_and_meshes = World::all_chunks();
     for(auto &chunk_and_mesh : all_chunks_and_meshes){
-        auto chunk = std::get<0>(chunk_and_mesh);
-        auto mesh = std::get<1>(chunk_and_mesh);
+        auto chunk = chunk_and_mesh.chunk;
+        auto mesh = chunk_and_mesh.mesh;
         if(!mesh || !chunk){
             continue;
         }
@@ -291,9 +291,9 @@ void on_left_click() {
     int hx, hy, hz;
     int hw = hit_test(0, s->x, s->y, s->z, s->rx, s->ry, &hx, &hy, &hz);
     if (hy > 0 && hy < 256 && is_destructable(hw)) {
-        WorldManager::set_block(hx, hy, hz, 0);
-        if (is_plant(WorldManager::get_block(hx, hy + 1, hz))) {
-            WorldManager::set_block(hx, hy + 1, hz, 0);
+        World::set_block(hx, hy, hz, 0);
+        if (is_plant(World::get_block(hx, hy + 1, hz))) {
+            World::set_block(hx, hy + 1, hz, 0);
         }
     }
 }
@@ -304,7 +304,7 @@ void on_right_click() {
     int hw = hit_test(1, s->x, s->y, s->z, s->rx, s->ry, &hx, &hy, &hz);
     if (hy > 0 && hy < 256 && is_obstacle(hw)) {
         if (!player_intersects_block(2, s->x, s->y, s->z, hx, hy, hz)) {
-            WorldManager::set_block(hx, hy, hz, items[g->item_index]);
+            World::set_block(hx, hy, hz, items[g->item_index]);
         }
     }
 }
@@ -665,7 +665,7 @@ int main(int argc, char **argv) {
                 snprintf(
                     text_buffer, 1024,
                     "(%d, %d) (%.2f, %.2f, %.2f) [%d, %d, %d] %d%cm %dfps",
-                    chunked(s->x), chunked(s->z), s->x, s->y, s->z, 1, WorldManager::chunk_count(),
+                    chunked(s->x), chunked(s->z), s->x, s->y, s->z, 1, World::chunk_count(),
                     face_count * 2, hour, am_pm, fps.fps);
                 render_text(&text_attrib, ALIGN_LEFT, tx, ty, ts, text_buffer);
                 ty -= ts * 2;

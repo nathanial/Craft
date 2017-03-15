@@ -2,7 +2,7 @@
 #include "model.h"
 #include "util.h"
 #include "item.h"
-#include "actors/WorldManager.h"
+#include "actors/World.h"
 
 using namespace vgk;
 using namespace vgk::actors;
@@ -14,8 +14,8 @@ int collide(int height, float *x, float *y, float *z) {
     int result = 0;
     int p = chunked(*x);
     int q = chunked(*z);
-    auto chunk_and_mesh = WorldManager::find(p, q);
-    auto chunk = std::get<0>(chunk_and_mesh);
+    auto chunk_and_mesh = World::find(p, q);
+    auto chunk = chunk_and_mesh.chunk;
     if (!chunk) {
         return result;
     }
@@ -27,24 +27,24 @@ int collide(int height, float *x, float *y, float *z) {
     float pz = *z - nz;
     float pad = 0.25;
     for (int dy = 0; dy < height; dy++) {
-        if (px < -pad && is_obstacle(WorldManager::get_block(nx - 1, ny - dy, nz))) {
+        if (px < -pad && is_obstacle(World::get_block(nx - 1, ny - dy, nz))) {
             *x = nx - pad;
         }
-        if (px > pad && is_obstacle(WorldManager::get_block(nx + 1, ny - dy, nz))) {
+        if (px > pad && is_obstacle(World::get_block(nx + 1, ny - dy, nz))) {
             *x = nx + pad;
         }
-        if (py < -pad && is_obstacle(WorldManager::get_block(nx, ny - dy - 1, nz))) {
+        if (py < -pad && is_obstacle(World::get_block(nx, ny - dy - 1, nz))) {
             *y = ny - pad;
             result = 1;
         }
-        if (py > pad && is_obstacle(WorldManager::get_block(nx, ny - dy + 1, nz))) {
+        if (py > pad && is_obstacle(World::get_block(nx, ny - dy + 1, nz))) {
             *y = ny + pad;
             result = 1;
         }
-        if (pz < -pad && is_obstacle(WorldManager::get_block(nx, ny - dy, nz - 1))) {
+        if (pz < -pad && is_obstacle(World::get_block(nx, ny - dy, nz - 1))) {
             *z = nz - pad;
         }
-        if (pz > pad && is_obstacle(WorldManager::get_block(nx, ny - dy, nz + 1))) {
+        if (pz > pad && is_obstacle(World::get_block(nx, ny - dy, nz + 1))) {
             *z = nz + pad;
         }
     }

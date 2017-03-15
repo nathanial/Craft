@@ -2,22 +2,23 @@
 // Created by Nathanial Hartman on 3/13/17.
 //
 
-#include "WorldManager.h"
+#include "World.h"
 #include "../model.h"
 #include "../util.h"
 #include "./Actors.h"
 #include "../chunk/ChunkMesh.h"
+#include "../biomes/Mountains.h"
 
 using namespace vgk;
 using namespace actors;
 
 extern Model *g;
 
-WorldManager::WorldManager(caf::actor_config &cfg)
+World::World(caf::actor_config &cfg)
         : caf::event_based_actor(cfg) {
 }
 
-caf::behavior WorldManager::make_behavior() {
+caf::behavior World::make_behavior() {
     return {
         [&](wm_get_block, int x, int y, int z) {
             return this->internal_get_block(x,y,z);
@@ -25,8 +26,9 @@ caf::behavior WorldManager::make_behavior() {
         [&](wm_set_block, int x, int y, int z, char w){
             this->internal_set_block(x,y,z,w);
         },
-        [&](wm_find_chunk_and_mesh, int p, int q){
-            return this->internal_find_chunk_and_mesh(p,q);
+        [&](wm_find_chunk_and_mesh, int p, int q) {
+            ChunkAndMesh result = this->internal_find_chunk_and_mesh(p,q);
+            return result;
         },
         [&](wm_find_neighbors, int p, int q) {
             return this->internal_find_neighbors(p,q);
@@ -41,7 +43,8 @@ caf::behavior WorldManager::make_behavior() {
             return this->internal_all_chunks();
         },
         [&](wm_load_world) {
-            return this->internal_load_world();
+            this->internal_load_world();
+            std::cout << "Load world complete" << std::endl;
         }
     };
 }
@@ -50,9 +53,9 @@ static caf::strong_actor_ptr get_world_manager() {
     return vgk::actors::system->registry().get(vgk::actors::world_manager_id::value);
 }
 
-ChunkAndMesh WorldManager::find(int p, int q) {
+ChunkAndMesh World::find(int p, int q) {
     caf::scoped_actor self { *vgk::actors::system };
-    ChunkAndMesh result = nullptr;
+    ChunkAndMesh result(nullptr, nullptr);
     self->request(
         caf::actor_cast<caf::actor>(get_world_manager()),
         caf::infinite,
@@ -62,14 +65,14 @@ ChunkAndMesh WorldManager::find(int p, int q) {
             result = cm;
         },
         [&](caf::error error){
-            caf::aout(self) << "Error " << error << std::endl;
+            caf::aout(self) << "Error with find: " << error << std::endl;
             exit(0);
         }
     );
     return result;
 }
 
-ChunkNeighbors WorldManager::find_neighbors(int p, int q) {
+ChunkNeighbors World::find_neighbors(int p, int q) {
     caf::scoped_actor self { *vgk::actors::system };
     ChunkNeighbors result;
     self->request(
@@ -89,7 +92,7 @@ ChunkNeighbors WorldManager::find_neighbors(int p, int q) {
     return result;
 }
 
-void WorldManager::update(int p, int q, const ChunkAndMesh& mesh) {
+void World::update(int p, int q, const ChunkAndMesh& mesh) {
     caf::scoped_actor self { *vgk::actors::system };
     self->request(
             caf::actor_cast<caf::actor>(get_world_manager()),
@@ -106,7 +109,7 @@ void WorldManager::update(int p, int q, const ChunkAndMesh& mesh) {
     );
 }
 
-char WorldManager::get_block(int x, int y, int z) {
+char World::get_block(int x, int y, int z) {
     caf::scoped_actor self { *vgk::actors::system };
     char result;
     self->request(
@@ -126,7 +129,7 @@ char WorldManager::get_block(int x, int y, int z) {
     return result;
 }
 
-void WorldManager::set_block(int x, int y, int z, char w) {
+void World::set_block(int x, int y, int z, char w) {
     caf::scoped_actor self { *vgk::actors::system };
     self->request(
         caf::actor_cast<caf::actor>(get_world_manager()),
@@ -144,7 +147,7 @@ void WorldManager::set_block(int x, int y, int z, char w) {
     );
 }
 
-std::vector<ChunkAndMesh> WorldManager::all_chunks() {
+std::vector<ChunkAndMesh> World::all_chunks() {
     caf::scoped_actor self { *vgk::actors::system };
     std::vector<ChunkAndMesh> result;
     self->request(
@@ -163,7 +166,7 @@ std::vector<ChunkAndMesh> WorldManager::all_chunks() {
     return result;
 }
 
-int WorldManager::chunk_count() {
+int World::chunk_count() {
     caf::scoped_actor self { *vgk::actors::system };
     int result;
     self->request(
@@ -182,14 +185,15 @@ int WorldManager::chunk_count() {
     return result;
 }
 
-void WorldManager::load_world() {
+void World::load_world() {
     caf::scoped_actor self { *vgk::actors::system };
     self->request(
         caf::actor_cast<caf::actor>(get_world_manager()),
         caf::infinite,
         vgk::actors::wm_load_world::value
     ).receive(
-        [&](bool _) {},
+        [&]() {
+        },
         [&](caf::error error) {
             aout(self) << "Error: load_world " << error << std::endl;
             exit(0);
@@ -197,34 +201,58 @@ void WorldManager::load_world() {
     );
 }
 
-char WorldManager::internal_get_block(int x, int y, int z) {
+char World::internal_get_block(int x, int y, int z) {
     throw "Not Implemented";
 }
 
-void WorldManager::internal_set_block(int x, int y, int z, char w) {
+void World::internal_set_block(int x, int y, int z, char w) {
     throw "Not Implemented";
 }
 
-ChunkAndMesh WorldManager::internal_find_chunk_and_mesh(int p, int q) {
+ChunkAndMesh World::internal_find_chunk_and_mesh(int p, int q) {
+    return this->chunks[std::make_tuple(p,q)];
+}
+
+ChunkNeighbors World::internal_find_neighbors(int p, int q) {
+    ChunkNeighbors results;
+    for(int dp = -1; dp <= 1; dp++){
+        for(int dq = -1; dq <= 1; dq++){
+            auto position = std::make_tuple(p+dp,q+dq);
+            results[position] = chunks[position].chunk;
+        }
+    }
+    return results;
+}
+
+void World::internal_update(int p, int q, const ChunkAndMesh& chunk_and_mesh) {
     throw "Not Implemented";
 }
 
-ChunkNeighbors WorldManager::internal_find_neighbors(int p, int q) {
+int World::internal_count_chunks() {
     throw "Not Implemented";
 }
 
-void WorldManager::internal_update(int p, int q, const ChunkAndMesh& chunk_and_mesh) {
+ChunksAndMeshes World::internal_all_chunks() {
     throw "Not Implemented";
 }
 
-int WorldManager::internal_count_chunks() {
-    throw "Not Implemented";
-}
-
-ChunksAndMeshes WorldManager::internal_all_chunks() {
-    throw "Not Implemented";
-}
-
-void WorldManager::internal_load_world() {
-    throw "Not Implemented";
+void World::internal_load_world() {
+    for(int p = -10; p < 10; p++){
+        for(int q = -10; q < 10; q++){
+            Mountains mountains;
+            TransientChunk chunk(p,q);
+            mountains.create_chunk(chunk, p,q);
+            chunks[std::make_tuple(p,q)] = ChunkAndMesh(std::make_shared<Chunk>(chunk.immutable()), nullptr);
+        }
+    }
+    for(int p = -10; p < 10; p++) {
+        for (int q = -10; q < 10; q++) {
+            auto chunk = chunks[std::make_tuple(p,q)].chunk;
+            TransientChunkMesh mesh;
+            Chunk::create_mesh(p, q, mesh, *chunk->blocks, this->internal_find_neighbors(p, q));
+            chunks[std::make_tuple(p,q)] = ChunkAndMesh(
+                chunk, std::make_shared<ChunkMesh>(mesh.immutable())
+            );
+        }
+    }
 }
