@@ -22,6 +22,7 @@ namespace vgk {
         using wm_update = caf::atom_constant<caf::atom("wm_u")>;
         using wm_count_chunks = caf::atom_constant<caf::atom("wm_cc")>;
         using wm_all_chunks = caf::atom_constant<caf::atom("wm_ac")>;
+        using wm_load_world = caf::atom_constant<caf::atom("wm_lw")>;
 
         class WorldManager : public caf::event_based_actor {
         private:

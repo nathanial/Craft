@@ -167,5 +167,16 @@ int WorldManager::chunk_count() {
 }
 
 void WorldManager::load_world() {
-    
+    caf::scoped_actor self { *vgk::actors::system };
+    self->request(
+        caf::actor_cast<caf::actor>(get_world_manager()),
+        caf::infinite,
+        vgk::actors::wm_load_world::value
+    ).receive(
+        [&](bool _) {},
+        [&](caf::error error) {
+            aout(self) << "Error: load_world " << error << std::endl;
+            exit(0);
+        }
+    );
 }
