@@ -30,6 +30,9 @@ extern "C" {
 static Model model;
 Model *g = &model;
 
+using namespace vgk;
+using namespace vgk::actors;
+
 float time_of_day() {
     return 12.0;
 }
@@ -253,46 +256,6 @@ int player_intersects_block(
     return 0;
 }
 
-void set_block(int x, int y, int z, int w) {
-    caf::scoped_actor self { *vgk::actors::system };
-    auto wm = vgk::actors::system->registry().get(vgk::actors::world_manager_id::value);
-    self->request(caf::actor_cast<caf::actor>(wm), caf::infinite, vgk::actors::wm_set_block::value, x, y, z, (char)w).receive(
-        [&](bool success){},
-        [&](caf::error error){
-            aout(self) << "Error: set_block" << error << std::endl;
-            exit(0);
-        }
-    );
-}
-
-int get_block(int x, int y, int z) {
-    caf::scoped_actor self { *vgk::actors::system };
-    auto wm = vgk::actors::system->registry().get(vgk::actors::world_manager_id::value);
-    int result = 0;
-    self->request(caf::actor_cast<caf::actor>(wm), caf::infinite, vgk::actors::wm_get_block::value, x, y, z).receive(
-            [&](char block){
-               result = block;
-            },
-            [&](caf::error error){
-                aout(self) << "Error: get_block" << error << std::endl;
-                exit(0);
-            }
-    );
-    return result;
-}
-
-void builder_block(int x, int y, int z, int w) {
-    if (y <= 0 || y >= 256) {
-        return;
-    }
-    if (is_destructable(get_block(x, y, z))) {
-        set_block(x, y, z, 0);
-    }
-    if (w) {
-        set_block(x, y, z, w);
-    }
-}
-
 int render_chunks(Attrib *attrib, Player *player) {
     int result = 0;
     State *s = &player->state;
@@ -388,9 +351,9 @@ void on_left_click() {
     int hx, hy, hz;
     int hw = hit_test(0, s->x, s->y, s->z, s->rx, s->ry, &hx, &hy, &hz);
     if (hy > 0 && hy < 256 && is_destructable(hw)) {
-        set_block(hx, hy, hz, 0);
-        if (is_plant(get_block(hx, hy + 1, hz))) {
-            set_block(hx, hy + 1, hz, 0);
+        WorldManager::set_block(hx, hy, hz, 0);
+        if (is_plant(WorldManager::get_block(hx, hy + 1, hz))) {
+            WorldManager::set_block(hx, hy + 1, hz, 0);
         }
     }
 }
@@ -401,7 +364,7 @@ void on_right_click() {
     int hw = hit_test(1, s->x, s->y, s->z, s->rx, s->ry, &hx, &hy, &hz);
     if (hy > 0 && hy < 256 && is_obstacle(hw)) {
         if (!player_intersects_block(2, s->x, s->y, s->z, hx, hy, hz)) {
-            set_block(hx, hy, hz, items[g->item_index]);
+            WorldManager::set_block(hx, hy, hz, items[g->item_index]);
         }
     }
 }
