@@ -27,7 +27,7 @@ caf::behavior World::make_behavior() {
             this->internal_set_block(x,y,z,w);
         },
         [&](wm_find_chunk_and_mesh, int p, int q) {
-            VisualChunkPtr result = this->internal_find_chunk_and_mesh(p,q);
+            VisualChunkPtr result = this->internal_find_visual_chunk(p, q);
             return result;
         },
         [&](wm_find_neighbors, int p, int q) {
@@ -137,8 +137,8 @@ void World::set_block(int x, int y, int z, char w) {
         vgk::actors::wm_set_block::value,
         x,y,z,w
     ).receive(
-        [&](bool _){
-
+        [&](){
+            std::cout << "COMPLETE" << std::endl;
         },
         [&](caf::error error){
             aout(self) << "Error: set_block " << error << std::endl;
@@ -204,7 +204,7 @@ void World::load_world() {
 char World::internal_get_block(int x, int y, int z) {
     int p = chunked(x);
     int q = chunked(z);
-    auto cm = this->internal_find_chunk_and_mesh(p, q);
+    auto cm = this->internal_find_visual_chunk(p, q);
     if(!cm){
         return 0;
     }
@@ -219,10 +219,40 @@ char World::internal_get_block(int x, int y, int z) {
 }
 
 void World::internal_set_block(int x, int y, int z, char w) {
-    throw "Not Implemented";
+    auto p = chunked(x);
+    auto q = chunked(z);
+    auto vchunk = this->internal_find_visual_chunk(p, q);
+    if(!vchunk || !vchunk->chunk){
+        return;
+    }
+
+    auto updated_chunk = vchunk->chunk->transient();
+    if (updated_chunk->get_block(x,y,z) != w) {
+        updated_chunk->set_block(x, y, z, w);
+    }
+    this->visual_chunks[std::make_tuple(p,q)] = std::make_shared<VisualChunk>(
+            std::make_shared<Chunk>(updated_chunk->immutable()),
+            vchunk->mesh
+    );
+
+    for(int dp = -1; dp <= 1; dp++){
+        for(int dq = -1; dq <= 1; dq++){
+            auto vchunk = this->internal_find_visual_chunk(p + dp, q + dq);
+            if(!vchunk){
+                continue;
+            }
+            TransientChunkMesh mesh;
+            Chunk::create_mesh(p+dp,q+dq, mesh, *vchunk->chunk->blocks, this->internal_find_neighbors(p+dp,q+dq));
+            this->visual_chunks[std::make_tuple(p+dp,q+dq)] = std::make_shared<VisualChunk>(
+                    vchunk->chunk,
+                    std::make_shared<ChunkMesh>(mesh.immutable())
+            );
+        }
+    }
+    std::cout << "BAM" << std::endl;
 }
 
-VisualChunkPtr World::internal_find_chunk_and_mesh(int p, int q) {
+VisualChunkPtr World::internal_find_visual_chunk(int p, int q) {
     return this->visual_chunks[std::make_tuple(p,q)];
 }
 

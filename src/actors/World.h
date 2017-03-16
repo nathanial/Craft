@@ -40,7 +40,7 @@ namespace vgk {
 
             char internal_get_block(int x, int y, int z);
             void internal_set_block(int x, int y, int z, char w);
-            VisualChunkPtr internal_find_chunk_and_mesh(int p, int q);
+            VisualChunkPtr internal_find_visual_chunk(int p, int q);
             ChunkNeighbors internal_find_neighbors(int p, int q);
             void internal_update(int p, int q, const VisualChunk& chunk_and_mesh);
             int internal_count_chunks();

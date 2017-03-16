@@ -239,7 +239,6 @@ int render_chunks(Attrib *attrib, Player *player) {
         {
             continue;
         }
-        std::cout << "RENDER IT" << std::endl;
 
         if(!mesh->buffer){
             auto transient = mesh->transient();
