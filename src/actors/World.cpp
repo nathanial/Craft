@@ -27,7 +27,7 @@ caf::behavior World::make_behavior() {
             this->internal_set_block(x,y,z,w);
         },
         [&](wm_find_chunk_and_mesh, int p, int q) {
-            ChunkAndMesh result = this->internal_find_chunk_and_mesh(p,q);
+            ChunkAndMeshPtr result = this->internal_find_chunk_and_mesh(p,q);
             return result;
         },
         [&](wm_find_neighbors, int p, int q) {
@@ -53,15 +53,15 @@ static caf::strong_actor_ptr get_world_manager() {
     return vgk::actors::system->registry().get(vgk::actors::world_manager_id::value);
 }
 
-ChunkAndMesh World::find(int p, int q) {
+ChunkAndMeshPtr World::find(int p, int q) {
     caf::scoped_actor self { *vgk::actors::system };
-    ChunkAndMesh result(nullptr, nullptr);
+    ChunkAndMeshPtr result;
     self->request(
         caf::actor_cast<caf::actor>(get_world_manager()),
         caf::infinite,
         vgk::actors::wm_find_chunk_and_mesh::value, p, q
     ).receive(
-        [&](const ChunkAndMesh &cm){
+        [&](const ChunkAndMeshPtr cm){
             result = cm;
         },
         [&](caf::error error){
@@ -147,15 +147,15 @@ void World::set_block(int x, int y, int z, char w) {
     );
 }
 
-std::vector<ChunkAndMesh> World::all_chunks() {
+std::vector<ChunkAndMeshPtr> World::all_chunks() {
     caf::scoped_actor self { *vgk::actors::system };
-    std::vector<ChunkAndMesh> result;
+    std::vector<ChunkAndMeshPtr> result;
     self->request(
         caf::actor_cast<caf::actor>(get_world_manager()),
         caf::infinite,
         vgk::actors::wm_all_chunks::value
     ).receive(
-        [&](const std::vector<ChunkAndMesh> &chunks) {
+        [&](const std::vector<ChunkAndMeshPtr> &chunks) {
             result = chunks;
         },
         [&](caf::error error){
@@ -202,14 +202,27 @@ void World::load_world() {
 }
 
 char World::internal_get_block(int x, int y, int z) {
-    throw "Not Implemented";
+    int p = chunked(x);
+    int q = chunked(z);
+    auto cm = this->internal_find_chunk_and_mesh(p, q);
+    if(!cm){
+        return 0;
+    }
+    auto chunk = cm->chunk;
+    if(!chunk){
+        return 0;
+    }
+    if(y < 0){
+        return 0;
+    }
+    return chunk->get_block(x,y,z);
 }
 
 void World::internal_set_block(int x, int y, int z, char w) {
     throw "Not Implemented";
 }
 
-ChunkAndMesh World::internal_find_chunk_and_mesh(int p, int q) {
+ChunkAndMeshPtr World::internal_find_chunk_and_mesh(int p, int q) {
     return this->chunks[std::make_tuple(p,q)];
 }
 
@@ -218,7 +231,12 @@ ChunkNeighbors World::internal_find_neighbors(int p, int q) {
     for(int dp = -1; dp <= 1; dp++){
         for(int dq = -1; dq <= 1; dq++){
             auto position = std::make_tuple(p+dp,q+dq);
-            results[position] = chunks[position].chunk;
+            auto cm = chunks[position];
+            if(cm){
+                results[position] = chunks[position]->chunk;
+            } else {
+                results[position] = nullptr;
+            }
         }
     }
     return results;
@@ -235,7 +253,9 @@ int World::internal_count_chunks() {
 ChunksAndMeshes World::internal_all_chunks() {
     ChunksAndMeshes result;
     for(auto& entry : this->chunks){
-        result.push_back(entry.second);
+        if(entry.second){
+            result.push_back(entry.second);
+        }
     }
     return result;
 }
@@ -246,15 +266,15 @@ void World::internal_load_world() {
             Mountains mountains;
             TransientChunk chunk(p,q);
             mountains.create_chunk(chunk, p,q);
-            chunks[std::make_tuple(p,q)] = ChunkAndMesh(std::make_shared<Chunk>(chunk.immutable()), nullptr);
+            chunks[std::make_tuple(p,q)] = std::make_shared<ChunkAndMesh>(std::make_shared<Chunk>(chunk.immutable()), nullptr);
         }
     }
     for(int p = -10; p < 10; p++) {
         for (int q = -10; q < 10; q++) {
-            auto chunk = chunks[std::make_tuple(p,q)].chunk;
+            auto chunk = chunks[std::make_tuple(p,q)]->chunk;
             TransientChunkMesh mesh;
             Chunk::create_mesh(p, q, mesh, *chunk->blocks, this->internal_find_neighbors(p, q));
-            chunks[std::make_tuple(p,q)] = ChunkAndMesh(
+            chunks[std::make_tuple(p,q)] = std::make_shared<ChunkAndMesh>(
                 chunk, std::make_shared<ChunkMesh>(mesh.immutable())
             );
         }

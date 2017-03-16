@@ -15,7 +15,7 @@ int collide(int height, float *x, float *y, float *z) {
     int p = chunked(*x);
     int q = chunked(*z);
     auto chunk_and_mesh = World::find(p, q);
-    auto chunk = chunk_and_mesh.chunk;
+    auto chunk = chunk_and_mesh->chunk;
     if (!chunk) {
         return result;
     }

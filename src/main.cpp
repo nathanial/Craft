@@ -160,7 +160,7 @@ int hit_test(
     get_sight_vector(rx, ry, &vx, &vy, &vz);
     auto all_chunks_and_meshes = World::all_chunks();
     for(auto &chunk_and_mesh : all_chunks_and_meshes){
-        auto chunk = chunk_and_mesh.chunk;
+        auto chunk = chunk_and_mesh->chunk;
         if(!chunk){
             continue;
         }
@@ -220,8 +220,11 @@ int render_chunks(Attrib *attrib, Player *player) {
 
     auto all_chunks_and_meshes = World::all_chunks();
     for(auto &chunk_and_mesh : all_chunks_and_meshes){
-        auto chunk = chunk_and_mesh.chunk;
-        auto mesh = chunk_and_mesh.mesh;
+        if(!chunk_and_mesh){
+            continue;
+        }
+        auto chunk = chunk_and_mesh->chunk;
+        auto mesh = chunk_and_mesh->mesh;
         if(!mesh || !chunk){
             continue;
         }

@@ -335,7 +335,7 @@ int highest_block(float x, float z) {
     int p = chunked(x);
     int q = chunked(z);
     auto chunk_and_mesh = World::find(p, q);
-    auto chunk = chunk_and_mesh.chunk;
+    auto chunk = chunk_and_mesh->chunk;
     if (chunk) {
         chunk->foreach_block([&](int ex, int ey, int ez, int ew){
             if (is_obstacle(ew) && ex == nx && ez == nz) {
