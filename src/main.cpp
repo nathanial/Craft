@@ -240,7 +240,14 @@ int render_chunks(Attrib *attrib, Player *player) {
             continue;
         }
         std::cout << "RENDER IT" << std::endl;
-        result += mesh->draw(attrib);
+
+        if(!mesh->buffer){
+            auto transient = mesh->transient();
+            transient->generate_buffer();
+            World::update(chunk->p, chunk->q, VisualChunk(chunk, std::make_shared<ChunkMesh>(transient->immutable())));
+        } else {
+            result += mesh->draw(attrib);
+        }
     }
     return result;
 }

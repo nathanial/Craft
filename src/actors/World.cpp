@@ -100,7 +100,7 @@ void World::update(int p, int q, const VisualChunk& mesh) {
             vgk::actors::wm_update::value,
             p, q, mesh
     ).receive(
-        [&](bool _){
+        [&](){
         },
         [&](caf::error error){
             aout(self) << "Error: update " << error << std::endl;
@@ -243,7 +243,7 @@ ChunkNeighbors World::internal_find_neighbors(int p, int q) {
 }
 
 void World::internal_update(int p, int q, const VisualChunk& chunk_and_mesh) {
-    throw "Not Implemented";
+    this->visual_chunks[std::make_tuple(p,q)] = std::make_shared<VisualChunk>(chunk_and_mesh.chunk, chunk_and_mesh.mesh);
 }
 
 int World::internal_count_chunks() {
