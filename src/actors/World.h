@@ -10,17 +10,17 @@
 
 using ChunkMeshPtr = std::shared_ptr<ChunkMesh>;
 
-class ChunkAndMesh {
+class VisualChunk {
 public:
     const ChunkPtr chunk;
     const ChunkMeshPtr mesh;
-    ChunkAndMesh() : chunk(nullptr), mesh(nullptr) {}
-    ChunkAndMesh(const ChunkPtr chunk, const ChunkMeshPtr mesh) : chunk(chunk), mesh(mesh) {}
+    VisualChunk() : chunk(nullptr), mesh(nullptr) {}
+    VisualChunk(const ChunkPtr chunk, const ChunkMeshPtr mesh) : chunk(chunk), mesh(mesh) {}
 };
 
-using ChunkAndMeshMap = std::unordered_map<ChunkPosition, std::shared_ptr<ChunkAndMesh>, ChunkPositionHash>;
-using ChunkAndMeshPtr = std::shared_ptr<ChunkAndMesh>;
-using ChunksAndMeshes = std::vector<ChunkAndMeshPtr>;
+using VisualChunkPtr = std::shared_ptr<VisualChunk>;
+using VisualChunks = std::vector<VisualChunkPtr>;
+using VisualChunkMap = std::unordered_map<ChunkPosition, VisualChunkPtr, ChunkPositionHash>;
 
 namespace vgk {
     namespace actors {
@@ -36,31 +36,31 @@ namespace vgk {
 
         class World : public caf::event_based_actor {
         private:
-            ChunkAndMeshMap chunks;
+            VisualChunkMap visual_chunks;
 
             char internal_get_block(int x, int y, int z);
             void internal_set_block(int x, int y, int z, char w);
-            ChunkAndMeshPtr internal_find_chunk_and_mesh(int p, int q);
+            VisualChunkPtr internal_find_chunk_and_mesh(int p, int q);
             ChunkNeighbors internal_find_neighbors(int p, int q);
-            void internal_update(int p, int q, const ChunkAndMesh& chunk_and_mesh);
+            void internal_update(int p, int q, const VisualChunk& chunk_and_mesh);
             int internal_count_chunks();
-            ChunksAndMeshes internal_all_chunks();
+            VisualChunks internal_all_chunks();
             void internal_load_world();
 
         public:
             World(caf::actor_config& cfg);
             caf::behavior make_behavior() override;
 
-            static ChunkAndMeshPtr find(int p, int q);
+            static VisualChunkPtr find(int p, int q);
             static ChunkNeighbors find_neighbors(int p, int q);
-            static void update(int p, int q, const ChunkAndMesh& mesh);
+            static void update(int p, int q, const VisualChunk& mesh);
 
             static char get_block(int x, int y, int z);
             static void set_block(int x, int y, int z, char w);
 
             static int chunk_count();
 
-            static ChunksAndMeshes all_chunks();
+            static VisualChunks all_chunks();
 
             static void load_world();
         };
@@ -71,10 +71,10 @@ namespace vgk {
 
 CAF_ALLOW_UNSAFE_MESSAGE_TYPE(ChunkPtr);
 CAF_ALLOW_UNSAFE_MESSAGE_TYPE(ChunkMeshPtr);
-CAF_ALLOW_UNSAFE_MESSAGE_TYPE(ChunkAndMesh);
-CAF_ALLOW_UNSAFE_MESSAGE_TYPE(ChunkAndMeshPtr);
+CAF_ALLOW_UNSAFE_MESSAGE_TYPE(VisualChunk);
+CAF_ALLOW_UNSAFE_MESSAGE_TYPE(VisualChunkPtr);
 CAF_ALLOW_UNSAFE_MESSAGE_TYPE(ChunkNeighbors);
-CAF_ALLOW_UNSAFE_MESSAGE_TYPE(ChunksAndMeshes);
+CAF_ALLOW_UNSAFE_MESSAGE_TYPE(VisualChunks);
 
 
 

@@ -27,13 +27,13 @@ caf::behavior World::make_behavior() {
             this->internal_set_block(x,y,z,w);
         },
         [&](wm_find_chunk_and_mesh, int p, int q) {
-            ChunkAndMeshPtr result = this->internal_find_chunk_and_mesh(p,q);
+            VisualChunkPtr result = this->internal_find_chunk_and_mesh(p,q);
             return result;
         },
         [&](wm_find_neighbors, int p, int q) {
             return this->internal_find_neighbors(p,q);
         },
-        [&](wm_update, int p, int q, const ChunkAndMesh& chunk_and_mesh){
+        [&](wm_update, int p, int q, const VisualChunk& chunk_and_mesh){
             this->internal_update(p,q,chunk_and_mesh);
         },
         [&](wm_count_chunks) {
@@ -53,15 +53,15 @@ static caf::strong_actor_ptr get_world_manager() {
     return vgk::actors::system->registry().get(vgk::actors::world_manager_id::value);
 }
 
-ChunkAndMeshPtr World::find(int p, int q) {
+VisualChunkPtr World::find(int p, int q) {
     caf::scoped_actor self { *vgk::actors::system };
-    ChunkAndMeshPtr result;
+    VisualChunkPtr result;
     self->request(
         caf::actor_cast<caf::actor>(get_world_manager()),
         caf::infinite,
         vgk::actors::wm_find_chunk_and_mesh::value, p, q
     ).receive(
-        [&](const ChunkAndMeshPtr cm){
+        [&](const VisualChunkPtr cm){
             result = cm;
         },
         [&](caf::error error){
@@ -92,7 +92,7 @@ ChunkNeighbors World::find_neighbors(int p, int q) {
     return result;
 }
 
-void World::update(int p, int q, const ChunkAndMesh& mesh) {
+void World::update(int p, int q, const VisualChunk& mesh) {
     caf::scoped_actor self { *vgk::actors::system };
     self->request(
             caf::actor_cast<caf::actor>(get_world_manager()),
@@ -147,15 +147,15 @@ void World::set_block(int x, int y, int z, char w) {
     );
 }
 
-std::vector<ChunkAndMeshPtr> World::all_chunks() {
+std::vector<VisualChunkPtr> World::all_chunks() {
     caf::scoped_actor self { *vgk::actors::system };
-    std::vector<ChunkAndMeshPtr> result;
+    std::vector<VisualChunkPtr> result;
     self->request(
         caf::actor_cast<caf::actor>(get_world_manager()),
         caf::infinite,
         vgk::actors::wm_all_chunks::value
     ).receive(
-        [&](const std::vector<ChunkAndMeshPtr> &chunks) {
+        [&](const std::vector<VisualChunkPtr> &chunks) {
             result = chunks;
         },
         [&](caf::error error){
@@ -222,8 +222,8 @@ void World::internal_set_block(int x, int y, int z, char w) {
     throw "Not Implemented";
 }
 
-ChunkAndMeshPtr World::internal_find_chunk_and_mesh(int p, int q) {
-    return this->chunks[std::make_tuple(p,q)];
+VisualChunkPtr World::internal_find_chunk_and_mesh(int p, int q) {
+    return this->visual_chunks[std::make_tuple(p,q)];
 }
 
 ChunkNeighbors World::internal_find_neighbors(int p, int q) {
@@ -231,9 +231,9 @@ ChunkNeighbors World::internal_find_neighbors(int p, int q) {
     for(int dp = -1; dp <= 1; dp++){
         for(int dq = -1; dq <= 1; dq++){
             auto position = std::make_tuple(p+dp,q+dq);
-            auto cm = chunks[position];
+            auto cm = visual_chunks[position];
             if(cm){
-                results[position] = chunks[position]->chunk;
+                results[position] = visual_chunks[position]->chunk;
             } else {
                 results[position] = nullptr;
             }
@@ -242,17 +242,17 @@ ChunkNeighbors World::internal_find_neighbors(int p, int q) {
     return results;
 }
 
-void World::internal_update(int p, int q, const ChunkAndMesh& chunk_and_mesh) {
+void World::internal_update(int p, int q, const VisualChunk& chunk_and_mesh) {
     throw "Not Implemented";
 }
 
 int World::internal_count_chunks() {
-    return static_cast<int>(this->chunks.size());
+    return static_cast<int>(this->visual_chunks.size());
 }
 
-ChunksAndMeshes World::internal_all_chunks() {
-    ChunksAndMeshes result;
-    for(auto& entry : this->chunks){
+VisualChunks World::internal_all_chunks() {
+    VisualChunks result;
+    for(auto& entry : this->visual_chunks){
         if(entry.second){
             result.push_back(entry.second);
         }
@@ -266,15 +266,15 @@ void World::internal_load_world() {
             Mountains mountains;
             TransientChunk chunk(p,q);
             mountains.create_chunk(chunk, p,q);
-            chunks[std::make_tuple(p,q)] = std::make_shared<ChunkAndMesh>(std::make_shared<Chunk>(chunk.immutable()), nullptr);
+            visual_chunks[std::make_tuple(p,q)] = std::make_shared<VisualChunk>(std::make_shared<Chunk>(chunk.immutable()), nullptr);
         }
     }
     for(int p = -10; p < 10; p++) {
         for (int q = -10; q < 10; q++) {
-            auto chunk = chunks[std::make_tuple(p,q)]->chunk;
+            auto chunk = visual_chunks[std::make_tuple(p,q)]->chunk;
             TransientChunkMesh mesh;
             Chunk::create_mesh(p, q, mesh, *chunk->blocks, this->internal_find_neighbors(p, q));
-            chunks[std::make_tuple(p,q)] = std::make_shared<ChunkAndMesh>(
+            visual_chunks[std::make_tuple(p,q)] = std::make_shared<VisualChunk>(
                 chunk, std::make_shared<ChunkMesh>(mesh.immutable())
             );
         }
