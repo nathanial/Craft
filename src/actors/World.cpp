@@ -229,11 +229,15 @@ void World::internal_update(int p, int q, const ChunkAndMesh& chunk_and_mesh) {
 }
 
 int World::internal_count_chunks() {
-    throw "Not Implemented";
+    return static_cast<int>(this->chunks.size());
 }
 
 ChunksAndMeshes World::internal_all_chunks() {
-    throw "Not Implemented";
+    ChunksAndMeshes result;
+    for(auto& entry : this->chunks){
+        result.push_back(entry.second);
+    }
+    return result;
 }
 
 void World::internal_load_world() {
