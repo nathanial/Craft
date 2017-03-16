@@ -249,7 +249,6 @@ void World::internal_set_block(int x, int y, int z, char w) {
             );
         }
     }
-    std::cout << "BAM" << std::endl;
 }
 
 VisualChunkPtr World::internal_find_visual_chunk(int p, int q) {

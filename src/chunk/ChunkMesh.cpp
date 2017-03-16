@@ -16,13 +16,8 @@ int ChunkMesh::draw(Attrib *attrib) const {
     return faces;
 }
 
-bool ChunkMesh::is_ready_to_draw() const {
-    return buffer && dirty;
-}
-
 std::shared_ptr<TransientChunkMesh> ChunkMesh::transient() const {
     auto transient = std::make_shared<TransientChunkMesh>();
-    transient->dirty = this->dirty;
     transient->buffer = this->buffer;
     transient->faces = this->faces;
     transient->maxy = this->maxy;

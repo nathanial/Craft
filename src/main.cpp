@@ -244,6 +244,7 @@ int render_chunks(Attrib *attrib, Player *player) {
             auto transient = mesh->transient();
             transient->generate_buffer();
             World::update(chunk->p, chunk->q, VisualChunk(chunk, std::make_shared<ChunkMesh>(transient->immutable())));
+            result += World::find(chunk->p, chunk->q)->mesh->draw(attrib);
         } else {
             result += mesh->draw(attrib);
         }

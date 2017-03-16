@@ -14,7 +14,6 @@ class ChunkMesh;
 class TransientChunkMesh {
 public:
     int faces = 0;
-    bool dirty = false;
     int miny = INT_MAX;
     int maxy = INT_MIN;
     GLuint buffer = 0;
