@@ -9,12 +9,11 @@
 #include "./TransientChunkMesh.h"
 
 int ChunkMesh::draw(Attrib *attrib) const {
-    if(buffer){
-        draw_triangles_3d_ao(attrib, buffer, faces * 6);
-        return faces;
-    } else {
-        return 0;
+    if(!buffer){
+        throw "Can't draw without a buffer";
     }
+    draw_triangles_3d_ao(attrib, buffer, faces * 6);
+    return faces;
 }
 
 bool ChunkMesh::is_ready_to_draw() const {

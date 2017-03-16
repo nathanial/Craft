@@ -218,13 +218,16 @@ int render_chunks(Attrib *attrib, Player *player) {
     glUniform1i(attrib->extra4, false);
     glUniform1f(attrib->timer, time_of_day());
 
-    auto all_chunks_and_meshes = World::all_chunks();
-    for(auto &chunk_and_mesh : all_chunks_and_meshes){
-        if(!chunk_and_mesh){
+    auto visual_chunks = World::all_chunks();
+    for(auto &vchunk : visual_chunks){
+        if(!vchunk){
             continue;
         }
-        auto chunk = chunk_and_mesh->chunk;
-        auto mesh = chunk_and_mesh->mesh;
+        auto chunk = vchunk->chunk;
+        auto mesh = vchunk->mesh;
+        if(chunk && !mesh){
+            std::cout << "No Mesh (" << chunk->p << "," << chunk->q << ")" << std::endl;
+        }
         if(!mesh || !chunk){
             continue;
         }
@@ -236,6 +239,7 @@ int render_chunks(Attrib *attrib, Player *player) {
         {
             continue;
         }
+        std::cout << "RENDER IT" << std::endl;
         result += mesh->draw(attrib);
     }
     return result;
