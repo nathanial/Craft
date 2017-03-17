@@ -15,6 +15,14 @@ enum class SourceDirection {
     YPlus
 };
 
+static const char *DirectionStrs[] = {
+        "None",
+        "Z-Minus",
+        "Z-Plus",
+        "Y-Minus",
+        "Y-Plus"
+};
+
 void light_fill_scanline(const BigBlockMap &opaque, BigBlockMap &light, int ox, int oy ,int oz, int ow);
 
 void scanline_iterate(BigBlockMap &light, const BigBlockMap &opaque, std::deque<std::tuple<int, int, int, int, SourceDirection>> &frontier,
@@ -81,10 +89,11 @@ void light_fill_scanline(const BigBlockMap &opaque, BigBlockMap &light, int ox, 
         int y = std::get<1>(next);
         int z = std::get<2>(next);
         int w = std::get<3>(next);
+        SourceDirection direction = std::get<4>(next);
         frontier.pop_front();
 
-        //std::cout << "Check " << x << "," << y << "," << z << " | " << check_count++ << std::endl;
-
+        std::cout << "Check " << x << "," << y << "," << z << "," << DirectionStrs[(int)direction] << " | " << check_count << std::endl;
+        check_count += 1;
         if(w == 0){
             continue;
         }
@@ -101,6 +110,7 @@ void light_fill_scanline(const BigBlockMap &opaque, BigBlockMap &light, int ox, 
         scanline_iterate(light, opaque, frontier, x, y, z, w, x, w, 1);
         scanline_iterate(light, opaque, frontier, x, y, z, w, x-1, w, -1);
     }
+    std::cout << "Check vs Chunk: " << (check_count * 1.0 * 100) / (CHUNK_SIZE * CHUNK_SIZE * CHUNK_HEIGHT) << "%" << std::endl;
 }
 
 void scanline_iterate(BigBlockMap &light, const BigBlockMap &opaque,

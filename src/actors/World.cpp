@@ -8,6 +8,7 @@
 #include "./Actors.h"
 #include "../chunk/ChunkMesh.h"
 #include "../biomes/Mountains.h"
+#include "../biomes/flatland.h"
 
 using namespace vgk;
 using namespace actors;
@@ -296,9 +297,9 @@ void World::internal_load_world() {
 
     for(int p = 0; p < 1; p++){
         for(int q = 0; q < 1; q++){
-            Mountains mountains;
+            Flatland flatland;
             TransientChunk chunk(p,q);
-            mountains.create_chunk(chunk, p,q);
+            flatland.create_chunk(chunk, p,q);
             visual_chunks[std::make_tuple(p,q)] = std::make_shared<VisualChunk>(std::make_shared<Chunk>(chunk.immutable()), nullptr);
         }
     }

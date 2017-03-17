@@ -15,4 +15,5 @@ void Flatland::create_chunk(TransientChunk& chunk, int p, int q) {
             }
         }
     }
+    chunk.set_block(8,11,8, BEACON);
 }
