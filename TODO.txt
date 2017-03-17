@@ -1,2 +1,4 @@
 Add Sunlight
 World fill time 2.7 seconds
+
+Store scanlines, prevent rescanning of parent

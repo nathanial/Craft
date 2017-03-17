@@ -23,6 +23,20 @@ static const char *DirectionStrs[] = {
         "Y-Plus"
 };
 
+class Scanline {
+    int startX;
+    int startY;
+    int startZ;
+
+    int light;
+
+    int endX;
+    int endY;
+    int endZ;
+
+    SourceDirection direction;
+};
+
 void light_fill_scanline(const BigBlockMap &opaque, BigBlockMap &light, int ox, int oy ,int oz, int ow);
 
 void scanline_iterate(BigBlockMap &light, const BigBlockMap &opaque, std::deque<std::tuple<int, int, int, int, SourceDirection>> &frontier,
@@ -92,7 +106,7 @@ void light_fill_scanline(const BigBlockMap &opaque, BigBlockMap &light, int ox, 
         SourceDirection direction = std::get<4>(next);
         frontier.pop_front();
 
-        std::cout << "Check " << x << "," << y << "," << z << "," << DirectionStrs[(int)direction] << " | " << check_count << std::endl;
+        //std::cout << "Check " << x << "," << y << "," << z << "," << DirectionStrs[(int)direction] << " | " << check_count << std::endl;
         check_count += 1;
         if(w == 0){
             continue;
@@ -107,51 +121,51 @@ void light_fill_scanline(const BigBlockMap &opaque, BigBlockMap &light, int ox, 
             continue;
         }
 
-        scanline_iterate(light, opaque, frontier, x, y, z, w, x, w, 1);
-        scanline_iterate(light, opaque, frontier, x, y, z, w, x-1, w, -1);
+        scanline_iterate(light, opaque, frontier, x, y, z, w, y, w, 1);
+        scanline_iterate(light, opaque, frontier, x, y, z, w, y-1, w, -1);
     }
-    std::cout << "Check vs Chunk: " << (check_count * 1.0 * 100) / (CHUNK_SIZE * CHUNK_SIZE * CHUNK_HEIGHT) << "%" << std::endl;
+    std::cout << "Check vs Chunk: " << check_count << " " << (check_count * 1.0 * 100) / (CHUNK_SIZE * CHUNK_SIZE * CHUNK_HEIGHT) << "%" << std::endl;
 }
 
 void scanline_iterate(BigBlockMap &light, const BigBlockMap &opaque,
                       std::deque<std::tuple<int, int, int, int, SourceDirection>> &frontier,
                       int x, int y, int z, int w,
-                      int cursorX, int cursorW, int direction) {
+                      int cursorY, int cursorW, int direction) {
 
     auto canLight = [&](int x, int y, int z, int w){
         return light.get(x, y, z) < w && !opaque.get(x, y, z);
     };
 
-    bool spanZMinus = false, spanZPlus = false, spanYMinus = false, spanYPlus = false;
-    while(cursorX < light.width() && cursorX >= 0 && canLight(cursorX, y, z, w - ABS(x - cursorX))){
-        cursorW = w - ABS(x - cursorX);
-        light.set(cursorX, y, z, cursorW);
-        if(!spanZMinus && z > 0 && canLight(cursorX, y, z-1, cursorW-1)) {
-            frontier.push_back(std::make_tuple(cursorX, y, z - 1, cursorW - 1, SourceDirection::ZMinus));
+    bool spanZMinus = false, spanZPlus = false, spanXMinus = false, spanXPlus = false;
+    while(cursorY < light.height() && cursorY >= 0 && canLight(x, cursorY, z, w - ABS(y - cursorY))){
+        cursorW = w - ABS(y - cursorY);
+        light.set(x, cursorY, z, cursorW);
+        if(!spanZMinus && z > 0 && canLight(x, cursorY, z-1, cursorW-1)) {
+            frontier.push_back(std::make_tuple(x, cursorY, z - 1, cursorW - 1, SourceDirection::ZMinus));
             spanZMinus = true;
-        } else if(spanZMinus && z > 0 && !canLight(cursorX, y, z - 1, cursorW-1)){
+        } else if(spanZMinus && z > 0 && !canLight(x, cursorY, z - 1, cursorW-1)){
             spanZMinus = false;
         }
-        if(!spanZPlus && z < light.width() - 1 && canLight(cursorX, y, z+1, cursorW - 1)){
-            frontier.push_back(std::make_tuple(cursorX, y, z + 1, cursorW - 1, SourceDirection::ZPlus));
+        if(!spanZPlus && z < light.width() - 1 && canLight(x, cursorY, z + 1, cursorW - 1)){
+            frontier.push_back(std::make_tuple(x, cursorY, z + 1, cursorW - 1, SourceDirection::ZPlus));
             spanZPlus = true;
-        } else if(spanZPlus && z < light.width() - 1 && !canLight(cursorX, y, z + 1, cursorW - 1)){
+        } else if(spanZPlus && z < light.width() - 1 && !canLight(x, cursorY, z + 1, cursorW - 1)){
             spanZPlus = false;
         }
-        if(!spanYMinus && y > 0 && canLight(cursorX, y-1,z, cursorW-1)){
-            frontier.push_back(std::make_tuple(cursorX, y-1, z, cursorW-1, SourceDirection::YMinus));
-            spanYMinus = true;
-        } else if(spanYMinus && y > 0 && !canLight(cursorX, y-1,z, cursorW- 1)){
-            spanYMinus = false;
+        if(!spanXMinus && x > 0 && canLight(x-1, cursorY,z, cursorW-1)){
+            frontier.push_back(std::make_tuple(x-1, cursorY, z, cursorW-1, SourceDirection::YMinus));
+            spanXMinus = true;
+        } else if(spanXMinus && x > 0 && !canLight(x-1, cursorY,z, cursorW - 1)){
+            spanXMinus = false;
         }
-        if(!spanYPlus && y < light.height() - 1 && canLight(cursorX, y+1,z, cursorW-1)){
-            frontier.push_back(std::make_tuple(cursorX, y+1,z, cursorW-1, SourceDirection::YPlus));
-            spanYPlus = true;
-        } else if(spanYPlus && y < light.height() - 1 && !canLight(cursorX, y+1, z, cursorW-1)){
-            spanYPlus = false;
+        if(!spanXPlus && x < light.width() - 1 && canLight(x+1, cursorY,z, cursorW-1)){
+            frontier.push_back(std::make_tuple(x+1, cursorY,z, cursorW-1, SourceDirection::YPlus));
+            spanXPlus = true;
+        } else if(spanXPlus && x < light.width() - 1 && !canLight(x+1, cursorY, z, cursorW-1)){
+            spanXPlus = false;
         }
 
-        cursorX += direction;
+        cursorY += direction;
 
     }
 }
