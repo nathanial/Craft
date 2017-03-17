@@ -15,12 +15,13 @@ extern "C" {
 #include "ChunkMesh.h"
 #include "../model.h"
 #include "../actors/World.h"
+#include "../lighting/ScanlineFill.h"
 
 using namespace vgk;
 using namespace vgk::actors;
 
 void occlusion(
-        char neighbors[27], char lights[27], float shades[27],
+        char neighbors[27], short lights[27], float shades[27],
         float ao[6][4], float light[6][4]);
 
 void scanline_iterate(BigBlockMap &light, BigBlockMap &opaque, std::deque<std::tuple<int, int, int, int>> &frontier,
@@ -140,7 +141,7 @@ std::vector<GLfloat> Chunk::generate_geometry(int p, int q, const ChunkBlocks &b
             return;
         }
         char neighbors[27] = {0};
-        char lights[27] = {0};
+        short lights[27] = {0};
         float shades[27] = {0};
         int index = 0;
         for (int dx = -1; dx <= 1; dx++) {
@@ -186,63 +187,30 @@ std::vector<GLfloat> Chunk::generate_geometry(int p, int q, const ChunkBlocks &b
 }
 
 
-void Chunk::create_mesh(int _p, int _q, TransientChunkMesh &mesh, const ChunkBlocks &blocks, const ChunkNeighbors &neighbors) {
+void Chunk::create_mesh(int p, int q, TransientChunkMesh &mesh, const ChunkBlocks &blocks, const ChunkNeighbors &neighbors) {
     auto opaque = std::make_unique<BigBlockMap>();
-    auto light = std::make_unique<BigBlockMap>();
     auto highest = std::make_unique<HeightMap<CHUNK_SIZE * 3>>();
 
-    Chunk::populate_opaque_array(_p, _q, *opaque, *highest, neighbors);
-    Chunk::populate_light_array(_p, _q, *opaque, *light, neighbors);
 
-    int miny, maxy, faces;
-    std::tie(miny, maxy, faces) = Chunk::count_faces(_p, _q, blocks, *opaque);
-    auto data = Chunk::generate_geometry(_p, _q, blocks, *opaque, *light, *highest);
+    try {
+        Chunk::populate_opaque_array(p, q, *opaque, *highest, neighbors);
+        ScanlineFill fill;
+        auto light = fill.light(p, q, *opaque, neighbors);
 
-    mesh.miny = miny;
-    mesh.maxy = maxy;
-    mesh.faces = faces;
-    mesh.vertices = data;
-}
+        int miny, maxy, faces;
+        std::tie(miny, maxy, faces) = Chunk::count_faces(p, q, blocks, *opaque);
+        auto data = Chunk::generate_geometry(p, q, blocks, *opaque, *light, *highest);
 
-void Chunk::populate_light_array(int _p, int _q, BigBlockMap &opaque, BigBlockMap &light, const ChunkNeighbors& neighbors) {
-    int ox = _p * CHUNK_SIZE - CHUNK_SIZE;
-    int oy = -1;
-    int oz = _q * CHUNK_SIZE - CHUNK_SIZE;
-
-    for (int a = 0; a < 3; a++) {
-        for (int b = 0; b < 3; b++) {
-            auto chunk = neighbors.at(std::make_tuple(_p - (a - 1), _q - (b - 1)));
-            if(chunk){
-                int chunk_x_offset = chunk->p * CHUNK_SIZE;
-                int chunk_z_offset = chunk->q * CHUNK_SIZE;
-                for(int bx = 0; bx < CHUNK_SIZE; bx++){
-                    for(int by = 0; by < CHUNK_HEIGHT; by++) {
-                        for (int bz = 0; bz < CHUNK_SIZE; bz++) {
-                            int ex = bx + chunk_x_offset;
-                            int ey = by;
-                            int ez = bz + chunk_z_offset;
-                            int ew = chunk->blocks->_data[bx][by][bz];
-                            if(ew == 0){
-                                continue;
-                            }
-
-                            if(ey == CHUNK_HEIGHT){
-                                continue;
-                            }
-
-                            int lx = ex - ox;
-                            int ly = ey - oy;
-                            int lz = ez - oz;
-
-                            if (is_light(ew)) {
-                                light_fill_scanline(opaque, light, lx, ly, lz, 15);
-                            }
-                        }
-                    }
-                }
-            }
-        }
+        mesh.miny = miny;
+        mesh.maxy = maxy;
+        mesh.faces = faces;
+        mesh.vertices = data;
+    }catch (std::exception& e) {
+        std::cout << e.what() << '\n';
+    } catch(...) {
+        std::cout << "Could not mesh, unknown exception" << std::endl;
     }
+
 }
 
 void Chunk::populate_opaque_array(int _p, int _q, BigBlockMap &opaque, HeightMap<48> &highest, const ChunkNeighbors &neighbors) {
@@ -347,84 +315,6 @@ int highest_block(float x, float z) {
 }
 
 
-void light_fill_scanline(BigBlockMap &opaque, BigBlockMap &light, int ox, int oy ,int oz, int ow)
-{
-    std::deque<std::tuple<int,int,int,int>> frontier;
-    frontier.push_back(std::make_tuple(ox,oy,oz,ow));
-    while(!frontier.empty()){
-        auto &next = frontier.front();
-        int x = std::get<0>(next);
-        int y = std::get<1>(next);
-        int z = std::get<2>(next);
-        int w = std::get<3>(next);
-        frontier.pop_front();
-
-        if(w == 0){
-            continue;
-        }
-        if(opaque.get(x,y,z)){
-            continue;
-        }
-        if(light.get(x,y,z) >= w){
-            continue;
-        }
-
-        int cursorX = x;
-        int cursorW = w;
-        scanline_iterate(light, opaque, frontier, x, y, z, w, cursorX, cursorW, true);
-        scanline_iterate(light, opaque, frontier, x, y, z, w, cursorX-1, cursorW, false);
-    }
-}
-
-
-
-void scanline_iterate(BigBlockMap &light, BigBlockMap &opaque, std::deque<std::tuple<int, int, int, int>> &frontier,
-                      int x, int y, int z, int w,
-                      int cursorX, int cursorW, bool ascend) {
-
-    auto canLight = [&](int x, int y, int z, int w){
-        return light.get(x, y, z) < w && !opaque.get(x, y, z);
-    };
-
-    bool spanZMinus = false, spanZPlus = false, spanYMinus = false, spanYPlus = false;
-    while(cursorX < CHUNK_SIZE * 3 && cursorX >= 0 && canLight(cursorX, y, z, w - ABS(x - cursorX))){
-        cursorW = w - ABS(x - cursorX);
-        light.set(cursorX, y, z, cursorW);
-        if(!spanZMinus && z > 0 && canLight(cursorX, y, z-1, cursorW-1)) {
-            frontier.push_back(std::make_tuple(cursorX, y, z - 1, cursorW - 1));
-            spanZMinus = true;
-        } else if(spanZMinus && z > 0 && !canLight(cursorX, y, z - 1, cursorW-1)){
-            spanZMinus = false;
-        }
-        if(!spanZPlus && z < CHUNK_SIZE * 3 - 1 && canLight(cursorX, y, z+1, cursorW - 1)){
-            frontier.push_back(std::make_tuple(cursorX, y, z + 1, cursorW - 1));
-            spanZPlus = true;
-        } else if(spanZPlus && z < CHUNK_SIZE * 3 - 1 && !canLight(cursorX, y, z + 1, cursorW - 1)){
-            spanZPlus = false;
-        }
-        if(!spanYMinus && y > 0 && canLight(cursorX, y-1,z, cursorW-1)){
-            frontier.push_back(std::make_tuple(cursorX, y-1, z, cursorW-1));
-            spanYMinus = true;
-        } else if(spanYMinus && y > 0 && !canLight(cursorX, y-1,z, cursorW- 1)){
-            spanYMinus = false;
-        }
-        if(!spanYPlus && y < CHUNK_HEIGHT - 1 && canLight(cursorX, y+1,z, cursorW-1)){
-            frontier.push_back(std::make_tuple(cursorX, y+1,z, cursorW-1));
-            spanYPlus = true;
-        } else if(spanYPlus && y < CHUNK_HEIGHT -1 && !canLight(cursorX, y+1, z, cursorW-1)){
-            spanYPlus = false;
-        }
-
-        if(ascend){
-            cursorX++;
-        } else {
-            cursorX--;
-        }
-
-    }
-}
-
-
 static float light_levels[] = {
         0.5629499534213125f, 0.7036874417766406f, 0.8796093022208006f, 1.0995116277760006f, 1.3743895347200008f,
         1.717986918400001f, 2.147483648000001f, 2.6843545600000014f, 3.3554432000000016f, 4.194304000000002f,
@@ -433,14 +323,17 @@ static float light_levels[] = {
 
 
 float get_light_level(int level){
-    if(level < 0 || level > 15) {
-        throw "Bad Light Level";
+    if(level < 0){
+        level = 0;
+    }
+    if(level > 15) {
+        level = 15;
     }
     return light_levels[level];
 }
 
 void occlusion(
-        char neighbors[27], char lights[27], float shades[27],
+        char neighbors[27], short lights[27], float shades[27],
         float ao[6][4], float light[6][4])
 {
     static const int lookup3[6][4][3] = {

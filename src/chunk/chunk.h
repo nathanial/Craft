@@ -46,11 +46,10 @@ public:
     int get_block(int x, int y, int z) const;
     int get_block_or_zero(int x, int y, int z) const;
     void foreach_block(std::function<void (int, int, int, char)> func) const;
-    static void create_mesh(int _p, int _q, TransientChunkMesh &mesh, const ChunkBlocks &blocks,
+    static void create_mesh(int p, int q, TransientChunkMesh &mesh, const ChunkBlocks &blocks,
                                                   const ChunkNeighbors &neighbors);
 
 private:
-    static void populate_light_array(int _p, int _q, BigBlockMap &opaque, BigBlockMap &light, const ChunkNeighbors& neighbors);
     static std::vector<GLfloat> generate_geometry(int p, int q, const ChunkBlocks& blocks, BigBlockMap &opaque, BigBlockMap &light, HeightMap<CHUNK_SIZE * 3> &highest);
     static std::tuple<int,int,int> count_faces(int p, int q, const ChunkBlocks& blocks, const BigBlockMap &opaque);
     static void populate_opaque_array(int _p, int _q, BigBlockMap &opaque, HeightMap<48> &highest, const ChunkNeighbors& neighbors);

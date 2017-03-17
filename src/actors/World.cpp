@@ -8,6 +8,7 @@
 #include "./Actors.h"
 #include "../chunk/ChunkMesh.h"
 #include "../biomes/Mountains.h"
+#include "../biomes/flatland.h"
 
 using namespace vgk;
 using namespace actors;
@@ -290,16 +291,22 @@ VisualChunks World::internal_all_chunks() {
 }
 
 void World::internal_load_world() {
-    for(int p = -10; p < 10; p++){
-        for(int q = -10; q < 10; q++){
-            Mountains mountains;
+    std::clock_t    start;
+    start = std::clock();
+
+    int min = 0;
+    int max = 2;
+
+    for(int p = min; p < max; p++){
+        for(int q = min; q < max; q++){
+            Mountains flatland;
             TransientChunk chunk(p,q);
-            mountains.create_chunk(chunk, p,q);
+            flatland.create_chunk(chunk, p,q);
             visual_chunks[std::make_tuple(p,q)] = std::make_shared<VisualChunk>(std::make_shared<Chunk>(chunk.immutable()), nullptr);
         }
     }
-    for(int p = -10; p < 10; p++) {
-        for (int q = -10; q < 10; q++) {
+    for(int p = min; p < max; p++) {
+        for (int q = min; q < max; q++) {
             auto chunk = visual_chunks[std::make_tuple(p,q)]->chunk;
             TransientChunkMesh mesh;
             Chunk::create_mesh(p, q, mesh, *chunk->blocks, this->internal_find_neighbors(p, q));
@@ -308,4 +315,6 @@ void World::internal_load_world() {
             );
         }
     }
+
+    std::cout << "Load World Time: " << (std::clock() - start) / (double)(CLOCKS_PER_SEC / 1000) << " ms" << std::endl;
 }

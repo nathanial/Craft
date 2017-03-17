@@ -10,6 +10,7 @@
 
 int ChunkMesh::draw(Attrib *attrib) const {
     if(!buffer){
+        std::cout << "Can't draw without a buffer" << std::endl;
         throw "Can't draw without a buffer";
     }
     draw_triangles_3d_ao(attrib, buffer, faces * 6);

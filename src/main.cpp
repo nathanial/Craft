@@ -57,7 +57,7 @@ GLuint gen_sky_buffer() {
 }
 
 GLuint gen_cube_buffer(float x, float y, float z, float n, int w) {
-    float ao[6][4] = {0};
+    float ao[6][4] = {{0}};
     float light[6][4] = {
         {0.5, 0.5, 0.5, 0.5},
         {0.5, 0.5, 0.5, 0.5},
