@@ -50,7 +50,6 @@ public:
                                                   const ChunkNeighbors &neighbors);
 
 private:
-    static void populate_light_array(int p, int q, BigBlockMap &opaque, BigBlockMap &light, const ChunkNeighbors& neighbors);
     static std::vector<GLfloat> generate_geometry(int p, int q, const ChunkBlocks& blocks, BigBlockMap &opaque, BigBlockMap &light, HeightMap<CHUNK_SIZE * 3> &highest);
     static std::tuple<int,int,int> count_faces(int p, int q, const ChunkBlocks& blocks, const BigBlockMap &opaque);
     static void populate_opaque_array(int _p, int _q, BigBlockMap &opaque, HeightMap<48> &highest, const ChunkNeighbors& neighbors);
