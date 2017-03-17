@@ -31,16 +31,11 @@ public:
 
     int light;
 
-    int endX;
-    int endY;
-    int endZ;
-
     SourceDirection direction;
 
     Scanline(){}
     Scanline(int startX, int startY, int startZ, int light, SourceDirection direction)
-            : startX(startX), startY(startY), startZ(startZ), light(light),
-              endX(0), endY(0), endZ(0), direction(directiong)
+            : startX(startX), startY(startY), startZ(startZ), light(light), direction(direction)
     {
     }
 };
