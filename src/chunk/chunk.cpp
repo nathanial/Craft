@@ -186,17 +186,17 @@ std::vector<GLfloat> Chunk::generate_geometry(int p, int q, const ChunkBlocks &b
 }
 
 
-void Chunk::create_mesh(int _p, int _q, TransientChunkMesh &mesh, const ChunkBlocks &blocks, const ChunkNeighbors &neighbors) {
+void Chunk::create_mesh(int p, int q, TransientChunkMesh &mesh, const ChunkBlocks &blocks, const ChunkNeighbors &neighbors) {
     auto opaque = std::make_unique<BigBlockMap>();
     auto light = std::make_unique<BigBlockMap>();
     auto highest = std::make_unique<HeightMap<CHUNK_SIZE * 3>>();
 
-    Chunk::populate_opaque_array(_p, _q, *opaque, *highest, neighbors);
-    Chunk::populate_light_array(_p, _q, *opaque, *light, neighbors);
+    Chunk::populate_opaque_array(p, q, *opaque, *highest, neighbors);
+    Chunk::populate_light_array(p, q, *opaque, *light, neighbors);
 
     int miny, maxy, faces;
-    std::tie(miny, maxy, faces) = Chunk::count_faces(_p, _q, blocks, *opaque);
-    auto data = Chunk::generate_geometry(_p, _q, blocks, *opaque, *light, *highest);
+    std::tie(miny, maxy, faces) = Chunk::count_faces(p, q, blocks, *opaque);
+    auto data = Chunk::generate_geometry(p, q, blocks, *opaque, *light, *highest);
 
     mesh.miny = miny;
     mesh.maxy = maxy;
@@ -204,14 +204,14 @@ void Chunk::create_mesh(int _p, int _q, TransientChunkMesh &mesh, const ChunkBlo
     mesh.vertices = data;
 }
 
-void Chunk::populate_light_array(int _p, int _q, BigBlockMap &opaque, BigBlockMap &light, const ChunkNeighbors& neighbors) {
-    int ox = _p * CHUNK_SIZE - CHUNK_SIZE;
+void Chunk::populate_light_array(int p, int q, BigBlockMap &opaque, BigBlockMap &light, const ChunkNeighbors& neighbors) {
+    int ox = p * CHUNK_SIZE - CHUNK_SIZE;
     int oy = -1;
-    int oz = _q * CHUNK_SIZE - CHUNK_SIZE;
+    int oz = q * CHUNK_SIZE - CHUNK_SIZE;
 
     for (int a = 0; a < 3; a++) {
         for (int b = 0; b < 3; b++) {
-            auto chunk = neighbors.at(std::make_tuple(_p - (a - 1), _q - (b - 1)));
+            auto chunk = neighbors.at(std::make_tuple(p - (a - 1), q - (b - 1)));
             if(chunk){
                 int chunk_x_offset = chunk->p * CHUNK_SIZE;
                 int chunk_z_offset = chunk->q * CHUNK_SIZE;
