@@ -24,6 +24,7 @@ static const char *DirectionStrs[] = {
 };
 
 class Scanline {
+public:
     int startX;
     int startY;
     int startZ;
@@ -35,12 +36,19 @@ class Scanline {
     int endZ;
 
     SourceDirection direction;
+
+    Scanline(){}
+    Scanline(int startX, int startY, int startZ, int light, SourceDirection direction)
+            : startX(startX), startY(startY), startZ(startZ), light(light),
+              endX(0), endY(0), endZ(0), direction(directiong)
+    {
+    }
 };
 
 void light_fill_scanline(const BigBlockMap &opaque, BigBlockMap &light, int ox, int oy ,int oz, int ow);
 
-void scanline_iterate(BigBlockMap &light, const BigBlockMap &opaque, std::deque<std::tuple<int, int, int, int, SourceDirection>> &frontier,
-                      int x, int y, int z, int w,
+void scanline_iterate(BigBlockMap &light, const BigBlockMap &opaque, std::deque<Scanline> &frontier,
+                      Scanline scanline,
                       int cursorX, int cursorW, int direction);
 
 bool is_sunlight(int y, int w){
@@ -93,25 +101,33 @@ std::unique_ptr<BigBlockMap> ScanlineFill::light(int p, int q, const BigBlockMap
 
 void light_fill_scanline(const BigBlockMap &opaque, BigBlockMap &light, int ox, int oy ,int oz, int ow)
 {
-    std::deque<std::tuple<int,int,int,int, SourceDirection >> frontier;
-    frontier.push_back(std::make_tuple(ox,oy,oz,ow, SourceDirection::None));
+    std::deque<Scanline> frontier;
+    Scanline origin;
+    origin.startX = ox;
+    origin.startY = oy;
+    origin.startZ = oz;
+    origin.light = ow;
+    origin.direction = SourceDirection::None;
+
+    frontier.push_back(origin);
     int check_count = 0;
     std::cout << "Light Fill Scanline " << ox << "," << oy << "," << oz << "," << ow << std::endl;
     while(!frontier.empty()){
         auto &next = frontier.front();
-        int x = std::get<0>(next);
-        int y = std::get<1>(next);
-        int z = std::get<2>(next);
-        int w = std::get<3>(next);
-        SourceDirection direction = std::get<4>(next);
+        auto scanline = next;
         frontier.pop_front();
+
+        auto x = scanline.startX;
+        auto y = scanline.startY;
+        auto z = scanline.startZ;
+        auto w = scanline.light;
 
         //std::cout << "Check " << x << "," << y << "," << z << "," << DirectionStrs[(int)direction] << " | " << check_count << std::endl;
         check_count += 1;
-        if(w == 0){
+        if(scanline.light == 0){
             continue;
         }
-        if(y >= CHUNK_HEIGHT) {
+        if(scanline.startY >= CHUNK_HEIGHT) {
             continue;
         }
         if(opaque.get(x,y,z)){
@@ -121,15 +137,15 @@ void light_fill_scanline(const BigBlockMap &opaque, BigBlockMap &light, int ox, 
             continue;
         }
 
-        scanline_iterate(light, opaque, frontier, x, y, z, w, y, w, 1);
-        scanline_iterate(light, opaque, frontier, x, y, z, w, y-1, w, -1);
+        scanline_iterate(light, opaque, frontier, scanline, y, w, 1);
+        scanline_iterate(light, opaque, frontier, scanline, y-1, w, -1);
     }
     std::cout << "Check vs Chunk: " << check_count << " " << (check_count * 1.0 * 100) / (CHUNK_SIZE * CHUNK_SIZE * CHUNK_HEIGHT) << "%" << std::endl;
 }
 
 void scanline_iterate(BigBlockMap &light, const BigBlockMap &opaque,
-                      std::deque<std::tuple<int, int, int, int, SourceDirection>> &frontier,
-                      int x, int y, int z, int w,
+                      std::deque<Scanline> &frontier,
+                      Scanline scanline,
                       int cursorY, int cursorW, int direction) {
 
     auto canLight = [&](int x, int y, int z, int w){
@@ -137,29 +153,33 @@ void scanline_iterate(BigBlockMap &light, const BigBlockMap &opaque,
     };
 
     bool spanZMinus = false, spanZPlus = false, spanXMinus = false, spanXPlus = false;
+    auto x = scanline.startX;
+    auto z = scanline.startZ;
+    auto y = scanline.startY;
+    auto w = scanline.light;
     while(cursorY < light.height() && cursorY >= 0 && canLight(x, cursorY, z, w - ABS(y - cursorY))){
         cursorW = w - ABS(y - cursorY);
         light.set(x, cursorY, z, cursorW);
         if(!spanZMinus && z > 0 && canLight(x, cursorY, z-1, cursorW-1)) {
-            frontier.push_back(std::make_tuple(x, cursorY, z - 1, cursorW - 1, SourceDirection::ZMinus));
+            frontier.push_back(Scanline(x, cursorY, z - 1, cursorW - 1, SourceDirection::ZMinus));
             spanZMinus = true;
         } else if(spanZMinus && z > 0 && !canLight(x, cursorY, z - 1, cursorW-1)){
             spanZMinus = false;
         }
         if(!spanZPlus && z < light.width() - 1 && canLight(x, cursorY, z + 1, cursorW - 1)){
-            frontier.push_back(std::make_tuple(x, cursorY, z + 1, cursorW - 1, SourceDirection::ZPlus));
+            frontier.push_back(Scanline(x, cursorY, z + 1, cursorW - 1, SourceDirection::ZPlus));
             spanZPlus = true;
         } else if(spanZPlus && z < light.width() - 1 && !canLight(x, cursorY, z + 1, cursorW - 1)){
             spanZPlus = false;
         }
         if(!spanXMinus && x > 0 && canLight(x-1, cursorY,z, cursorW-1)){
-            frontier.push_back(std::make_tuple(x-1, cursorY, z, cursorW-1, SourceDirection::YMinus));
+            frontier.push_back(Scanline(x-1, cursorY, z, cursorW-1, SourceDirection::YMinus));
             spanXMinus = true;
         } else if(spanXMinus && x > 0 && !canLight(x-1, cursorY,z, cursorW - 1)){
             spanXMinus = false;
         }
         if(!spanXPlus && x < light.width() - 1 && canLight(x+1, cursorY,z, cursorW-1)){
-            frontier.push_back(std::make_tuple(x+1, cursorY,z, cursorW-1, SourceDirection::YPlus));
+            frontier.push_back(Scanline(x+1, cursorY,z, cursorW-1, SourceDirection::YPlus));
             spanXPlus = true;
         } else if(spanXPlus && x < light.width() - 1 && !canLight(x+1, cursorY, z, cursorW-1)){
             spanXPlus = false;
