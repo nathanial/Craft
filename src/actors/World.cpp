@@ -290,16 +290,20 @@ VisualChunks World::internal_all_chunks() {
 }
 
 void World::internal_load_world() {
-    for(int p = -10; p < 10; p++){
-        for(int q = -10; q < 10; q++){
+    std::clock_t    start;
+    start = std::clock();
+    // your test
+
+    for(int p = 0; p < 1; p++){
+        for(int q = 0; q < 1; q++){
             Mountains mountains;
             TransientChunk chunk(p,q);
             mountains.create_chunk(chunk, p,q);
             visual_chunks[std::make_tuple(p,q)] = std::make_shared<VisualChunk>(std::make_shared<Chunk>(chunk.immutable()), nullptr);
         }
     }
-    for(int p = -10; p < 10; p++) {
-        for (int q = -10; q < 10; q++) {
+    for(int p = 0; p < 1; p++) {
+        for (int q = 0; q < 1; q++) {
             auto chunk = visual_chunks[std::make_tuple(p,q)]->chunk;
             TransientChunkMesh mesh;
             Chunk::create_mesh(p, q, mesh, *chunk->blocks, this->internal_find_neighbors(p, q));
@@ -308,4 +312,6 @@ void World::internal_load_world() {
             );
         }
     }
+
+    std::cout << "Load World Time: " << (std::clock() - start) / (double)(CLOCKS_PER_SEC / 1000) << " ms" << std::endl;
 }

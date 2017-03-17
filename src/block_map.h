@@ -22,7 +22,7 @@ public:
 
     int set(int x, int y, int z, char w) {
         if(x < 0 || x >= WIDTH || y < 0 || y >= HEIGHT || z < 0 || z >= WIDTH){
-            printf("Bad Index %d,%d,%d\n", x, y, z);
+            printf("Set Bad Index %d,%d,%d\n", x, y, z);
             throw new std::invalid_argument("Bad Index");
         }
 
@@ -38,7 +38,7 @@ public:
     }
     char get(int x, int y, int z) const {
         if(x < 0 || x >= WIDTH || y < 0 || y >= HEIGHT|| z < 0 || z >= WIDTH){
-            printf("Bad Index %d,%d,%d\n", x, y, z);
+            printf("Get Bad Index %d,%d,%d\n", x, y, z);
             throw new std::invalid_argument("Bad Index");
         }
         return this->_data[x][y][z];
@@ -78,6 +78,9 @@ public:
         });
         return newCopy;
     };
+
+    constexpr int width() { return WIDTH; }
+    constexpr int height() { return HEIGHT; }
 };
 
 typedef BlockMap<CHUNK_SIZE * 3, CHUNK_HEIGHT> BigBlockMap;
