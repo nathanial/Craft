@@ -51,16 +51,16 @@ Chunk::~Chunk() {
     // del_buffer(this->mesh()->buffer);
 }
 
-int Chunk::get_block(int x, int y, int z) const {
+short Chunk::get_block(int x, int y, int z) const {
     return this->blocks->get(x - this->p * CHUNK_SIZE, y, z - this->q * CHUNK_SIZE);
 }
 
-int Chunk::get_block_or_zero(int x, int y, int z) const {
+short Chunk::get_block_or_zero(int x, int y, int z) const {
     return this->blocks->get_or_default(x - this->p * CHUNK_SIZE, y, z - this->q * CHUNK_SIZE, 0);
 }
 
-void Chunk::foreach_block(std::function<void (int, int, int, char)> func) const {
-    this->blocks->each([&](int x, int y, int z, char w){
+void Chunk::foreach_block(std::function<void (int, int, int, short)> func) const {
+    this->blocks->each([&](int x, int y, int z, short w){
         func(x + this->p * CHUNK_SIZE, y, z + this->q * CHUNK_SIZE, w);
     });
 }

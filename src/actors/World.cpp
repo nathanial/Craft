@@ -201,7 +201,7 @@ void World::load_world() {
     );
 }
 
-char World::internal_get_block(int x, int y, int z) {
+short World::internal_get_block(int x, int y, int z) {
     int p = chunked(x);
     int q = chunked(z);
     auto cm = this->internal_find_visual_chunk(p, q);

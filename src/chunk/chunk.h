@@ -43,11 +43,13 @@ public:
     // THREAD SAFE
     int distance(int p, int q) const;
     std::shared_ptr<TransientChunk> transient() const;
-    int get_block(int x, int y, int z) const;
-    int get_block_or_zero(int x, int y, int z) const;
-    void foreach_block(std::function<void (int, int, int, char)> func) const;
-    static void create_mesh(int p, int q, TransientChunkMesh &mesh, const ChunkBlocks &blocks,
-                                                  const ChunkNeighbors &neighbors);
+    short get_block(int x, int y, int z) const;
+    short get_block_or_zero(int x, int y, int z) const;
+    void foreach_block(std::function<void (int, int, int, short)> func) const;
+    static void create_mesh(int p, int q,
+                            TransientChunkMesh &mesh,
+                            const ChunkBlocks &blocks,
+                            const ChunkNeighbors &neighbors);
 
 private:
     static std::vector<GLfloat> generate_geometry(int p, int q, const ChunkBlocks& blocks, BigBlockMap &opaque, BigBlockMap &light, HeightMap<CHUNK_SIZE * 3> &highest);

@@ -38,7 +38,7 @@ namespace vgk {
         private:
             VisualChunkMap visual_chunks;
 
-            char internal_get_block(int x, int y, int z);
+            short internal_get_block(int x, int y, int z);
             void internal_set_block(int x, int y, int z, char w);
             VisualChunkPtr internal_find_visual_chunk(int p, int q);
             ChunkNeighbors internal_find_neighbors(int p, int q);
