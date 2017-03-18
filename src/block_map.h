@@ -20,21 +20,12 @@ public:
     BlockMap(BlockMap&&) = delete;
     BlockMap& operator=(BlockMap&&) = delete;
 
-    int set(int x, int y, int z, short w) {
+    void set(int x, int y, int z, short w) {
         if(x < 0 || x >= WIDTH || y < 0 || y >= HEIGHT || z < 0 || z >= WIDTH){
             printf("Set Bad Index %d,%d,%d\n", x, y, z);
             throw new std::invalid_argument("Bad Index");
         }
-
-        int overwrite = 0;
-        if(this->_data[x][y][z] > 0){
-            overwrite = 1;
-        }
         this->_data[x][y][z] = w;
-        if(w){
-            return 1;
-        }
-        return overwrite;
     }
     short get(int x, int y, int z) const {
         if(x < 0 || x >= WIDTH || y < 0 || y >= HEIGHT|| z < 0 || z >= WIDTH){
@@ -43,7 +34,7 @@ public:
         }
         return this->_data[x][y][z];
     }
-    short get_or_default(int x, int y, int z, char _default) const {
+    short get_or_default(int x, int y, int z, short _default = 0) const {
         if(x < 0 || x >= WIDTH || y < 0 || y >= HEIGHT|| z < 0 || z >= WIDTH){
             return _default;
         }

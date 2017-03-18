@@ -10,8 +10,8 @@ TransientChunk::TransientChunk(int p, int q) :
     blocks(std::make_unique<BlockMap<CHUNK_SIZE, CHUNK_HEIGHT>>())
 {
 }
-int TransientChunk::set_block(int x, int y, int z, char w) {
-    return this->blocks->set(x - this->p * CHUNK_SIZE, y, z - this->q * CHUNK_SIZE, w);
+void TransientChunk::set_block(int x, int y, int z, char w) {
+    this->blocks->set(x - this->p * CHUNK_SIZE, y, z - this->q * CHUNK_SIZE, w);
 }
 int TransientChunk::get_block(int x, int y, int z) const {
     return this->blocks->get(x - this->p * CHUNK_SIZE, y, z - this->q * CHUNK_SIZE);

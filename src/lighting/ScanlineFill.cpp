@@ -42,8 +42,23 @@ void scanline_iterate(BigBlockMap &light, const BigBlockMap &opaque, std::deque<
                       Scanline scanline,
                       int cursorX, short cursorW, int direction, bool is_sunlight);
 
-bool is_sunlight(int y, int w){
-    return y == CHUNK_HEIGHT - 2 && w == 0;
+bool neighbor_has_value(const BigBlockMap &blocks, int x, int y, int z, short value) {
+    return (
+        blocks.get_or_default(x-1,y,z) == value ||
+        blocks.get_or_default(x+1,y,z) == value ||
+        blocks.get_or_default(x,y+1,z) == value ||
+        blocks.get_or_default(x,y-1,z) == value ||
+        blocks.get_or_default(x,y,z-1) == value ||
+        blocks.get_or_default(x,y,z+1) == value
+    );
+}
+
+bool touches_sunlight(const BigBlockMap &light, const BigBlockMap &opaque, int lx, int ly, int lz) {
+    return (
+            light.get(lx,ly,lz) < 15 &&
+            !opaque.get(lx,ly,lz) &&
+            neighbor_has_value(light, lx, ly, lz, 16)
+    );
 }
 
 std::unique_ptr<BigBlockMap> ScanlineFill::light(int p, int q, const BigBlockMap &opaque, const ChunkNeighbors& neighbors) {
@@ -52,6 +67,18 @@ std::unique_ptr<BigBlockMap> ScanlineFill::light(int p, int q, const BigBlockMap
     int oz = q * CHUNK_SIZE - CHUNK_SIZE;
     auto light = std::make_unique<BigBlockMap>();
 
+
+    for(int x = 0; x < light->width(); x++){
+        for(int z = 0; z < light->width(); z++){
+            for(int y = light->height() - 1; y >= 0; y--){
+                if(opaque.get(x,y,z)) {
+                    break;
+                }
+                light->set(x,y,z,16);
+            }
+        }
+    }
+
     for (int a = 0; a < 3; a++) {
         for (int b = 0; b < 3; b++) {
             auto chunk = neighbors.at(std::make_tuple(p - (a - 1), q - (b - 1)));
@@ -59,7 +86,7 @@ std::unique_ptr<BigBlockMap> ScanlineFill::light(int p, int q, const BigBlockMap
                 int chunk_x_offset = chunk->p * CHUNK_SIZE;
                 int chunk_z_offset = chunk->q * CHUNK_SIZE;
                 for(int bx = 0; bx < CHUNK_SIZE; bx++){
-                    for(int by = 0; by < CHUNK_HEIGHT; by++) {
+                    for(int by = 0; by < CHUNK_HEIGHT - 1; by++) {
                         for (int bz = 0; bz < CHUNK_SIZE; bz++) {
                             int ex = bx + chunk_x_offset;
                             int ey = by;
@@ -74,11 +101,9 @@ std::unique_ptr<BigBlockMap> ScanlineFill::light(int p, int q, const BigBlockMap
                             int lz = ez - oz;
 
                             if (is_light(ew)) {
-                                printf("Is Light(%d,%d,%d)\n", lx,ly,lz);
                                 light_fill_scanline(opaque, *light, lx, ly, lz, 15, false);
                             }
-                            else if(is_sunlight(ey, ew)) {
-                                printf("Sunlight(%d,%d,%d)\n", lx,ly,lz);
+                            else if(touches_sunlight(*light, opaque, lx, ly, lz)) {
                                 light_fill_scanline(opaque, *light, lx, ly, lz, 15, true);
                             }
                         }
@@ -104,7 +129,9 @@ void light_fill_scanline(const BigBlockMap &opaque, BigBlockMap &light, int ox, 
 
     frontier.push_back(origin);
     int check_count = 0;
-    std::cout << "Light Fill Scanline " << ox << "," << oy << "," << oz << "," << ow << std::endl;
+//    std::cout << "Light Fill Scanline " << ox << "," << oy << "," << oz << "," << ow << std::endl;
+
+
     while(!frontier.empty()){
         auto &next = frontier.front();
         auto scanline = next;
@@ -134,7 +161,7 @@ void light_fill_scanline(const BigBlockMap &opaque, BigBlockMap &light, int ox, 
         scanline_iterate(light, opaque, frontier, scanline, y-1, w, -1, is_sunlight);
 
     }
-    std::cout << "Check vs Chunk: " << check_count << " " << (check_count * 1.0 * 100) / (CHUNK_SIZE * CHUNK_SIZE * CHUNK_HEIGHT) << "%" << std::endl;
+//    std::cout << "Check vs Chunk: " << check_count << " " << (check_count * 1.0 * 100) / (CHUNK_SIZE * CHUNK_SIZE * CHUNK_HEIGHT) << "%" << std::endl;
 }
 
 void scanline_iterate(BigBlockMap &light, const BigBlockMap &opaque,

@@ -17,7 +17,7 @@ public:
     std::unique_ptr<BlockMap<CHUNK_SIZE, CHUNK_HEIGHT>> blocks;
 
     TransientChunk(int p, int q);
-    int set_block(int x, int y, int z, char w);
+    void set_block(int x, int y, int z, char w);
     int get_block(int x, int y, int z) const;
     int get_block_or_zero(int x, int y, int z) const;
     void foreach_block(std::function<void(int, int, int, char)> func) const;

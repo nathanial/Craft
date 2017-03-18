@@ -139,7 +139,6 @@ void World::set_block(int x, int y, int z, char w) {
         x,y,z,w
     ).receive(
         [&](){
-            std::cout << "COMPLETE" << std::endl;
         },
         [&](caf::error error){
             aout(self) << "Error: set_block " << error << std::endl;
@@ -294,8 +293,8 @@ void World::internal_load_world() {
     std::clock_t    start;
     start = std::clock();
 
-    int min = 0;
-    int max = 2;
+    int min = -10;
+    int max = 10;
 
     for(int p = min; p < max; p++){
         for(int q = min; q < max; q++){
