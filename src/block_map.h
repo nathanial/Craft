@@ -9,7 +9,7 @@
 template<unsigned int WIDTH, unsigned int HEIGHT>
 class BlockMap {
 public:
-    char _data[WIDTH][HEIGHT][WIDTH] = {{{0}}};
+    short _data[WIDTH][HEIGHT][WIDTH] = {{{0}}};
 
     BlockMap() {}
 
@@ -20,7 +20,7 @@ public:
     BlockMap(BlockMap&&) = delete;
     BlockMap& operator=(BlockMap&&) = delete;
 
-    int set(int x, int y, int z, char w) {
+    int set(int x, int y, int z, short w) {
         if(x < 0 || x >= WIDTH || y < 0 || y >= HEIGHT || z < 0 || z >= WIDTH){
             printf("Set Bad Index %d,%d,%d\n", x, y, z);
             throw new std::invalid_argument("Bad Index");
@@ -36,14 +36,14 @@ public:
         }
         return overwrite;
     }
-    char get(int x, int y, int z) const {
+    short get(int x, int y, int z) const {
         if(x < 0 || x >= WIDTH || y < 0 || y >= HEIGHT|| z < 0 || z >= WIDTH){
             printf("Get Bad Index %d,%d,%d\n", x, y, z);
             throw new std::invalid_argument("Bad Index");
         }
         return this->_data[x][y][z];
     }
-    char get_or_default(int x, int y, int z, char _default) const {
+    short get_or_default(int x, int y, int z, char _default) const {
         if(x < 0 || x >= WIDTH || y < 0 || y >= HEIGHT|| z < 0 || z >= WIDTH){
             return _default;
         }

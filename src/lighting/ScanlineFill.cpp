@@ -44,7 +44,7 @@ void light_fill_scanline(const BigBlockMap &opaque, BigBlockMap &light, int ox, 
 
 void scanline_iterate(BigBlockMap &light, const BigBlockMap &opaque, std::deque<Scanline> &frontier,
                       Scanline scanline,
-                      int cursorX, int cursorW, int direction);
+                      int cursorX, short cursorW, int direction);
 
 bool is_sunlight(int y, int w){
     return y == CHUNK_HEIGHT - 2 && w == 0;
@@ -78,11 +78,13 @@ std::unique_ptr<BigBlockMap> ScanlineFill::light(int p, int q, const BigBlockMap
                             int lz = ez - oz;
 
                             if (is_light(ew)) {
+                                printf("Is Light(%d,%d,%d)\n", lx,ly,lz);
                                 light_fill_scanline(opaque, *light, lx, ly, lz, 15);
                             }
-//                            else if(is_sunlight(ey, ew)) {
-//                                light_fill_scanline(opaque, *light, lx, ly, lz, 15);
-//                            }
+                            else if(is_sunlight(ey, ew)) {
+                                printf("Sunlight(%d,%d,%d)\n", lx,ly,lz);
+                                light_fill_scanline(opaque, *light, lx, ly, lz, 250);
+                            }
                         }
                     }
                 }
@@ -134,6 +136,7 @@ void light_fill_scanline(const BigBlockMap &opaque, BigBlockMap &light, int ox, 
 
         scanline_iterate(light, opaque, frontier, scanline, y, w, 1);
         scanline_iterate(light, opaque, frontier, scanline, y-1, w, -1);
+
     }
     std::cout << "Check vs Chunk: " << check_count << " " << (check_count * 1.0 * 100) / (CHUNK_SIZE * CHUNK_SIZE * CHUNK_HEIGHT) << "%" << std::endl;
 }
@@ -141,7 +144,7 @@ void light_fill_scanline(const BigBlockMap &opaque, BigBlockMap &light, int ox, 
 void scanline_iterate(BigBlockMap &light, const BigBlockMap &opaque,
                       std::deque<Scanline> &frontier,
                       Scanline scanline,
-                      int cursorY, int cursorW, int direction) {
+                      int cursorY, short cursorW, int direction) {
 
     auto canLight = [&](int x, int y, int z, int w){
         return light.get(x, y, z) < w && !opaque.get(x, y, z);
@@ -152,9 +155,15 @@ void scanline_iterate(BigBlockMap &light, const BigBlockMap &opaque,
     auto z = scanline.startZ;
     auto y = scanline.startY;
     auto w = scanline.light;
+    int count = 0;
     while(cursorY < light.height() && cursorY >= 0 && canLight(x, cursorY, z, w - ABS(y - cursorY))){
+        count += 1;
         cursorW = w - ABS(y - cursorY);
+        if(light.get(x,cursorY,z) >= cursorW){
+            return;
+        }
         light.set(x, cursorY, z, cursorW);
+
         if(!spanZMinus && z > 0 && canLight(x, cursorY, z-1, cursorW-1)) {
             frontier.push_back(Scanline(x, cursorY, z - 1, cursorW - 1, SourceDirection::ZMinus));
             spanZMinus = true;

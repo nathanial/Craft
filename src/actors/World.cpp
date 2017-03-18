@@ -294,16 +294,16 @@ void World::internal_load_world() {
     std::clock_t    start;
     start = std::clock();
 
-    for(int p = 0; p < 1; p++){
-        for(int q = 0; q < 1; q++){
-            Flatland flatland;
+    for(int p = -10; p < 10; p++){
+        for(int q = -10; q < 10; q++){
+            Mountains flatland;
             TransientChunk chunk(p,q);
             flatland.create_chunk(chunk, p,q);
             visual_chunks[std::make_tuple(p,q)] = std::make_shared<VisualChunk>(std::make_shared<Chunk>(chunk.immutable()), nullptr);
         }
     }
-    for(int p = 0; p < 1; p++) {
-        for (int q = 0; q < 1; q++) {
+    for(int p = -10; p < 10; p++) {
+        for (int q = -10; q < 10; q++) {
             auto chunk = visual_chunks[std::make_tuple(p,q)]->chunk;
             TransientChunkMesh mesh;
             Chunk::create_mesh(p, q, mesh, *chunk->blocks, this->internal_find_neighbors(p, q));

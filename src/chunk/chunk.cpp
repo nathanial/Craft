@@ -21,7 +21,7 @@ using namespace vgk;
 using namespace vgk::actors;
 
 void occlusion(
-        char neighbors[27], char lights[27], float shades[27],
+        char neighbors[27], short lights[27], float shades[27],
         float ao[6][4], float light[6][4]);
 
 void scanline_iterate(BigBlockMap &light, BigBlockMap &opaque, std::deque<std::tuple<int, int, int, int>> &frontier,
@@ -141,7 +141,7 @@ std::vector<GLfloat> Chunk::generate_geometry(int p, int q, const ChunkBlocks &b
             return;
         }
         char neighbors[27] = {0};
-        char lights[27] = {0};
+        short lights[27] = {0};
         float shades[27] = {0};
         int index = 0;
         for (int dx = -1; dx <= 1; dx++) {
@@ -192,18 +192,23 @@ void Chunk::create_mesh(int p, int q, TransientChunkMesh &mesh, const ChunkBlock
     auto highest = std::make_unique<HeightMap<CHUNK_SIZE * 3>>();
 
 
-    Chunk::populate_opaque_array(p, q, *opaque, *highest, neighbors);
-    ScanlineFill fill;
-    auto light = fill.light(p,q,*opaque, neighbors);
+    try {
+        Chunk::populate_opaque_array(p, q, *opaque, *highest, neighbors);
+        ScanlineFill fill;
+        auto light = fill.light(p,q,*opaque, neighbors);
 
-    int miny, maxy, faces;
-    std::tie(miny, maxy, faces) = Chunk::count_faces(p, q, blocks, *opaque);
-    auto data = Chunk::generate_geometry(p, q, blocks, *opaque, *light, *highest);
+        int miny, maxy, faces;
+        std::tie(miny, maxy, faces) = Chunk::count_faces(p, q, blocks, *opaque);
+        auto data = Chunk::generate_geometry(p, q, blocks, *opaque, *light, *highest);
 
-    mesh.miny = miny;
-    mesh.maxy = maxy;
-    mesh.faces = faces;
-    mesh.vertices = data;
+        mesh.miny = miny;
+        mesh.maxy = maxy;
+        mesh.faces = faces;
+        mesh.vertices = data;
+    } catch(...) {
+        std::cout << "Could not mesh, unknown exception" << std::endl;
+    }
+
 }
 
 void Chunk::populate_opaque_array(int _p, int _q, BigBlockMap &opaque, HeightMap<48> &highest, const ChunkNeighbors &neighbors) {
@@ -323,7 +328,7 @@ float get_light_level(int level){
 }
 
 void occlusion(
-        char neighbors[27], char lights[27], float shades[27],
+        char neighbors[27], short lights[27], float shades[27],
         float ao[6][4], float light[6][4])
 {
     static const int lookup3[6][4][3] = {
