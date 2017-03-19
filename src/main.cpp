@@ -552,7 +552,6 @@ int main(int argc, char **argv) {
 
     // LOAD SHADERS //
     Attrib block_attrib = {0};
-    Attrib line_attrib = {0};
     Attrib text_attrib = {0};
     Attrib sky_attrib = {0};
     GLuint program;
@@ -571,12 +570,6 @@ int main(int argc, char **argv) {
     block_attrib.extra4 = glGetUniformLocation(program, "ortho");
     block_attrib.camera = glGetUniformLocation(program, "camera");
     block_attrib.timer = glGetUniformLocation(program, "timer");
-
-    program = load_program(
-        "shaders/line_vertex.glsl", "shaders/line_fragment.glsl");
-    line_attrib.program = program;
-    line_attrib.position = glGetAttribLocation(program, "position");
-    line_attrib.matrix = glGetUniformLocation(program, "matrix");
 
     program = load_program(
         "shaders/text_vertex.glsl", "shaders/text_fragment.glsl");

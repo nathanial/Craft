@@ -7,7 +7,7 @@
 #include "../util.h"
 #include "./Actors.h"
 #include "../chunk/ChunkMesh.h"
-#include "../biomes/Mountains.h"
+#include "../biomes/mountains.h"
 #include "../biomes/flatland.h"
 
 using namespace vgk;

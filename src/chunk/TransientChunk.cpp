@@ -3,7 +3,7 @@
 //
 
 #include "TransientChunk.h"
-#include "Chunk.h"
+#include "chunk.h"
 
 TransientChunk::TransientChunk(int p, int q) :
     p(p), q(q),

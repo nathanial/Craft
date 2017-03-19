@@ -9,7 +9,7 @@
 #include <stdexcept>
 #include <functional>
 
-template<unsigned int WIDTH>
+template<int WIDTH>
 class HeightMap {
 public:
     char _data[WIDTH][WIDTH] = {{0}};

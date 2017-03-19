@@ -35,6 +35,7 @@ endif()
 
 find_package(CURL REQUIRED)
 include_directories(${CURL_INCLUDE_DIR})
+link_directories(/usr/local/lib)
 
 if(APPLE)
     target_link_libraries(craft glfw -larmadillo -lcaf_core
@@ -42,7 +43,7 @@ if(APPLE)
 endif()
 
 if(UNIX)
-    target_link_libraries(craft dl glfw -larmadillo
+    target_link_libraries(craft dl glfw armadillo caf_core
         ${GLFW_LIBRARIES} ${CURL_LIBRARIES})
 endif()
 

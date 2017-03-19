@@ -5,8 +5,9 @@
 #include <cmath>
 #include <unordered_map>
 #include "config.h"
+#include <memory>
 
-template<unsigned int WIDTH, unsigned int HEIGHT>
+template<int WIDTH, int HEIGHT>
 class BlockMap {
 public:
     short _data[WIDTH][HEIGHT][WIDTH] = {{{0}}};

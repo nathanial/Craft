@@ -8,6 +8,7 @@
 
 #include <GL/glew.h>
 #include <vector>
+#include <climits>
 
 class ChunkMesh;
 
@@ -21,8 +22,6 @@ public:
 
     ChunkMesh immutable() const;
     void generate_buffer();
-
-
 };
 
 

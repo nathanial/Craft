@@ -9,6 +9,8 @@
 #include <GL/glew.h>
 #include <vector>
 #include <caf/allowed_unsafe_message_type.hpp>
+#include <memory>
+#include <climits>
 
 class Attrib;
 class TransientChunkMesh;
