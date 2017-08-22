@@ -14,5 +14,8 @@ log.txt
 *.dll
 *.pyc
 .idea/
-deps/
+deps/glfw
+deps/glew
+deps/lodepng
+deps/noise
 craft.cbp

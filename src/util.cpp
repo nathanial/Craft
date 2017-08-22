@@ -29,10 +29,14 @@ void update_fps(FPS *fps) {
 char *load_file(const char *path) {
     FILE *file = fopen(path, "rb");
     fseek(file, 0, SEEK_END);
-    int length = ftell(file);
+    auto length = (uint64_t)ftell(file);
     rewind(file);
-    char *data = (char*)calloc(length + 1, sizeof(char));
-    fread(data, 1, length, file);
+    auto data = (char*)calloc(length + 1, sizeof(char));
+    auto len = fread(data, 1, length, file);
+    if(len != length){
+        std::cerr << "Bad Length Read" << std::endl;
+        exit(1);
+    }
     fclose(file);
     return data;
 }

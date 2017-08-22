@@ -14,8 +14,13 @@ add_executable(
     deps/noise/noise.c
         src/chunk/chunk.h src/chunk/chunk.cpp src/model.h src/draw.cpp src/draw.h src/actors/Actors.cpp src/actors/Actors.h src/biomes/rolling_planes.cpp src/biomes/rolling_planes.h src/biomes/biome.h src/biomes/mountains.h src/biomes/mountains.cpp src/height_map.h src/workers/tasks/generate_chunk_task.h src/workers/tasks/task.h src/workers/tasks/generate_chunk_task.cpp src/biomes/flatland.cpp src/biomes/flatland.h src/terrain_features/trees/OakTree.cpp src/terrain_features/trees/OakTree.h src/terrain_features/TerrainFeature.cpp src/terrain_features/TerrainFeature.h src/chunk/ChunkMesh.cpp src/chunk/ChunkMesh.h src/chunk/TransientChunk.cpp src/chunk/TransientChunk.h src/chunk/TransientChunkMesh.cpp src/chunk/TransientChunkMesh.h src/actors/World.cpp src/actors/World.h src/lighting/ScanlineFill.cpp src/lighting/ScanlineFill.h src/lighting/LightingAlgorithm.h)
 
-set(CMAKE_CXX_FLAGS "-std=c++14 -Werror -Wall -Wno-narrowing -O3 ")
-set(CMAKE_C_FLAGS -O3)
+set(OPTIMIZATION_LEVEL "-O3")
+set(CMAKE_CXX_FLAGS "-std=c++14 -Werror -Wall -Wno-narrowing ${OPTIMIZATION_LEVEL}")
+set(CMAKE_C_FLAGS ${OPTIMIZATION_LEVEL})
+
+
+set(CMAKE_MODULE_PATH
+        ${CMAKE_MODULE_PATH} ${CMAKE_CURRENT_SOURCE_DIR}/deps/actor-framework/cmake)
 
 add_subdirectory(deps/glfw)
 include_directories(deps/glew/include)
@@ -25,7 +30,13 @@ include_directories(deps/noise)
 include_directories(deps/sqlite)
 include_directories(deps/tinycthread)
 include_directories(/usr/local/include)
-include_directories(deps/actor-framework)
+
+set(CAF_ROOT_DIR ${CMAKE_SOURCE_DIR}/deps/actor-framework)
+find_package(CAF COMPONENTS core io QUIET)
+if (NOT CAF_FOUND)
+    message(FATAL_ERROR "Could not find CAF")
+endif ()
+include_directories(${CAF_INCLUDE_DIRS})
 
 if(MINGW)
     set(CMAKE_LIBRARY_PATH ${CMAKE_LIBRARY_PATH}
@@ -39,10 +50,11 @@ include_directories(${CURL_INCLUDE_DIR})
 link_directories(/usr/local/lib)
 
 if(APPLE)
-    target_link_libraries(craft glfw -larmadillo -lcaf_core
+    target_link_libraries(craft glfw -larmadillo caf_core
         ${GLFW_LIBRARIES} ${CURL_LIBRARIES})
 endif()
 
+message("CAF LIBRARIES" ${CAF_LIBRARIES})
 if(UNIX)
     target_link_libraries(craft dl glfw armadillo caf_core
         ${GLFW_LIBRARIES} ${CURL_LIBRARIES})
