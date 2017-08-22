@@ -1,0 +1,3 @@
+[submodule "actor-framework"]
+	path = deps/actor-framework
+	url = https://github.com/actor-framework/actor-framework
